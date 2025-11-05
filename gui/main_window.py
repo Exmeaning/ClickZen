@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"已复制坐标: {self.current_device_coords[0]}, {self.current_device_coords[1]}",
                                      2000)
     def initUI(self):
-        self.setWindowTitle("Phone Controller - 手机控制器")
+        self.setWindowTitle("ClickZen - 智能点击助手")
         self.setGeometry(100, 100, 900, 700)
         
         # 设置窗口图标（可选）

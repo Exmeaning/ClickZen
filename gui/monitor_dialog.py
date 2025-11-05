@@ -28,6 +28,8 @@ class MonitorTaskDialog(QDialog):
         """初始化UI"""
         self.setWindowTitle("监控任务配置")
         self.setMinimumWidth(600)
+        self.setMinimumHeight(700)  # 增加高度
+        self.resize(650, 750)  # 设置初始大小
 
         # 创建滚动区域
         scroll = QScrollArea()
@@ -128,10 +130,19 @@ class MonitorTaskDialog(QDialog):
         action_layout.addLayout(action_button_layout)
         action_group.setLayout(action_layout)
 
-        # 条件设置（新增）
+        # 条件设置（高级功能）
         condition_group = QGroupBox("执行条件")
         condition_layout = QVBoxLayout()
 
+        # 启用条件判断复选框
+        self.enable_condition_check = QCheckBox("启用条件判断功能（高级）")
+        self.enable_condition_check.toggled.connect(self.toggle_condition_panel)
+        condition_layout.addWidget(self.enable_condition_check)
+
+        # 条件面板（默认隐藏）
+        self.condition_panel = QWidget()
+        condition_panel_layout = QVBoxLayout(self.condition_panel)
+        
         self.condition_list = QListWidget()
         self.condition_list.setMaximumHeight(80)
 
@@ -143,9 +154,12 @@ class MonitorTaskDialog(QDialog):
         condition_button_layout.addWidget(self.add_condition_btn)
         condition_button_layout.addWidget(self.remove_condition_btn)
 
-        condition_layout.addWidget(QLabel("基于公共变量的条件判断:"))
-        condition_layout.addWidget(self.condition_list)
-        condition_layout.addLayout(condition_button_layout)
+        condition_panel_layout.addWidget(QLabel("基于公共变量的条件判断:"))
+        condition_panel_layout.addWidget(self.condition_list)
+        condition_panel_layout.addLayout(condition_button_layout)
+        
+        self.condition_panel.setVisible(False)  # 默认隐藏
+        condition_layout.addWidget(self.condition_panel)
         condition_group.setLayout(condition_layout)
 
         # 按钮
@@ -193,6 +207,17 @@ class MonitorTaskDialog(QDialog):
             
             # 加载条件
             self.conditions = self.task_config.get('conditions', [])
+            if self.conditions:
+                self.enable_condition_check.setChecked(True)
+                self.condition_panel.setVisible(True)
+            self.refresh_condition_list()
+
+    def toggle_condition_panel(self, checked):
+        """切换条件面板显示"""
+        self.condition_panel.setVisible(checked)
+        if not checked:
+            # 清空条件列表
+            self.conditions = []
             self.refresh_condition_list()
     
     def refresh_condition_list(self):
@@ -432,9 +457,12 @@ class MonitorTaskDialog(QDialog):
 
     def get_config(self):
         """获取配置"""
-        if not self.name_input.text():
-            QMessageBox.warning(self, "警告", "请输入任务名称")
-            return None
+        # 如果没有填写名称，自动生成
+        task_name = self.name_input.text()
+        if not task_name:
+            from datetime import datetime
+            task_name = f"监控任务_{datetime.now().strftime('%H%M%S')}"
+            self.name_input.setText(task_name)
 
         # 如果没有模板图片但有条件判断，允许创建（纯条件触发）
         conditions = getattr(self, 'conditions', [])
@@ -443,14 +471,14 @@ class MonitorTaskDialog(QDialog):
             return None
 
         return {
-            'name': self.name_input.text(),
+            'name': task_name,
             'enabled': self.enabled_check.isChecked(),
             'region': self.region,
             'template': self.template_image,
             'threshold': self.threshold_spin.value(),
             'cooldown': self.cooldown_spin.value(),
             'actions': self.actions,
-            'conditions': getattr(self, 'conditions', [])
+            'conditions': getattr(self, 'conditions', []) if self.enable_condition_check.isChecked() else []
         }
 
 
@@ -460,15 +488,130 @@ class RegionInputDialog(QDialog):
     def __init__(self, parent=None, initial_region=None):
         super().__init__(parent)
         self.initial_region = initial_region
+        self.current_device_coords = (0, 0)
         self.initUI()
         if initial_region:
             self.load_region(initial_region)
+        # 启动坐标追踪
+        self.setup_coordinate_tracker()
+
+    def setup_coordinate_tracker(self):
+        """设置坐标追踪器"""
+        self.coord_timer = QTimer(self)
+        self.coord_timer.timeout.connect(self.update_mouse_coordinates)
+        self.coord_timer.start(50)  # 每50ms更新一次
+
+    def update_mouse_coordinates(self):
+        """更新鼠标坐标显示"""
+        try:
+            import win32gui
+
+            # 获取鼠标位置
+            cursor_pos = win32gui.GetCursorPos()
+            self.screen_coord_label.setText(f"屏幕: ({cursor_pos[0]}, {cursor_pos[1]})")
+
+            # 使用WindowCapture查找Scrcpy窗口
+            from core.window_capture import WindowCapture
+            hwnd = WindowCapture.find_scrcpy_window()
+
+            if hwnd:
+                # 获取窗口客户区
+                rect = win32gui.GetClientRect(hwnd)
+                point = win32gui.ClientToScreen(hwnd, (0, 0))
+                client_rect = (
+                    point[0], point[1],
+                    point[0] + rect[2], point[1] + rect[3]
+                )
+
+                # 检查鼠标是否在窗口内
+                if (client_rect[0] <= cursor_pos[0] <= client_rect[2] and
+                        client_rect[1] <= cursor_pos[1] <= client_rect[3]):
+
+                    # 计算相对坐标
+                    rel_x = cursor_pos[0] - client_rect[0]
+                    rel_y = cursor_pos[1] - client_rect[1]
+
+                    # 窗口大小
+                    window_width = client_rect[2] - client_rect[0]
+                    window_height = client_rect[3] - client_rect[1]
+
+                    # 获取设备分辨率（需要传入controller）
+                    # 尝试从父窗口获取controller
+                    controller = None
+                    p = self.parent()
+                    while p:
+                        if hasattr(p, 'controller'):
+                            controller = p.controller
+                            break
+                        p = p.parent() if hasattr(p, 'parent') and callable(p.parent) else None
+                    
+                    if controller:
+                        device_width, device_height = controller.get_device_resolution()
+
+                        # 判断实际显示方向
+                        window_aspect = window_width / window_height if window_height > 0 else 1
+
+                        if window_aspect > 1.3:  # 横屏
+                            actual_width = max(device_width, device_height)
+                            actual_height = min(device_width, device_height)
+                        else:  # 竖屏
+                            actual_width = min(device_width, device_height)
+                            actual_height = max(device_width, device_height)
+
+                        # 转换为设备坐标
+                        if window_width > 0 and window_height > 0:
+                            device_x = int(rel_x * actual_width / window_width)
+                            device_y = int(rel_y * actual_height / window_height)
+
+                            # 确保坐标在有效范围内
+                            device_x = max(0, min(device_x, actual_width - 1))
+                            device_y = max(0, min(device_y, actual_height - 1))
+
+                            self.current_device_coords = (device_x, device_y)
+                            self.device_coord_label.setText(f"设备: ({device_x}, {device_y})")
+                        else:
+                            self.device_coord_label.setText(f"设备: (-, -)")
+                    else:
+                        self.device_coord_label.setText(f"设备: (-, -)")
+                else:
+                    self.device_coord_label.setText(f"设备: (-, -)")
+            else:
+                self.device_coord_label.setText(f"设备: (-, -)")
+
+        except Exception:
+            self.device_coord_label.setText(f"设备: (-, -)")
 
     def initUI(self):
         self.setWindowTitle("输入监控区域")
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(400)
 
         layout = QVBoxLayout(self)
+
+        # 实时坐标显示（新增）
+        coord_display_group = QGroupBox("实时坐标")
+        coord_display_layout = QVBoxLayout()
+
+        self.screen_coord_label = QLabel("屏幕: (-, -)")
+        self.screen_coord_label.setStyleSheet("font-family: Consolas; font-size: 11px;")
+        
+        self.device_coord_label = QLabel("设备: (-, -)")
+        self.device_coord_label.setStyleSheet("font-family: Consolas; font-size: 11px; color: blue;")
+
+        # 快速填充按钮
+        fill_button_layout = QHBoxLayout()
+        self.fill_start_btn = QPushButton("填充为起始点")
+        self.fill_start_btn.clicked.connect(self.fill_start_coords)
+        self.fill_end_btn = QPushButton("填充为结束点")
+        self.fill_end_btn.clicked.connect(self.fill_end_coords)
+        fill_button_layout.addWidget(self.fill_start_btn)
+        fill_button_layout.addWidget(self.fill_end_btn)
+
+        coord_display_layout.addWidget(self.screen_coord_label)
+        coord_display_layout.addWidget(self.device_coord_label)
+        coord_display_layout.addLayout(fill_button_layout)
+        coord_display_group.setLayout(coord_display_layout)
+        
+        layout.addWidget(coord_display_group)
 
         # 说明文字
         info_label = QLabel("输入监控区域的起始和结束坐标：")
@@ -536,6 +679,20 @@ class RegionInputDialog(QDialog):
         layout.addWidget(buttons)
 
         # 初始更新显示
+        self.update_display()
+
+    def fill_start_coords(self):
+        """填充当前设备坐标为起始点"""
+        x, y = self.current_device_coords
+        self.x1_spin.setValue(x)
+        self.y1_spin.setValue(y)
+        self.update_display()
+
+    def fill_end_coords(self):
+        """填充当前设备坐标为结束点"""
+        x, y = self.current_device_coords
+        self.x2_spin.setValue(x)
+        self.y2_spin.setValue(y)
         self.update_display()
 
     def load_region(self, region):

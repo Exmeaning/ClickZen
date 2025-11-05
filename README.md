@@ -16,9 +16,9 @@ ClickZen 是一个基于 Python 开发的 Android 设备自动化控制工具，
 
 ## ⚠️ 重要声明
 
-1. **AI代码风险提示**：本项目部分代码由AI辅助生成，可能存在潜在的bug或安全问题。使用前请仔细审查代码，风险自负。
-2. **作者能力有限**：本人编程水平有限，代码质量可能不高。作者 Python 水平约等于 Hello World → 欢迎 PR 教我写 class。
-3. **使用责任**：请合理使用本工具，遵守相关法律法规。因使用本工具产生的任何问题，作者不承担责任。
+1.  **AI代码风险提示**：本项目部分代码由AI辅助生成，可能存在潜在的bug或安全问题。使用前请仔细审查代码，风险自负。
+2.  **作者能力有限**：本人编程水平有限，代码质量可能不高。作者 Python 水平约等于 Hello World → 欢迎 PR 教我写 class。
+3.  **使用责任**：请合理使用本工具，遵守相关法律法规。因使用本工具产生的任何问题，作者不承担责任。
 
 ---
 
@@ -32,27 +32,34 @@ ClickZen 是一个基于 Python 开发的 Android 设备自动化控制工具，
 - 🔧 **易用的GUI**：直观的图形界面操作
 
 ---
-## 📥 资源下载
-[Windows平台](https://github.com/Exmeaning/ClickZen/releases)
-## 🎥 截图示例
-![mainGUI](https://github.com/Exmeaning/Exmeaning-Image-hosting/blob/main/ClickZen/readme/mainGUI.png)
 
-## 🔧 技术栈
-- **GUI**: PyQt6
-- **设备通信**: ADB (Android Debug Bridge)
-- **投屏**: Scrcpy
-- **图像识别**: OpenCV
-- **截图**: mss, win32api
+## 🚀 快速上手 (面向普通用户)
 
-## 📖 使用教程
+如果您不了解代码，只想直接使用本软件，请按以下步骤操作：
+
+1.  **下载程序**：
+    *   前往 [**Releases 发布页面**](https://github.com/Exmeaning/ClickZen/releases)。
+    *   找到最新的版本，下载名为 `ClickZen_vX.X.X.exe` 的可执行程序。
+
+2.  **连接手机**：
+    *   在手机上开启 **“开发者选项”**，然后启用 **“USB调试”**。
+    *   **（小米/Redmi手机用户注意）**：需要额外在“开发者选项”中开启 **“USB调试（安全设置）”**。
+    *   使用数据线将手机连接到电脑。
+
+3.  **运行软件**：
+    *   找到并双击 `ClickZen.exe` 即可启动程序。
+    *   点击软件界面上的 **“刷新设备”**，如果您的手机出现在列表中，说明连接成功。
+    *   点击 **“启动 scrcpy”** 即可在电脑上看到并操作手机屏幕。
+
+---
+
+## 📖 功能指南
 
 ### 🧩 基础使用
 
-1. 连接手机并开启 **USB 调试**（小米设备需要额外开启 **USB 调试（安全模式）**）。
-2. 点击 **“刷新设备”** 识别设备。
-3. 启动 **scrcpy**。
-
----
+1.  确保手机已按上述步骤连接成功。
+2.  点击 **“刷新设备”** 识别设备。
+3.  点击 **“启动 scrcpy”** 开始投屏和操作。
 
 ### ⚙️ 进阶功能
 
@@ -63,53 +70,61 @@ ClickZen 是一个基于 Python 开发的 Android 设备自动化控制工具，
 
 #### 🤖 类 Klick'r 的自动化监控
 
-1. 创建任务，设置好变量和条件（复杂监控方案若需要）。
-2. 点击 **“监控区域”** → 选择区域后点击 **“截取区域”**，系统会自动以截取好的区域作为检测模板。
-3. 选择匹配阈值与冷却时间。  
-   🔸 *冷却时间* 指重复检测时，执行操作中的频率将具有一定冷却 CD，而不是检测的CD。
-4. 添加想要执行的动作。  
-   可执行操作包括：
-   - 变量更改  
-   - 点击、滑动、等待等物理操作  
-   - 调用你录制好的脚本
-   
+1.  创建任务，设置好变量和条件（如果需要复杂的监控方案）。
+2.  点击 **“监控区域”** → 在弹出的投屏窗口上框选您想监控的区域 → 点击 **“截取区域”**，系统会自动将这块区域的图像作为后续识别的目标。
+3.  选择匹配阈值与冷却时间。  
+    🔸 *冷却时间* 指的是当条件满足后，执行相应操作的间隔，而不是检测的间隔。
+4.  添加您希望执行的动作。  
+    可执行操作包括：
+    -   变量更改
+    -   点击、滑动、等待等物理操作
+    -   调用您已录制好的脚本
+
 ![autoclickGUI](https://github.com/Exmeaning/Exmeaning-Image-hosting/blob/main/ClickZen/readme/autoclickGUI.png)
-----
-## 🚀 快速开始
+
+---
+
+## 🎥 截图示例
+![mainGUI](https://github.com/Exmeaning/Exmeaning-Image-hosting/blob/main/ClickZen/readme/mainGUI.png)
+
+---
+
+## 👨‍💻 从源码运行 (面向开发者)
 
 ### 环境要求
 
-- Windows 10/11 (64位)
-- Python 3.8+
-- Android 设备（需开启USB调试 小米设备需要开启ADB安全模式）
+-   Windows 10/11 (64位)
+-   Python 3.8+
+-   Android 设备（需开启USB调试，小米设备需要开启USB调试安全模式）
 
 ### 安装步骤
 
-1. 克隆项目
-```bash
-git clone https://github.com/Exmeaning/ClickZen.git
-cd ClickZen
-```
+1.  克隆项目
+    ```bash
+    git clone https://github.com/Exmeaning/ClickZen.git
+    cd ClickZen
+    ```
 
-2. 安装依赖
-```bash
-pip install -r requirements.txt
-```
+2.  安装依赖
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-3. 运行程序
-```bash
-python main.py
-```
+3.  运行程序
+    ```bash
+    python main.py
+    ```
+    首次运行时会自动下载 ADB 和 Scrcpy 工具。
 
-首次运行时会自动下载 ADB 和 Scrcpy 工具。
+---
 
-### 使用说明
+## 🔧 技术栈
 
-1. **连接设备**：通过USB连接Android设备，开启USB调试
-2. **启动投屏**：点击"启动Scrcpy"按钮
-3. **录制操作**：点击"开始录制"，在投屏窗口操作
-4. **保存/加载**：可保存录制脚本供后续使用
-5. **自动化任务**：创建基于图像识别的监控任务
+-   **GUI**: PyQt6
+-   **设备通信**: ADB (Android Debug Bridge)
+-   **投屏**: Scrcpy
+-   **图像识别**: OpenCV
+-   **截图**: mss, win32api
 
 ---
 
@@ -136,19 +151,19 @@ ClickZen/
 
 非常欢迎您的贡献！请通过以下方式参与：
 
-1. Fork 本项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交 Pull Request
+1.  Fork 本项目
+2.  创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3.  提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4.  推送到分支 (`git push origin feature/AmazingFeature`)
+5.  提交 Pull Request
 
 ### 需要帮助的方面
 
-- 🐛 Bug修复
-- 📝 文档改进
-- 🎨 UI优化
-- ⚡ 性能优化
-- 🌍 国际化支持
+-   🐛 Bug修复
+-   📝 文档改进
+-   🎨 UI优化
+-   ⚡ 性能优化
+-   🌍 国际化支持
 
 ---
 
@@ -158,15 +173,15 @@ ClickZen/
 
 ## 🙏 致谢
 
-- [Scrcpy](https://github.com/Genymobile/scrcpy) - 优秀的Android投屏工具
-- [Pure-python-adb](https://github.com/Swind/pure-python-adb) - Python ADB客户端
-- [Klick'r](https://github.com/Nain57/Smart-AutoClicker)-项目功能主要参考的安卓客户端
-- 所有贡献者和用户
+-   [Scrcpy](https://github.com/Genymobile/scrcpy) - 优秀的Android投屏工具
+-   [Pure-python-adb](https://github.com/Swind/pure-python-adb) - Python ADB客户端
+-   [Klick'r](https://github.com/Nain57/Smart-AutoClicker) - 项目功能主要参考的安卓客户端
+-   所有贡献者和用户
 
 ## 📞 联系方式
 
-- GitHub Issues: [提交问题](https://github.com/Exmeaning/ClickZen/issues)
-- Pull Requests: [贡献代码](https://github.com/Exmeaning/ClickZen/pulls)
+-   GitHub Issues: [提交问题](https://github.com/Exmeaning/ClickZen/issues)
+-   Pull Requests: [贡献代码](https://github.com/Exmeaning/ClickZen/pulls)
 
 ---
 **免责声明**：本软件不提供任何形式的保证。作者不对使用本软件导致的任何损失负责。

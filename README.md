@@ -33,7 +33,7 @@ ClickZen 是一个基于 Python 开发的 Android 设备自动化控制工具，
 
 ---
 ## 📥 资源下载
-
+[Windows平台](https://github.com/Exmeaning/ClickZen/releases)
 ## 🎥 截图示例
 ![mainGUI](https://github.com/Exmeaning/Exmeaning-Image-hosting/blob/main/ClickZen/readme/mainGUI.png)
 

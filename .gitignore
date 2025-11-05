@@ -2405,3 +2405,16 @@ main.dist/cv2/data/haarcascade_smile.xml
 main.dist/cv2/data/haarcascade_upperbody.xml
 PhoneController.exe
 build_nuitka.py
+main.dist/ffi.dll
+main.dist/libbz2.dll
+main.dist/libexpat.dll
+main.dist/liblzma.dll
+main.dist/python312.dll
+main.dist/pythoncom312.dll
+main.dist/pywintypes312.dll
+main.dist/zlib.dll
+main.dist/cv2/opencv_videoio_ffmpeg4120_64.dll
+main.dist/jaraco/text/Lorem ipsum.txt
+main.dist/numpy.libs/libscipy_openblas64_-13e2df515630b4a41f92893938845698.dll
+main.dist/numpy.libs/msvcp140-263139962577ecda4cd9469ca360a746.dll
+ClickZen.exe

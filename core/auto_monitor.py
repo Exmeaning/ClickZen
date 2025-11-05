@@ -3,7 +3,7 @@ import threading
 from PIL import Image
 import numpy as np
 import cv2
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal
 from datetime import datetime
 from core.window_capture import WindowCapture
 import json

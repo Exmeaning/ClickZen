@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
 from PIL import Image
+import numpy as np
 from core.window_capture import WindowCapture
 import json
 import time
@@ -80,7 +81,7 @@ class MonitorTaskDialog(QDialog):
 
         self.template_label = QLabel("未选择模板")
         self.template_label.setMinimumHeight(100)
-        self.template_label.setAlignment(Qt.AlignCenter)
+        self.template_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.template_label.setStyleSheet("border: 1px solid #ccc;")
 
         template_layout.addLayout(template_button_layout)
@@ -149,7 +150,7 @@ class MonitorTaskDialog(QDialog):
 
         # 按钮
         button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
@@ -206,7 +207,7 @@ class MonitorTaskDialog(QDialog):
     def add_condition(self):
         """添加条件"""
         dialog = ConditionDialog(self)
-        if dialog.exec_():
+        if dialog.exec():
             condition = dialog.get_condition()
             if not hasattr(self, 'conditions'):
                 self.conditions = []
@@ -223,7 +224,7 @@ class MonitorTaskDialog(QDialog):
     def select_region(self):
         """选择监控区域"""
         dialog = RegionInputDialog(self, self.region)
-        if dialog.exec_():
+        if dialog.exec():
             self.region = dialog.get_region()
             x, y, w, h = self.region
             self.region_label.setText(f"起始: ({x}, {y}) → 结束: ({x + w}, {y + h})")
@@ -299,7 +300,7 @@ class MonitorTaskDialog(QDialog):
         else:
             # 弹出区域选择对话框
             dialog = RegionInputDialog(self)
-            if dialog.exec_():
+            if dialog.exec():
                 self.region = dialog.get_region()
                 # 递归调用以处理区域
                 self.capture_template()
@@ -337,7 +338,7 @@ class MonitorTaskDialog(QDialog):
                     width,
                     height,
                     bytes_per_line,
-                    QImage.Format_RGB888
+                    QImage.Format.Format_RGB888
                 )
 
                 # 转换为QPixmap并缩放
@@ -348,8 +349,8 @@ class MonitorTaskDialog(QDialog):
                     pixmap = pixmap.scaled(
                         max_width,
                         max_height,
-                        Qt.KeepAspectRatio,
-                        Qt.SmoothTransformation
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
                     )
 
                 self.template_label.setPixmap(pixmap)
@@ -361,7 +362,7 @@ class MonitorTaskDialog(QDialog):
         """添加动作"""
         try:
             dialog = ActionEditDialog(self.controller, self)
-            if dialog.exec_():
+            if dialog.exec():
                 action = dialog.get_action()
                 if action:
                     self.actions.append(action)
@@ -374,7 +375,7 @@ class MonitorTaskDialog(QDialog):
         current = self.action_list.currentRow()
         if current >= 0:
             dialog = ActionEditDialog(self.controller, self, self.actions[current])
-            if dialog.exec_():
+            if dialog.exec():
                 self.actions[current] = dialog.get_action()
                 self.refresh_action_list()
 
@@ -412,7 +413,21 @@ class MonitorTaskDialog(QDialog):
             count = len(action.get('sub_actions', []))
             return f"随机执行 ({count}个动作之一)"
         elif action_type == 'set_variable':
-            return f"设置变量 {action.get('variable', '')} = {action.get('value', 0)}"
+            variable = action.get('variable', '')
+            value = action.get('value', 0)
+            operation = action.get('operation', 'set')
+            
+            # 使用符号表示操作
+            op_symbols = {
+                'set': '=',
+                'add': '+=',
+                'subtract': '-=',
+                'multiply': '*=',
+                'divide': '/='
+            }
+            
+            op_symbol = op_symbols.get(operation, '=')
+            return f"变量 {variable} {op_symbol} {value}"
         return "未知动作"
 
     def get_config(self):
@@ -514,7 +529,7 @@ class RegionInputDialog(QDialog):
 
         # 按钮
         buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(self.validate_and_accept)
         buttons.rejected.connect(self.reject)
@@ -616,7 +631,7 @@ class ActionEditDialog(QDialog):
 
         # 按钮
         buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -768,7 +783,7 @@ class ActionEditDialog(QDialog):
         
         # 操作类型选择
         self.variable_operation = QComboBox()
-        self.variable_operation.addItems(["设置为", "增加", "减少", "乘以", "除以"])
+        self.variable_operation.addItems(["设置", "增加", "减少", "乘以", "除以"])
         self.variable_operation.currentIndexChanged.connect(self.on_variable_operation_changed)
         
         self.variable_value_spin = QSpinBox()
@@ -780,11 +795,14 @@ class ActionEditDialog(QDialog):
         layout.addRow("值:", self.variable_value_spin)
         
         self.param_stack.addWidget(widget)
+        
+        # 初始化后缀显示
+        self.on_variable_operation_changed(0)
     
     def on_variable_operation_changed(self, index):
         """变量操作类型改变时更新提示"""
-        operations = ["设置为", "增加", "减少", "乘以", "除以"]
-        if index == 0:  # 设置为
+        operations = ["设置", "增加", "减少", "乘以", "除以"]
+        if index == 0:  # 设置
             self.variable_value_spin.setSuffix("")
         elif index in [1, 2]:  # 增加/减少
             self.variable_value_spin.setSuffix(" (单位)")
@@ -794,7 +812,7 @@ class ActionEditDialog(QDialog):
     def add_random_action(self):
         """添加随机动作选项"""
         dialog = RandomActionDialog(self.controller, self)
-        if dialog.exec_():
+        if dialog.exec():
             action_data = dialog.get_action_data()
             if action_data:
                 self.random_actions.append(action_data)
@@ -942,10 +960,14 @@ class ActionEditDialog(QDialog):
             }
         elif index == 7:  # 设置变量
             operations = ["set", "add", "subtract", "multiply", "divide"]
+            op_index = self.variable_operation.currentIndex()
+            # 确保索引有效
+            if op_index < 0 or op_index >= len(operations):
+                op_index = 0
             return {
                 'type': 'set_variable',
                 'variable': self.variable_name_input.text(),
-                'operation': operations[self.variable_operation.currentIndex()],
+                'operation': operations[op_index],
                 'value': self.variable_value_spin.value()
             }
 
@@ -973,7 +995,7 @@ class ConditionDialog(QDialog):
         layout.addRow("比较:", self.operator_combo)
         layout.addRow("值:", self.value_spin)
         
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
@@ -1068,7 +1090,7 @@ class RandomActionDialog(QDialog):
         layout.addWidget(action_group)
         layout.addWidget(variable_group)
         
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

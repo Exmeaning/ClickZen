@@ -90,7 +90,7 @@ class ADBManager:
 
             # 尝试连接ADB
             try:
-                self.client = AdbClient(host="127.0.0.1.txt", port=5037)
+                self.client = AdbClient(host="127.0.0.1", port=5037)
                 # 测试连接
                 self.client.version()
                 return True

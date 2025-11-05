@@ -1,8 +1,10 @@
-PyQt5>=5.15.0
-Pillow>=9.0.0
-numpy>=1.20.0
+PyQt6>=6.4.0
+PyQt6-Qt6>=6.4.0
+PyQt6-sip>=13.4.0
+pillow>=9.0.0
 opencv-python>=4.5.0
+numpy>=1.20.0
 pywin32>=300
 mss>=6.1.0
-requests>=2.25.0
 pure-python-adb>=0.3.0.dev0
+requests>=2.25.0

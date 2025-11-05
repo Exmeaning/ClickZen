@@ -2,7 +2,7 @@ import time
 import random
 from PIL import Image
 import io
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal
 # from core.windows_hook_monitor import WindowsHookMonitor
 from core.simple_mouse_monitor import SimpleMouseMonitor  # 使用新的简化监控器
 

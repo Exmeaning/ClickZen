@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
 import sys
 import json
 from datetime import datetime
@@ -137,7 +137,7 @@ class MainWindow(QMainWindow):
 
     def copy_device_coordinates(self):
         """复制设备坐标到剪贴板"""
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         clipboard = QApplication.clipboard()
         clipboard.setText(f"{self.current_device_coords[0]}, {self.current_device_coords[1]}")
         self.statusBar().showMessage(f"已复制坐标: {self.current_device_coords[0]}, {self.current_device_coords[1]}",
@@ -145,6 +145,9 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.setWindowTitle("Phone Controller - 手机控制器")
         self.setGeometry(100, 100, 900, 700)
+        
+        # 设置窗口图标（可选）
+        self.setWindowIcon(QIcon())
 
         # 创建中心部件
         central_widget = QWidget()
@@ -166,7 +169,6 @@ class MainWindow(QMainWindow):
         status_bar.showMessage("就绪")
         
         # 添加GitHub链接到状态栏
-        from PyQt5.QtWidgets import QLabel
         github_label = QLabel('<a href="https://github.com/Exmeaning/ClickZen">GitHub: ClickZen</a>')
         github_label.setOpenExternalLinks(True)
         github_label.setStyleSheet("margin-right: 10px;")
@@ -583,7 +585,7 @@ class MainWindow(QMainWindow):
         interval_layout.addWidget(self.interval_spin)
         
         # 添加提示标签
-        min_interval_label = QLabel("(最小: 0.05秒)")
+        min_interval_label = QLabel("(最小: 0.05秒 过低可能影响性能)")
         min_interval_label.setStyleSheet("color: gray; font-size: 10px;")
         interval_layout.addWidget(min_interval_label)
 
@@ -628,7 +630,7 @@ class MainWindow(QMainWindow):
     def add_monitor_task(self):
         """添加监控任务"""
         dialog = MonitorTaskDialog(self.controller, self)
-        if dialog.exec_():
+        if dialog.exec():
             config = dialog.get_config()
             if config:
                 index = self.auto_monitor.add_monitor_config(config)
@@ -641,7 +643,7 @@ class MainWindow(QMainWindow):
         if current >= 0 and current < len(self.auto_monitor.monitor_configs):
             config = self.auto_monitor.monitor_configs[current]
             dialog = MonitorTaskDialog(self.controller, self, config)
-            if dialog.exec_():
+            if dialog.exec():
                 new_config = dialog.get_config()
                 if new_config:
                     self.auto_monitor.update_monitor_config(current, new_config)
@@ -654,9 +656,9 @@ class MainWindow(QMainWindow):
         if current >= 0:
             reply = QMessageBox.question(
                 self, "确认", "确定要删除这个监控任务吗？",
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            if reply == QMessageBox.Yes:
+            if reply == QMessageBox.StandardButton.Yes:
                 self.auto_monitor.remove_monitor_config(current)
                 self.refresh_monitor_task_list()
 
@@ -930,9 +932,9 @@ class MainWindow(QMainWindow):
                     "1. 临时关闭Windows HDR（设置->显示->HDR）\n"
                     "2. 或直接从设备截图\n\n"
                     "是否继续？",
-                    QMessageBox.Yes | QMessageBox.No
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
-                if reply == QMessageBox.No:
+                if reply == QMessageBox.StandardButton.No:
                     return
         except:
             pass

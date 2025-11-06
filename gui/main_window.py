@@ -7,6 +7,7 @@ from datetime import datetime
 import time
 from core.auto_monitor import AutoMonitor
 from gui.monitor_dialog import MonitorTaskDialog
+from gui.settings_dialog import SettingsDialog
 from utils.config import VERSION
 
 
@@ -149,6 +150,9 @@ class MainWindow(QMainWindow):
         
         # 设置窗口图标（可选）
         self.setWindowIcon(QIcon())
+        
+        # 创建菜单栏
+        self.create_menu_bar()
 
         # 创建中心部件
         central_widget = QWidget()
@@ -183,6 +187,121 @@ class MainWindow(QMainWindow):
 
         # 连接控制器信号
         self.controller.action_recorded.connect(self.on_action_recorded)
+        
+        # 加载并应用设置
+        self.load_and_apply_settings()
+
+    def create_menu_bar(self):
+        """创建菜单栏"""
+        menubar = self.menuBar()
+        
+        # 文件菜单
+        file_menu = menubar.addMenu("文件")
+        
+        # 加载录制
+        load_action = QAction("加载录制", self)
+        load_action.setShortcut("Ctrl+O")
+        load_action.triggered.connect(self.load_recording)
+        file_menu.addAction(load_action)
+        
+        # 保存录制
+        save_action = QAction("保存录制", self)
+        save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self.save_recording)
+        file_menu.addAction(save_action)
+        
+        file_menu.addSeparator()
+        
+        # 退出
+        exit_action = QAction("退出", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+        
+        # 工具菜单
+        tools_menu = menubar.addMenu("工具")
+        
+        # 设置
+        settings_action = QAction("设置", self)
+        settings_action.setShortcut("Ctrl+,")
+        settings_action.triggered.connect(self.open_settings)
+        tools_menu.addAction(settings_action)
+        
+        tools_menu.addSeparator()
+        
+        # 截图
+        screenshot_action = QAction("截图", self)
+        screenshot_action.setShortcut("Ctrl+P")
+        screenshot_action.triggered.connect(self.take_screenshot)
+        tools_menu.addAction(screenshot_action)
+        
+        # 帮助菜单
+        help_menu = menubar.addMenu("帮助")
+        
+        # 关于
+        about_action = QAction("关于", self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
+        
+        # GitHub
+        github_action = QAction("GitHub项目", self)
+        github_action.triggered.connect(lambda: QDesktopServices.openUrl(
+            QUrl("https://github.com/Exmeaning/ClickZen")))
+        help_menu.addAction(github_action)
+
+    def open_settings(self):
+        """打开设置对话框"""
+        dialog = SettingsDialog(self)
+        dialog.settings_changed.connect(self.on_settings_changed)
+        dialog.exec()
+    
+    def on_settings_changed(self, settings):
+        """设置改变时的处理"""
+        # 应用坐标更新间隔
+        interval = settings["performance"]["coord_update_interval"]
+        self.coord_timer.setInterval(interval)
+        
+        # 应用日志设置
+        max_lines = settings["ui"]["max_log_lines"]
+        doc = self.log_text.document()
+        doc.setMaximumBlockCount(max_lines)
+        
+        self.log(f"设置已更新")
+    
+    def load_and_apply_settings(self):
+        """加载并应用设置"""
+        try:
+            import os
+            settings_file = "settings.json"
+            if os.path.exists(settings_file):
+                with open(settings_file, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    
+                # 应用捕获方法
+                from core.window_capture import WindowCapture
+                # 默认使用PrintWindow方法
+                capture_method = settings.get("capture", {}).get("method", "printwindow")
+                WindowCapture.set_capture_method(capture_method == "printwindow")
+                WindowCapture.enable_log(settings.get("capture", {}).get("debug_log", False))
+                
+                # 应用其他设置
+                self.on_settings_changed(settings)
+                
+                # 自动刷新设备
+                if settings.get("ui", {}).get("auto_refresh_devices", False):
+                    QTimer.singleShot(500, self.refresh_devices)
+        except Exception as e:
+            self.log(f"加载设置失败: {str(e)}")
+    
+    def show_about(self):
+        """显示关于对话框"""
+        QMessageBox.about(self, "关于 ClickZen",
+            f"<h2>ClickZen v{VERSION}</h2>"
+            f"<p>智能点击助手 - 自动化控制Android设备</p>"
+            f"<p>基于ADB和Scrcpy的开源项目</p>"
+            f"<p><a href='https://github.com/Exmeaning/ClickZen'>GitHub项目主页</a></p>"
+            f"<p>作者: Exmeaning</p>"
+        )
 
     def setup_shortcuts(self):
         """设置快捷键 - 已禁用全局快捷键功能"""
@@ -970,28 +1089,40 @@ class MainWindow(QMainWindow):
 
     def take_screenshot(self):
         """截图 - 带HDR提示"""
-        # 检查是否可能有HDR问题
-        import win32api
-        import win32con
-
+        # 检查是否需要显示HDR警告
         try:
-            # 检查显示器色深
-            dc = win32api.GetDC(0)
-            bits = win32api.GetDeviceCaps(dc, win32con.BITSPIXEL)
-            win32api.ReleaseDC(0, dc)
+            import os
+            show_warning = True
+            settings_file = "settings.json"
+            if os.path.exists(settings_file):
+                with open(settings_file, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    show_warning = settings.get("capture", {}).get("show_hdr_warning", True)
+                    
+            if show_warning:
+                from core.window_capture import WindowCapture
+                # 只在使用屏幕DC方法时才检查HDR
+                if not WindowCapture.get_capture_method():
+                    import win32api
+                    import win32con
+                    
+                    # 检查显示器色深
+                    dc = win32api.GetDC(0)
+                    bits = win32api.GetDeviceCaps(dc, win32con.BITSPIXEL)
+                    win32api.ReleaseDC(0, dc)
 
-            if bits > 32:  # 可能是HDR
-                reply = QMessageBox.question(
-                    self, "HDR提示",
-                    "检测到您可能在使用HDR显示。\n\n"
-                    "如果截图出现问题（全灰或乱码），建议：\n"
-                    "1. 临时关闭Windows HDR（设置->显示->HDR）\n"
-                    "2. 或直接从设备截图\n\n"
-                    "是否继续？",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                )
-                if reply == QMessageBox.StandardButton.No:
-                    return
+                    if bits > 32:  # 可能是HDR
+                        reply = QMessageBox.question(
+                            self, "HDR提示",
+                            "检测到您可能在使用HDR显示。\n\n"
+                            "如果截图出现问题（全灰或乱码），建议：\n"
+                            "1. 在设置中切换到PrintWindow API方法\n"
+                            "2. 或临时关闭Windows HDR（设置->显示->HDR）\n\n"
+                            "是否继续？",
+                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                        )
+                        if reply == QMessageBox.StandardButton.No:
+                            return
         except:
             pass
 
@@ -1037,21 +1168,35 @@ class MainWindow(QMainWindow):
     
     def closeEvent(self, event):
         """关闭事件 - 添加保存提示"""
-        reply = QMessageBox.question(
-            self, "退出确认",
-            "请在退出前检查方案是否保存！\n\n确定要退出吗？",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No  # 默认选择"否"
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            # 清理资源
-            if self.scrcpy.is_running():
-                self.scrcpy.stop()
-            if self.is_recording:
-                self.controller.stop_recording()
-            if self.auto_monitor.monitoring:
-                self.auto_monitor.stop_monitoring()
-            event.accept()
-        else:
-            event.ignore()
+        # 检查是否需要退出确认
+        confirm_exit = True
+        try:
+            import os
+            settings_file = "settings.json"
+            if os.path.exists(settings_file):
+                with open(settings_file, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    confirm_exit = settings.get("ui", {}).get("confirm_exit", True)
+        except:
+            pass
+            
+        if confirm_exit:
+            reply = QMessageBox.question(
+                self, "退出确认",
+                "请在退出前检查方案是否保存！\n\n确定要退出吗？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No  # 默认选择"否"
+            )
+            
+            if reply != QMessageBox.StandardButton.Yes:
+                event.ignore()
+                return
+                
+        # 清理资源
+        if self.scrcpy.is_running():
+            self.scrcpy.stop()
+        if self.is_recording:
+            self.controller.stop_recording()
+        if self.auto_monitor.monitoring:
+            self.auto_monitor.stop_monitoring()
+        event.accept()

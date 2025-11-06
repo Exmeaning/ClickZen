@@ -2,6 +2,8 @@ import os
 import json
 from pathlib import Path
 
+VERSION = "1.0.0"
+
 
 class Config:
     def __init__(self):

@@ -193,12 +193,15 @@ class MonitorTaskDialog(QDialog):
             self.threshold_spin.setValue(self.task_config.get('threshold', 0.85))
             self.cooldown_spin.setValue(self.task_config.get('cooldown', 5))
 
-            if 'region' in self.task_config:
+            # 安全处理region
+            if 'region' in self.task_config and self.task_config['region']:
                 self.region = self.task_config['region']
-                x, y, w, h = self.region
-                self.region_label.setText(f"起始: ({x}, {y}) → 结束: ({x + w}, {y + h})")
+                if self.region and len(self.region) == 4:
+                    x, y, w, h = self.region
+                    self.region_label.setText(f"起始: ({x}, {y}) → 结束: ({x + w}, {y + h})")
 
-            if 'template' in self.task_config:
+            # 安全处理template
+            if 'template' in self.task_config and self.task_config['template']:
                 self.template_image = self.task_config['template']
                 self.show_template_preview()
 
@@ -439,20 +442,32 @@ class MonitorTaskDialog(QDialog):
             return f"随机执行 ({count}个动作之一)"
         elif action_type == 'set_variable':
             variable = action.get('variable', '')
-            value = action.get('value', 0)
             operation = action.get('operation', 'set')
             
-            # 使用符号表示操作
-            op_symbols = {
-                'set': '=',
-                'add': '+=',
-                'subtract': '-=',
-                'multiply': '*=',
-                'divide': '/='
-            }
-            
-            op_symbol = op_symbols.get(operation, '=')
-            return f"变量 {variable} {op_symbol} {value}"
+            if operation == 'from_variable':
+                # 基于变量的操作
+                source_var = action.get('source_variable', '')
+                calc_op = action.get('calc_operator', '+')
+                calc_value = action.get('calc_value', 0)
+                return f"变量 {variable} = {source_var} {calc_op} {calc_value}"
+            else:
+                # 普通操作
+                value = action.get('value', 0)
+                op_symbols = {
+                    'set': '=',
+                    'add': '+=',
+                    'subtract': '-=',
+                    'multiply': '*=',
+                    'divide': '/='
+                }
+                op_symbol = op_symbols.get(operation, '=')
+                return f"变量 {variable} {op_symbol} {value}"
+        elif action_type == 'adb_command':
+            command = action.get('command', '')
+            # 截断长命令显示
+            if len(command) > 30:
+                command = command[:30] + '...'
+            return f"ADB: {command}"
         return "未知动作"
 
     def get_config(self):
@@ -489,6 +504,9 @@ class RegionInputDialog(QDialog):
         super().__init__(parent)
         self.initial_region = initial_region
         self.current_device_coords = (0, 0)
+        self.pipette_mode = False
+        self.pipette_target = 'start'
+        self.last_click_time = 0
         self.initUI()
         if initial_region:
             self.load_region(initial_region)
@@ -500,6 +518,11 @@ class RegionInputDialog(QDialog):
         self.coord_timer = QTimer(self)
         self.coord_timer.timeout.connect(self.update_mouse_coordinates)
         self.coord_timer.start(50)  # 每50ms更新一次
+        
+        # 滴管模式
+        self.pipette_mode = False
+        self.pipette_target = 'start'
+        self.last_click_time = 0
 
     def update_mouse_coordinates(self):
         """更新鼠标坐标显示"""
@@ -580,6 +603,67 @@ class RegionInputDialog(QDialog):
 
         except Exception:
             self.device_coord_label.setText(f"设备: (-, -)")
+            
+        # 滴管模式下检测点击
+        if self.pipette_mode:
+            self.check_pipette_click()
+    
+    def toggle_pipette_mode(self, target='start'):
+        """切换滴管模式"""
+        # 根据目标按钮决定状态
+        if target == 'start':
+            self.pipette_mode = self.pipette_start_btn.isChecked()
+            # 如果开启，关闭另一个
+            if self.pipette_mode:
+                self.pipette_end_btn.setChecked(False)
+            self.pipette_target = 'start'
+        else:
+            self.pipette_mode = self.pipette_end_btn.isChecked()
+            # 如果开启，关闭另一个
+            if self.pipette_mode:
+                self.pipette_start_btn.setChecked(False)
+            self.pipette_target = 'end'
+        
+        self.pipette_info.setVisible(self.pipette_mode)
+        
+        if self.pipette_mode:
+            # 设置鼠标样式为十字
+            QApplication.setOverrideCursor(Qt.CursorShape.CrossCursor)
+        else:
+            # 恢复默认鼠标样式
+            QApplication.restoreOverrideCursor()
+    
+    def check_pipette_click(self):
+        """检查滴管点击"""
+        import win32api
+        import win32con
+        
+        # 检测鼠标左键
+        if win32api.GetAsyncKeyState(win32con.VK_LBUTTON) < 0:
+            current_time = time.time()
+            # 防止重复触发
+            if current_time - self.last_click_time > 0.5:
+                self.last_click_time = current_time
+                # 自动填充坐标
+                x, y = self.current_device_coords
+                
+                # 根据目标填充坐标
+                if self.pipette_target == 'start':
+                    self.x1_spin.setValue(x)
+                    self.y1_spin.setValue(y)
+                    # 关闭滴管模式
+                    self.pipette_start_btn.setChecked(False)
+                    self.toggle_pipette_mode('start')
+                else:
+                    self.x2_spin.setValue(x)
+                    self.y2_spin.setValue(y)
+                    # 关闭滴管模式
+                    self.pipette_end_btn.setChecked(False)
+                    self.toggle_pipette_mode('end')
+                
+                self.update_display()
+                # 显示状态栏提示而非对话框
+                self.statusBar().showMessage(f"已拾取坐标: ({x}, {y})", 2000) if hasattr(self, 'statusBar') else None
 
     def initUI(self):
         self.setWindowTitle("输入监控区域")
@@ -597,18 +681,40 @@ class RegionInputDialog(QDialog):
         self.device_coord_label = QLabel("设备: (-, -)")
         self.device_coord_label.setStyleSheet("font-family: Consolas; font-size: 11px; color: blue;")
 
-        # 快速填充按钮
-        fill_button_layout = QHBoxLayout()
-        self.fill_start_btn = QPushButton("填充为起始点")
-        self.fill_start_btn.clicked.connect(self.fill_start_coords)
-        self.fill_end_btn = QPushButton("填充为结束点")
-        self.fill_end_btn.clicked.connect(self.fill_end_coords)
-        fill_button_layout.addWidget(self.fill_start_btn)
-        fill_button_layout.addWidget(self.fill_end_btn)
+        # 滴管按钮组
+        pipette_button_layout = QHBoxLayout()
+        
+        self.pipette_start_btn = QPushButton("🎯 拾取起始坐标")
+        self.pipette_start_btn.setCheckable(True)
+        self.pipette_start_btn.clicked.connect(lambda: self.toggle_pipette_mode('start'))
+        
+        self.pipette_end_btn = QPushButton("🎯 拾取结束坐标")
+        self.pipette_end_btn.setCheckable(True)
+        self.pipette_end_btn.clicked.connect(lambda: self.toggle_pipette_mode('end'))
+        
+        # 样式
+        pipette_style = """
+            QPushButton:checked {
+                background-color: #4CAF50;
+                color: white;
+            }
+        """
+        self.pipette_start_btn.setStyleSheet(pipette_style)
+        self.pipette_end_btn.setStyleSheet(pipette_style)
+        
+        pipette_button_layout.addWidget(self.pipette_start_btn)
+        pipette_button_layout.addWidget(self.pipette_end_btn)
 
         coord_display_layout.addWidget(self.screen_coord_label)
         coord_display_layout.addWidget(self.device_coord_label)
-        coord_display_layout.addLayout(fill_button_layout)
+        coord_display_layout.addLayout(pipette_button_layout)
+        
+        # 滴管提示
+        self.pipette_info = QLabel("提示：点击上方按钮后，在Scrcpy窗口点击即可拾取坐标")
+        self.pipette_info.setStyleSheet("color: green; font-size: 10px;")
+        self.pipette_info.setVisible(False)
+        coord_display_layout.addWidget(self.pipette_info)
+        
         coord_display_group.setLayout(coord_display_layout)
         
         layout.addWidget(coord_display_group)
@@ -681,19 +787,7 @@ class RegionInputDialog(QDialog):
         # 初始更新显示
         self.update_display()
 
-    def fill_start_coords(self):
-        """填充当前设备坐标为起始点"""
-        x, y = self.current_device_coords
-        self.x1_spin.setValue(x)
-        self.y1_spin.setValue(y)
-        self.update_display()
 
-    def fill_end_coords(self):
-        """填充当前设备坐标为结束点"""
-        x, y = self.current_device_coords
-        self.x2_spin.setValue(x)
-        self.y2_spin.setValue(y)
-        self.update_display()
 
     def load_region(self, region):
         """加载已有区域"""
@@ -724,6 +818,16 @@ class RegionInputDialog(QDialog):
             return
         self.accept()
 
+    def closeEvent(self, event):
+        """关闭事件处理"""
+        # 确保滴管模式关闭
+        if hasattr(self, 'pipette_mode') and self.pipette_mode:
+            QApplication.restoreOverrideCursor()
+        # 停止坐标追踪
+        if hasattr(self, 'coord_timer'):
+            self.coord_timer.stop()
+        super().closeEvent(event)
+    
     def get_region(self):
         """获取区域"""
         x = min(self.x1_spin.value(), self.x2_spin.value())
@@ -766,7 +870,7 @@ class ActionEditDialog(QDialog):
         type_layout = QHBoxLayout()
         type_layout.addWidget(QLabel("动作类型:"))
         self.type_combo = QComboBox()
-        self.type_combo.addItems(["点击", "滑动", "输入文本", "按键", "等待", "执行录制", "随机动作", "设置变量"])
+        self.type_combo.addItems(["点击", "滑动", "输入文本", "按键", "等待", "执行录制", "随机动作", "设置变量", "ADB命令"])
         self.type_combo.currentIndexChanged.connect(self.on_type_changed)
         type_layout.addWidget(self.type_combo)
         layout.addLayout(type_layout)
@@ -783,6 +887,7 @@ class ActionEditDialog(QDialog):
         self.create_recording_widget()
         self.create_random_widget()
         self.create_variable_widget()
+        self.create_adb_widget()
 
         layout.addWidget(self.param_stack)
 
@@ -940,16 +1045,41 @@ class ActionEditDialog(QDialog):
         
         # 操作类型选择
         self.variable_operation = QComboBox()
-        self.variable_operation.addItems(["设置", "增加", "减少", "乘以", "除以"])
+        self.variable_operation.addItems(["设置", "增加", "减少", "乘以", "除以", "基于变量"])
         self.variable_operation.currentIndexChanged.connect(self.on_variable_operation_changed)
         
+        # 值输入（可以是数字或变量名）
+        value_layout = QHBoxLayout()
         self.variable_value_spin = QSpinBox()
         self.variable_value_spin.setRange(-9999, 9999)
         self.variable_value_spin.setValue(1)
         
+        self.variable_from_input = QLineEdit()
+        self.variable_from_input.setPlaceholderText("源变量名")
+        self.variable_from_input.setVisible(False)
+        
+        self.variable_calc_op = QComboBox()
+        self.variable_calc_op.addItems(["+", "-", "*", "÷(整除)"])
+        self.variable_calc_op.setVisible(False)
+        
+        self.variable_calc_value = QSpinBox()
+        self.variable_calc_value.setRange(-9999, 9999)
+        self.variable_calc_value.setValue(1)
+        self.variable_calc_value.setVisible(False)
+        
+        value_layout.addWidget(self.variable_value_spin)
+        value_layout.addWidget(self.variable_from_input)
+        value_layout.addWidget(self.variable_calc_op)
+        value_layout.addWidget(self.variable_calc_value)
+        
         layout.addRow("变量名:", self.variable_name_input)
         layout.addRow("操作:", self.variable_operation)
-        layout.addRow("值:", self.variable_value_spin)
+        layout.addRow("值:", value_layout)
+        
+        # 说明文字
+        self.variable_hint = QLabel("提示: 所有变量运算结果都将转换为整数")
+        self.variable_hint.setStyleSheet("color: gray; font-size: 10px;")
+        layout.addRow("", self.variable_hint)
         
         self.param_stack.addWidget(widget)
         
@@ -958,13 +1088,69 @@ class ActionEditDialog(QDialog):
     
     def on_variable_operation_changed(self, index):
         """变量操作类型改变时更新提示"""
-        operations = ["设置", "增加", "减少", "乘以", "除以"]
-        if index == 0:  # 设置
-            self.variable_value_spin.setSuffix("")
-        elif index in [1, 2]:  # 增加/减少
-            self.variable_value_spin.setSuffix(" (单位)")
-        elif index in [3, 4]:  # 乘以/除以
-            self.variable_value_spin.setSuffix(" (倍数)")
+        if index == 5:  # 基于变量
+            self.variable_value_spin.setVisible(False)
+            self.variable_from_input.setVisible(True)
+            self.variable_calc_op.setVisible(True)
+            self.variable_calc_value.setVisible(True)
+            self.variable_hint.setText("提示: arc = brc + 10 形式，结果自动转为整数")
+        else:
+            self.variable_value_spin.setVisible(True)
+            self.variable_from_input.setVisible(False)
+            self.variable_calc_op.setVisible(False)
+            self.variable_calc_value.setVisible(False)
+            self.variable_hint.setText("提示: 所有变量运算结果都将转换为整数")
+            
+            if index == 0:  # 设置
+                self.variable_value_spin.setSuffix("")
+            elif index in [1, 2]:  # 增加/减少
+                self.variable_value_spin.setSuffix(" (单位)")
+            elif index in [3, 4]:  # 乘以/除以
+                self.variable_value_spin.setSuffix(" (倍数)")
+    
+    def create_adb_widget(self):
+        """创建ADB命令widget"""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        
+        layout.addWidget(QLabel("ADB Shell命令:"))
+        
+        self.adb_command_input = QTextEdit()
+        self.adb_command_input.setPlaceholderText("输入ADB shell命令...\n例如: input keyevent 4\n      am start -n com.example/.MainActivity")
+        self.adb_command_input.setMaximumHeight(100)
+        
+        # 常用命令快速插入
+        quick_layout = QHBoxLayout()
+        quick_label = QLabel("快速插入:")
+        quick_combo = QComboBox()
+        quick_combo.addItems([
+            "选择常用命令...",
+            "input keyevent 4  # 返回键",
+            "input keyevent 3  # HOME键",
+            "input keyevent 26  # 电源键",
+            "am force-stop <包名>  # 强制停止应用",
+            "am start -n <包名/活动名>  # 启动应用",
+            "settings put system screen_brightness 255  # 设置亮度最大",
+            "svc wifi enable  # 开启WiFi",
+            "svc wifi disable  # 关闭WiFi"
+        ])
+        quick_combo.currentTextChanged.connect(self.insert_adb_template)
+        
+        quick_layout.addWidget(quick_label)
+        quick_layout.addWidget(quick_combo)
+        quick_layout.addStretch()
+        
+        layout.addLayout(quick_layout)
+        layout.addWidget(self.adb_command_input)
+        
+        self.param_stack.addWidget(widget)
+    
+    def insert_adb_template(self, text):
+        """插入ADB命令模板"""
+        if text and not text.startswith("选择"):
+            # 移除注释部分
+            command = text.split('#')[0].strip()
+            self.adb_command_input.setText(command)
     
     def add_random_action(self):
         """添加随机动作选项"""
@@ -1050,13 +1236,25 @@ class ActionEditDialog(QDialog):
         elif action_type == 'set_variable':
             self.type_combo.setCurrentIndex(7)
             self.variable_name_input.setText(self.action.get('variable', ''))
-            self.variable_value_spin.setValue(self.action.get('value', 0))
             
-            # 设置正确的操作类型
             operation = self.action.get('operation', 'set')
-            operations = ["set", "add", "subtract", "multiply", "divide"]
-            if operation in operations:
-                self.variable_operation.setCurrentIndex(operations.index(operation))
+            if operation == 'from_variable':
+                self.variable_operation.setCurrentIndex(5)
+                self.variable_from_input.setText(self.action.get('source_variable', ''))
+                calc_ops = ['+', '-', '*', '//']
+                calc_op = self.action.get('calc_operator', '+')
+                if calc_op in calc_ops:
+                    self.variable_calc_op.setCurrentIndex(calc_ops.index(calc_op))
+                self.variable_calc_value.setValue(self.action.get('calc_value', 0))
+            else:
+                self.variable_value_spin.setValue(self.action.get('value', 0))
+                operations = ["set", "add", "subtract", "multiply", "divide"]
+                if operation in operations:
+                    self.variable_operation.setCurrentIndex(operations.index(operation))
+        
+        elif action_type == 'adb_command':
+            self.type_combo.setCurrentIndex(8)
+            self.adb_command_input.setText(self.action.get('command', ''))
 
     def get_action(self):
         """获取动作"""
@@ -1116,16 +1314,33 @@ class ActionEditDialog(QDialog):
                 'sub_actions': self.random_actions
             }
         elif index == 7:  # 设置变量
-            operations = ["set", "add", "subtract", "multiply", "divide"]
+            operations = ["set", "add", "subtract", "multiply", "divide", "from_variable"]
             op_index = self.variable_operation.currentIndex()
             # 确保索引有效
             if op_index < 0 or op_index >= len(operations):
                 op_index = 0
+            
+            if op_index == 5:  # 基于变量
+                calc_ops = ['+', '-', '*', '//']  # 整除
+                return {
+                    'type': 'set_variable',
+                    'variable': self.variable_name_input.text(),
+                    'operation': 'from_variable',
+                    'source_variable': self.variable_from_input.text(),
+                    'calc_operator': calc_ops[self.variable_calc_op.currentIndex()],
+                    'calc_value': self.variable_calc_value.value()
+                }
+            else:
+                return {
+                    'type': 'set_variable',
+                    'variable': self.variable_name_input.text(),
+                    'operation': operations[op_index],
+                    'value': self.variable_value_spin.value()
+                }
+        elif index == 8:  # ADB命令
             return {
-                'type': 'set_variable',
-                'variable': self.variable_name_input.text(),
-                'operation': operations[op_index],
-                'value': self.variable_value_spin.value()
+                'type': 'adb_command',
+                'command': self.adb_command_input.toPlainText()
             }
 
 

@@ -197,29 +197,71 @@ class AutoMonitor(QObject):
                 elif action_type == 'set_variable':
                     # 设置或修改公共变量
                     var_name = action.get('variable', '')
-                    var_value = action.get('value', 0)
                     operation = action.get('operation', 'set')
                     
-                    if operation == 'set':
-                        self.global_variables[var_name] = var_value
-                        self.log_message.emit(f"  设置变量: {var_name} = {var_value}")
-                    elif operation == 'add':
-                        current = self.global_variables.get(var_name, 0)
-                        self.global_variables[var_name] = current + var_value
-                        self.log_message.emit(f"  变量增加: {var_name} += {var_value} (现在={self.global_variables[var_name]})")
-                    elif operation == 'subtract':
-                        current = self.global_variables.get(var_name, 0)
-                        self.global_variables[var_name] = current - var_value
-                        self.log_message.emit(f"  变量减少: {var_name} -= {var_value} (现在={self.global_variables[var_name]})")
-                    elif operation == 'multiply':
-                        current = self.global_variables.get(var_name, 1)
-                        self.global_variables[var_name] = current * var_value
-                        self.log_message.emit(f"  变量乘以: {var_name} *= {var_value} (现在={self.global_variables[var_name]})")
-                    elif operation == 'divide':
-                        current = self.global_variables.get(var_name, 1)
-                        if var_value != 0:
-                            self.global_variables[var_name] = current // var_value
-                            self.log_message.emit(f"  变量除以: {var_name} /= {var_value} (现在={self.global_variables[var_name]})")
+                    if operation == 'from_variable':
+                        # 基于另一个变量的操作
+                        source_var = action.get('source_variable', '')
+                        calc_op = action.get('calc_operator', '+')
+                        calc_value = action.get('calc_value', 0)
+                        
+                        if source_var in self.global_variables:
+                            source_value = self.global_variables[source_var]
+                            
+                            # 执行运算（结果转为整数）
+                            if calc_op == '+':
+                                result = int(source_value + calc_value)
+                            elif calc_op == '-':
+                                result = int(source_value - calc_value)
+                            elif calc_op == '*':
+                                result = int(source_value * calc_value)
+                            elif calc_op == '//':
+                                if calc_value != 0:
+                                    result = int(source_value // calc_value)
+                                else:
+                                    self.log_message.emit(f"  错误: 除数为0")
+                                    continue
+                            else:
+                                result = int(source_value)
+                            
+                            self.global_variables[var_name] = result
+                            self.log_message.emit(f"  变量计算: {var_name} = {source_var}({source_value}) {calc_op} {calc_value} = {result}")
+                        else:
+                            self.log_message.emit(f"  错误: 源变量 {source_var} 不存在")
+                    else:
+                        # 原有的操作
+                        var_value = action.get('value', 0)
+                        
+                        if operation == 'set':
+                            self.global_variables[var_name] = int(var_value)
+                            self.log_message.emit(f"  设置变量: {var_name} = {var_value}")
+                        elif operation == 'add':
+                            current = self.global_variables.get(var_name, 0)
+                            self.global_variables[var_name] = int(current + var_value)
+                            self.log_message.emit(f"  变量增加: {var_name} += {var_value} (现在={self.global_variables[var_name]})")
+                        elif operation == 'subtract':
+                            current = self.global_variables.get(var_name, 0)
+                            self.global_variables[var_name] = int(current - var_value)
+                            self.log_message.emit(f"  变量减少: {var_name} -= {var_value} (现在={self.global_variables[var_name]})")
+                        elif operation == 'multiply':
+                            current = self.global_variables.get(var_name, 1)
+                            self.global_variables[var_name] = int(current * var_value)
+                            self.log_message.emit(f"  变量乘以: {var_name} *= {var_value} (现在={self.global_variables[var_name]})")
+                        elif operation == 'divide':
+                            current = self.global_variables.get(var_name, 1)
+                            if var_value != 0:
+                                self.global_variables[var_name] = int(current // var_value)
+                                self.log_message.emit(f"  变量除以: {var_name} /= {var_value} (现在={self.global_variables[var_name]})")
+                
+                elif action_type == 'adb_command':
+                    # 执行ADB命令
+                    command = action.get('command', '')
+                    if command:
+                        result = self.adb.shell(command)
+                        if result:
+                            self.log_message.emit(f"  执行ADB: {command[:50]}")
+                        else:
+                            self.log_message.emit(f"  ADB命令失败: {command[:50]}")
 
                 elif action_type == 'click':
                     self.controller.click(action['x'], action['y'])
@@ -341,14 +383,19 @@ class AutoMonitor(QObject):
         try:
             configs_to_save = []
             for config in self.monitor_configs:
-                # 将图片转换为base64
-                template = config['template']
-                buffered = BytesIO()
-                template.save(buffered, format="PNG")
-                img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-
                 config_copy = config.copy()
-                config_copy['template'] = img_base64
+                
+                # 将图片转换为base64（如果存在）
+                template = config.get('template')
+                if template is not None:
+                    buffered = BytesIO()
+                    template.save(buffered, format="PNG")
+                    img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                    config_copy['template'] = img_base64
+                else:
+                    # 没有模板图片时保存为null
+                    config_copy['template'] = None
+                
                 config_copy.pop('last_executed', None)
                 configs_to_save.append(config_copy)
 
@@ -377,9 +424,15 @@ class AutoMonitor(QObject):
             self.check_interval = scheme.get('check_interval', 0.5)
 
             for config in scheme.get('configs', []):
-                # 将base64转换回图片
-                img_data = base64.b64decode(config['template'])
-                config['template'] = Image.open(BytesIO(img_data))
+                # 将base64转换回图片（如果存在）
+                template_data = config.get('template')
+                if template_data is not None and template_data != '':
+                    img_data = base64.b64decode(template_data)
+                    config['template'] = Image.open(BytesIO(img_data))
+                else:
+                    # 没有模板图片
+                    config['template'] = None
+                
                 config['last_executed'] = 0
                 self.monitor_configs.append(config)
 

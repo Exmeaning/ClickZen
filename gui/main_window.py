@@ -7,6 +7,7 @@ from datetime import datetime
 import time
 from core.auto_monitor import AutoMonitor
 from gui.monitor_dialog import MonitorTaskDialog
+from utils.config import VERSION
 
 
 class MainWindow(QMainWindow):
@@ -143,7 +144,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"已复制坐标: {self.current_device_coords[0]}, {self.current_device_coords[1]}",
                                      2000)
     def initUI(self):
-        self.setWindowTitle("ClickZen - 智能点击助手")
+        self.setWindowTitle(f"ClickZen - 智能点击助手 v{VERSION}")
         self.setGeometry(100, 100, 900, 700)
         
         # 设置窗口图标（可选）
@@ -252,14 +253,24 @@ class MainWindow(QMainWindow):
         self.stop_scrcpy_btn.setEnabled(False)
         
         # 版本信息标签
-        version = self.config.get("scrcpy_version", "未知")
-        self.scrcpy_version_label = QLabel(f"版本: v{version}")
+        scrcpy_version = self.config.get("scrcpy_version", "未知")
+        self.scrcpy_version_label = QLabel(f"Scrcpy版本: v{scrcpy_version}")
         self.scrcpy_version_label.setStyleSheet("color: gray; font-size: 10px;")
+        
+        # ClickZen版本信息
+        version_info_label = QLabel(
+            f'当前版本: v{VERSION} | '
+            f'<a href="https://github.com/Exmeaning/ClickZen/releases">GitHub最新版本 →</a>'
+        )
+        version_info_label.setOpenExternalLinks(True)
+        version_info_label.setStyleSheet("color: gray; font-size: 10px;")
 
         scrcpy_layout.addWidget(self.start_scrcpy_btn)
         scrcpy_layout.addWidget(self.stop_scrcpy_btn)
         scrcpy_layout.addWidget(self.scrcpy_version_label)
+        scrcpy_layout.addWidget(version_info_label)
         scrcpy_group.setLayout(scrcpy_layout)
+        
         # 录制控制
         record_group = QGroupBox("操作录制")
         record_layout = QVBoxLayout()
@@ -284,6 +295,50 @@ class MainWindow(QMainWindow):
         action_layout.addWidget(self.recent_btn, 1, 0)
         action_layout.addWidget(self.screenshot_btn, 1, 1)
         action_group.setLayout(action_layout)
+        
+        # ADB命令执行
+        adb_group = QGroupBox("ADB命令")
+        adb_layout = QVBoxLayout()
+        
+        self.adb_command_input = QLineEdit()
+        self.adb_command_input.setPlaceholderText("输入shell命令，如: input keyevent 4")
+        self.adb_command_input.returnPressed.connect(self.execute_adb_command)
+        
+        adb_button_layout = QHBoxLayout()
+        self.adb_execute_btn = QPushButton("执行")
+        self.adb_execute_btn.clicked.connect(self.execute_adb_command)
+        
+        self.adb_clear_btn = QPushButton("清空")
+        self.adb_clear_btn.clicked.connect(self.adb_command_input.clear)
+        
+        adb_button_layout.addWidget(self.adb_execute_btn)
+        adb_button_layout.addWidget(self.adb_clear_btn)
+        
+        # 常用命令快速按钮
+        quick_cmd_layout = QGridLayout()
+        
+        self.adb_screenshot_btn = QPushButton("截屏到设备")
+        self.adb_screenshot_btn.clicked.connect(lambda: self.quick_adb_command("screencap -p /sdcard/screenshot.png"))
+        
+        self.adb_ime_list_btn = QPushButton("输入法列表")
+        self.adb_ime_list_btn.clicked.connect(lambda: self.quick_adb_command("ime list -s"))
+        
+        self.adb_activity_btn = QPushButton("当前Activity")
+        self.adb_activity_btn.clicked.connect(lambda: self.quick_adb_command("dumpsys window | grep mCurrentFocus"))
+        
+        self.adb_packages_btn = QPushButton("包名列表")
+        self.adb_packages_btn.clicked.connect(lambda: self.quick_adb_command("pm list packages"))
+        
+        quick_cmd_layout.addWidget(self.adb_screenshot_btn, 0, 0)
+        quick_cmd_layout.addWidget(self.adb_ime_list_btn, 0, 1)
+        quick_cmd_layout.addWidget(self.adb_activity_btn, 1, 0)
+        quick_cmd_layout.addWidget(self.adb_packages_btn, 1, 1)
+        
+        adb_layout.addWidget(self.adb_command_input)
+        adb_layout.addLayout(adb_button_layout)
+        adb_layout.addWidget(QLabel("快速命令:"))
+        adb_layout.addLayout(quick_cmd_layout)
+        adb_group.setLayout(adb_layout)
         play_control_layout = QHBoxLayout()
 
         self.play_btn = QPushButton("播放录制")
@@ -394,6 +449,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(device_group)
         layout.addWidget(scrcpy_group)
         layout.addWidget(action_group)
+        layout.addWidget(adb_group)
         layout.addWidget(random_group)
         layout.addWidget(record_group)
         layout.addStretch()
@@ -954,12 +1010,48 @@ class MainWindow(QMainWindow):
         timestamp = datetime.now().strftime("%H:%M:%S")
         self.log_text.append(f"[{timestamp}] {message}")
 
+    def execute_adb_command(self):
+        """执行ADB命令"""
+        command = self.adb_command_input.text().strip()
+        if not command:
+            return
+        
+        self.log(f"执行ADB命令: {command}")
+        result = self.adb.shell(command)
+        
+        if result:
+            # 显示结果（限制长度）
+            lines = result.strip().split('\n')
+            if len(lines) > 10:
+                result_display = '\n'.join(lines[:10]) + f"\n... (共{len(lines)}行)"
+            else:
+                result_display = result.strip()
+            self.log(f"结果:\n{result_display}")
+        else:
+            self.log("命令执行失败或无返回")
+    
+    def quick_adb_command(self, command):
+        """快速执行ADB命令"""
+        self.adb_command_input.setText(command)
+        self.execute_adb_command()
+    
     def closeEvent(self, event):
-        """关闭事件"""
-        if self.scrcpy.is_running():
-            self.scrcpy.stop()
-        if self.is_recording:
-            self.controller.stop_recording()
-        if self.auto_monitor.monitoring:
-            self.auto_monitor.stop_monitoring()
-        event.accept()
+        """关闭事件 - 添加保存提示"""
+        reply = QMessageBox.question(
+            self, "退出确认",
+            "请在退出前检查方案是否保存！\n\n确定要退出吗？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No  # 默认选择"否"
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            # 清理资源
+            if self.scrcpy.is_running():
+                self.scrcpy.stop()
+            if self.is_recording:
+                self.controller.stop_recording()
+            if self.auto_monitor.monitoring:
+                self.auto_monitor.stop_monitoring()
+            event.accept()
+        else:
+            event.ignore()

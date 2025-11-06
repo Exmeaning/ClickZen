@@ -206,6 +206,6 @@ ClickZen/
 
 -   GitHub Issues: [提交问题](https://github.com/Exmeaning/ClickZen/issues)
 -   Pull Requests: [贡献代码](https://github.com/Exmeaning/ClickZen/pulls)
-
+-   个人邮箱：[联系我](exmeaning@foxmail.com)
 ---
 **免责声明**：本软件不提供任何形式的保证。作者不对使用本软件导致的任何损失负责。

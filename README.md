@@ -8,6 +8,12 @@
 
 ---
 
+## 📋 项目主页
+
+-   [ClickZen的GitHub页面](https://github.com/Exmeaning/ClickZen) 
+
+---
+
 ## 📋 项目简介
 
 ClickZen 是一个基于 Python 开发的 Android 设备自动化控制工具，通过 ADB 和 Scrcpy 实现设备投屏、操作录制回放、图像识别自动化等功能。特别适用于自动化测试、游戏挂机、批量操作等场景。部分自动化灵感来源于手机端的成熟项目"klick‘r"。
@@ -207,5 +213,6 @@ ClickZen/
 -   GitHub Issues: [提交问题](https://github.com/Exmeaning/ClickZen/issues)
 -   Pull Requests: [贡献代码](https://github.com/Exmeaning/ClickZen/pulls)
 -   个人邮箱：[联系我](exmeaning@foxmail.com)
+
 ---
 **免责声明**：本软件不提供任何形式的保证。作者不对使用本软件导致的任何损失负责。

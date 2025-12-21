@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动触发
 
 permissions:
   contents: write
@@ -34,6 +34,15 @@ jobs:
         PYTHONIOENCODING: utf-8
       run: |
         python build_nuitka.py
+        # 调试：列出当前目录文件，确保 exe 确实生成在根目录
+        dir
+
+    - name: Upload Artifact (For Testing)
+      uses: actions/upload-artifact@v4
+      with:
+        name: ClickZen-Build
+        path: ClickZen.exe
+        retention-days: 5
 
     - name: Upload Release
       uses: softprops/action-gh-release@v1

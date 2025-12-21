@@ -27,7 +27,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install nuitka zstandard ordered-set patchelf
+        pip install nuitka zstandard ordered-set
 
     - name: Build with Nuitka
       run: |

@@ -30,6 +30,8 @@ jobs:
         pip install nuitka zstandard ordered-set
 
     - name: Build with Nuitka
+      env:
+        PYTHONIOENCODING: utf-8
       run: |
         python build_nuitka.py
 

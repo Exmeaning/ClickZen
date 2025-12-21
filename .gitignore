@@ -2404,7 +2404,6 @@ main.dist/cv2/data/haarcascade_russian_plate_number.xml
 main.dist/cv2/data/haarcascade_smile.xml
 main.dist/cv2/data/haarcascade_upperbody.xml
 PhoneController.exe
-build_nuitka.py
 main.dist/ffi.dll
 main.dist/libbz2.dll
 main.dist/libexpat.dll

@@ -76,15 +76,13 @@ def build_with_nuitka():
         "--include-package=ppadb",
         "--include-package=mss",
 
-        # ===== 数据文件 =====
-        "--include-data-dir=resources=resources",
-
         # ===== 插件 =====
         "--enable-plugin=pyqt6",
         "--enable-plugin=numpy",
 
+
         # ===== 错误日志路径 =====
-        "--force-stderr-spec=%TEMP%\\phone_controller_error_%TIME%.log".replace(
+        "--force-stderr-spec={TEMP}\\phone_controller_error_%TIME%.log".replace(
             "%TIME%", datetime.datetime.now().strftime("%H%M%S")
         ),
 
@@ -94,6 +92,10 @@ def build_with_nuitka():
     # 可选图标
     if Path(ICON_FILE).exists():
         nuitka_args.insert(3, f"--windows-icon-from-ico={ICON_FILE}")
+        
+    # 可选资源目录
+    if Path("resources").exists() and any(Path("resources").iterdir()):
+        nuitka_args.insert(5, "--include-data-dir=resources=resources")
 
     print("\n开始构建Nuitka项目...")
     print("命令：", " ".join(nuitka_args), "\n")

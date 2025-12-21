@@ -4,6 +4,7 @@ from PyQt6.QtGui import *
 from PIL import Image
 import numpy as np
 from core.window_capture import WindowCapture
+from core.window_capture import WindowCapture
 import json
 import time
 import os
@@ -51,54 +52,9 @@ class MonitorTaskDialog(QDialog):
 
         info_group.setLayout(info_layout)
 
-        # 监控区域
-        region_group = QGroupBox("监控区域")
-        region_layout = QVBoxLayout()
-
-        region_button_layout = QHBoxLayout()
-        self.select_region_btn = QPushButton("选择区域")
-        self.select_region_btn.clicked.connect(self.select_region)
-        self.clear_region_btn = QPushButton("全屏")
-        self.clear_region_btn.clicked.connect(self.clear_region)
-        region_button_layout.addWidget(self.select_region_btn)
-        region_button_layout.addWidget(self.clear_region_btn)
-
-        self.region_label = QLabel("监控全屏")
-
-        region_layout.addLayout(region_button_layout)
-        region_layout.addWidget(self.region_label)
-        region_group.setLayout(region_layout)
-
-        # 模板图片
-        template_group = QGroupBox("模板图片")
-        template_layout = QVBoxLayout()
-
-        template_button_layout = QHBoxLayout()
-        self.select_template_btn = QPushButton("选择图片")
-        self.select_template_btn.clicked.connect(self.select_template)
-        self.capture_template_btn = QPushButton("截取模板")
-        self.capture_template_btn.clicked.connect(self.capture_template)
-        template_button_layout.addWidget(self.select_template_btn)
-        template_button_layout.addWidget(self.capture_template_btn)
-
-        self.template_label = QLabel("未选择模板")
-        self.template_label.setMinimumHeight(100)
-        self.template_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.template_label.setStyleSheet("border: 1px solid #ccc;")
-
-        template_layout.addLayout(template_button_layout)
-        template_layout.addWidget(self.template_label)
-        template_group.setLayout(template_layout)
-
-        # 匹配参数
-        param_group = QGroupBox("匹配参数")
+        # 触发参数
+        param_group = QGroupBox("触发参数")
         param_layout = QFormLayout()
-
-        self.threshold_spin = QDoubleSpinBox()
-        self.threshold_spin.setRange(0.5, 1.0)
-        self.threshold_spin.setValue(0.85)
-        self.threshold_spin.setSingleStep(0.01)
-        param_layout.addRow("匹配阈值:", self.threshold_spin)
 
         self.cooldown_spin = QSpinBox()
         self.cooldown_spin.setRange(0, 300)
@@ -108,7 +64,28 @@ class MonitorTaskDialog(QDialog):
 
         param_group.setLayout(param_layout)
 
-        # 执行动作
+        # 监控任务模式
+        mode_group = QGroupBox("监控任务模式")
+        mode_layout = QVBoxLayout()
+        
+        mode_select_layout = QHBoxLayout()
+        self.mode_check = QCheckBox("启用模式选择")
+        self.mode_check.setChecked(False)
+        self.mode_check.toggled.connect(self.on_mode_check_changed)
+        
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItems(["IF模式 (条件触发)", "RANDOM模式 (随机执行)"])
+        self.mode_combo.setEnabled(False)
+        self.mode_combo.currentIndexChanged.connect(self.on_mode_changed)
+        
+        mode_select_layout.addWidget(self.mode_check)
+        mode_select_layout.addWidget(self.mode_combo)
+        mode_select_layout.addStretch()
+        
+        mode_layout.addLayout(mode_select_layout)
+        mode_group.setLayout(mode_layout)
+        
+        # 执行动作（用于兼容旧版本和基本动作）
         action_group = QGroupBox("执行动作")
         action_layout = QVBoxLayout()
 
@@ -129,38 +106,132 @@ class MonitorTaskDialog(QDialog):
         action_layout.addWidget(self.action_list)
         action_layout.addLayout(action_button_layout)
         action_group.setLayout(action_layout)
+        
+        # IF模式配置（条件-动作对）
+        self.if_group = QGroupBox("IF模式配置")
+        if_layout = QVBoxLayout()
+        
+        self.if_pairs_list = QListWidget()
+        self.if_pairs_list.setMaximumHeight(150)
+        
+        if_button_layout = QHBoxLayout()
+        self.add_if_pair_btn = QPushButton("添加条件-动作对")
+        self.add_if_pair_btn.clicked.connect(self.add_if_pair)
+        self.edit_if_pair_btn = QPushButton("编辑")
+        self.edit_if_pair_btn.clicked.connect(self.edit_if_pair)
+        self.remove_if_pair_btn = QPushButton("删除")
+        self.remove_if_pair_btn.clicked.connect(self.remove_if_pair)
+        
+        if_button_layout.addWidget(self.add_if_pair_btn)
+        if_button_layout.addWidget(self.edit_if_pair_btn)
+        if_button_layout.addWidget(self.remove_if_pair_btn)
+        
+        if_layout.addWidget(QLabel("条件-动作配置列表:"))
+        if_layout.addWidget(self.if_pairs_list)
+        if_layout.addLayout(if_button_layout)
+        
+        if_help = QLabel(
+            "说明：配置多个条件-动作对，当条件满足时执行对应动作序列\n"
+            "每个条件可以包含多个子条件（AND/OR逻辑）"
+        )
+        if_help.setStyleSheet("color: gray; font-size: 10px;")
+        if_layout.addWidget(if_help)
+        
+        self.if_group.setLayout(if_layout)
+        self.if_group.setVisible(False)
+        
+        # RANDOM模式配置
+        self.random_group = QGroupBox("RANDOM模式配置")
+        random_layout = QVBoxLayout()
+        
+        self.random_actions_list = QListWidget()
+        self.random_actions_list.setMaximumHeight(150)
+        
+        random_button_layout = QHBoxLayout()
+        self.add_random_action_btn = QPushButton("添加动作序列")
+        self.add_random_action_btn.clicked.connect(self.add_random_action_sequence)
+        self.edit_random_action_btn = QPushButton("编辑")
+        self.edit_random_action_btn.clicked.connect(self.edit_random_action_sequence)
+        self.remove_random_action_btn = QPushButton("删除")
+        self.remove_random_action_btn.clicked.connect(self.remove_random_action_sequence)
+        
+        random_button_layout.addWidget(self.add_random_action_btn)
+        random_button_layout.addWidget(self.edit_random_action_btn)
+        random_button_layout.addWidget(self.remove_random_action_btn)
+        
+        random_layout.addWidget(QLabel("随机执行以下动作序列之一:"))
+        random_layout.addWidget(self.random_actions_list)
+        random_layout.addLayout(random_button_layout)
+        
+        random_help = QLabel(
+            "说明：配置多个动作序列，触发时随机选择一个执行\n"
+            "每个序列可以包含多个动作步骤"
+        )
+        random_help.setStyleSheet("color: gray; font-size: 10px;")
+        random_layout.addWidget(random_help)
+        
+        self.random_group.setLayout(random_layout)
+        self.random_group.setVisible(False)
+        
+        # 初始化模式数据
+        self.if_pairs = []
+        self.random_action_sequences = []
 
-        # 条件设置（高级功能）
-        condition_group = QGroupBox("执行条件")
+        # 条件检测组
+        condition_group = QGroupBox("触发条件")
         condition_layout = QVBoxLayout()
-
-        # 启用条件判断复选框
-        self.enable_condition_check = QCheckBox("启用条件判断功能（高级）")
-        self.enable_condition_check.toggled.connect(self.toggle_condition_panel)
-        condition_layout.addWidget(self.enable_condition_check)
-
-        # 条件面板（默认隐藏）
-        self.condition_panel = QWidget()
-        condition_panel_layout = QVBoxLayout(self.condition_panel)
         
-        self.condition_list = QListWidget()
-        self.condition_list.setMaximumHeight(80)
-
+        # 条件逻辑选择
+        mode_layout = QHBoxLayout()
+        mode_layout.addWidget(QLabel("条件逻辑:"))
+        self.condition_logic_combo = QComboBox()
+        self.condition_logic_combo.addItems(["AND (全部满足)", "OR (任一满足)", "NOT (全部不满足)"])
+        mode_layout.addWidget(self.condition_logic_combo)
+        mode_layout.addStretch()
+        condition_layout.addLayout(mode_layout)
+        
+        # 统一的条件列表
+        self.unified_condition_list = QListWidget()
+        self.unified_condition_list.setMaximumHeight(150)
+        
+        # 按钮布局
         condition_button_layout = QHBoxLayout()
-        self.add_condition_btn = QPushButton("添加条件")
-        self.add_condition_btn.clicked.connect(self.add_condition)
-        self.remove_condition_btn = QPushButton("删除")
-        self.remove_condition_btn.clicked.connect(self.remove_condition)
-        condition_button_layout.addWidget(self.add_condition_btn)
-        condition_button_layout.addWidget(self.remove_condition_btn)
-
-        condition_panel_layout.addWidget(QLabel("基于公共变量的条件判断:"))
-        condition_panel_layout.addWidget(self.condition_list)
-        condition_panel_layout.addLayout(condition_button_layout)
         
-        self.condition_panel.setVisible(False)  # 默认隐藏
-        condition_layout.addWidget(self.condition_panel)
+        # 添加按钮（带菜单）
+        self.add_condition_menu_btn = QPushButton("添加条件")
+        add_menu = QMenu()
+        add_menu.addAction("添加变量条件", self.add_variable_condition)
+        add_menu.addAction("添加图像检测", self.add_image_condition)
+        self.add_condition_menu_btn.setMenu(add_menu)
+        
+        self.edit_condition_btn = QPushButton("编辑")
+        self.edit_condition_btn.clicked.connect(self.edit_unified_condition)
+        self.remove_condition_btn = QPushButton("删除")
+        self.remove_condition_btn.clicked.connect(self.remove_unified_condition)
+        
+        condition_button_layout.addWidget(self.add_condition_menu_btn)
+        condition_button_layout.addWidget(self.edit_condition_btn)
+        condition_button_layout.addWidget(self.remove_condition_btn)
+        
+        condition_layout.addWidget(QLabel("检测条件列表:"))
+        condition_layout.addWidget(self.unified_condition_list)
+        condition_layout.addLayout(condition_button_layout)
+        
+        help_text = QLabel(
+            "说明：\n"
+            "• 变量条件：基于公共变量值判断\n"
+            "• 图像检测：检测指定区域的图像是否存在\n"
+            "• AND：所有条件都满足时触发\n"
+            "• OR：任一条件满足时触发\n"
+            "• NOT：所有条件都不满足时触发"
+        )
+        help_text.setStyleSheet("color: gray; font-size: 10px;")
+        condition_layout.addWidget(help_text)
+        
         condition_group.setLayout(condition_layout)
+        
+        # 初始化统一条件列表
+        self.unified_conditions = []
 
         # 按钮
         button_box = QDialogButtonBox(
@@ -172,10 +243,15 @@ class MonitorTaskDialog(QDialog):
         # 添加到主布局
         layout.addWidget(info_group)
         layout.addWidget(condition_group)
-        layout.addWidget(region_group)
-        layout.addWidget(template_group)
         layout.addWidget(param_group)
-        layout.addWidget(action_group)
+        layout.addWidget(mode_group)
+        
+        # 基本动作组（只在传统模式下显示）
+        self.traditional_action_group = action_group
+        layout.addWidget(self.traditional_action_group)
+        
+        layout.addWidget(self.if_group)
+        layout.addWidget(self.random_group)
         layout.addStretch()
         
         scroll.setWidget(scroll_widget)
@@ -185,52 +261,255 @@ class MonitorTaskDialog(QDialog):
         main_layout.addWidget(scroll)
         main_layout.addWidget(button_box)
 
+    def on_mode_check_changed(self, checked):
+        """模式选择复选框状态改变"""
+        self.mode_combo.setEnabled(checked)
+        if checked:
+            self.on_mode_changed(self.mode_combo.currentIndex())
+        else:
+            # 传统模式：显示基本动作配置，隐藏特殊配置
+            self.if_group.setVisible(False)
+            self.random_group.setVisible(False)
+            self.traditional_action_group.setVisible(True)
+    
+    def on_mode_changed(self, index):
+        """模式改变时更新界面"""
+        if not self.mode_check.isChecked():
+            return
+            
+        # 隐藏传统动作组（IF/RANDOM模式不使用）
+        self.traditional_action_group.setVisible(False)
+        
+        if index == 0:  # IF模式
+            self.if_group.setVisible(True)
+            self.random_group.setVisible(False)
+        else:  # RANDOM模式
+            self.if_group.setVisible(False)
+            self.random_group.setVisible(True)
+    
+    def add_if_pair(self):
+        """添加IF条件-动作对"""
+        dialog = IFPairDialog(self.controller, self)
+        if dialog.exec():
+            pair = dialog.get_if_pair()
+            if pair:
+                self.if_pairs.append(pair)
+                self.refresh_if_pairs_list()
+    
+    def edit_if_pair(self):
+        """编辑IF条件-动作对"""
+        current = self.if_pairs_list.currentRow()
+        if current >= 0 and current < len(self.if_pairs):
+            dialog = IFPairDialog(self.controller, self, self.if_pairs[current])
+            if dialog.exec():
+                self.if_pairs[current] = dialog.get_if_pair()
+                self.refresh_if_pairs_list()
+    
+    def remove_if_pair(self):
+        """删除IF条件-动作对"""
+        current = self.if_pairs_list.currentRow()
+        if current >= 0:
+            del self.if_pairs[current]
+            self.refresh_if_pairs_list()
+    
+    def refresh_if_pairs_list(self):
+        """刷新IF条件-动作对列表"""
+        self.if_pairs_list.clear()
+        for i, pair in enumerate(self.if_pairs, 1):
+            conditions_count = len(pair.get('conditions', []))
+            actions_count = len(pair.get('actions', []))
+            logic = pair.get('logic', 'AND')
+            text = f"条件组{i}: {conditions_count}个条件({logic}) → {actions_count}个动作"
+            self.if_pairs_list.addItem(text)
+    
+    def add_random_action_sequence(self):
+        """添加RANDOM动作序列"""
+        dialog = ActionSequenceDialog(self.controller, self)
+        if dialog.exec():
+            sequence = dialog.get_action_sequence()
+            if sequence:
+                self.random_action_sequences.append(sequence)
+                self.refresh_random_actions_list()
+    
+    def edit_random_action_sequence(self):
+        """编辑RANDOM动作序列"""
+        current = self.random_actions_list.currentRow()
+        if current >= 0 and current < len(self.random_action_sequences):
+            dialog = ActionSequenceDialog(self.controller, self, self.random_action_sequences[current])
+            if dialog.exec():
+                self.random_action_sequences[current] = dialog.get_action_sequence()
+                self.refresh_random_actions_list()
+    
+    def remove_random_action_sequence(self):
+        """删除RANDOM动作序列"""
+        current = self.random_actions_list.currentRow()
+        if current >= 0:
+            del self.random_action_sequences[current]
+            self.refresh_random_actions_list()
+    
+    def refresh_random_actions_list(self):
+        """刷新RANDOM动作序列列表"""
+        self.random_actions_list.clear()
+        for i, sequence in enumerate(self.random_action_sequences, 1):
+            actions_count = len(sequence.get('actions', []))
+            name = sequence.get('name', f'序列{i}')
+            text = f"{name} ({actions_count}个动作)"
+            self.random_actions_list.addItem(text)
+    
     def load_config(self):
         """加载配置"""
         if self.task_config:
             self.name_input.setText(self.task_config.get('name', ''))
             self.enabled_check.setChecked(self.task_config.get('enabled', True))
-            self.threshold_spin.setValue(self.task_config.get('threshold', 0.85))
             self.cooldown_spin.setValue(self.task_config.get('cooldown', 5))
 
-            # 安全处理region
-            if 'region' in self.task_config and self.task_config['region']:
-                self.region = self.task_config['region']
-                if self.region and len(self.region) == 4:
-                    x, y, w, h = self.region
-                    self.region_label.setText(f"起始: ({x}, {y}) → 结束: ({x + w}, {y + h})")
-
-            # 安全处理template
-            if 'template' in self.task_config and self.task_config['template']:
-                self.template_image = self.task_config['template']
-                self.show_template_preview()
-
-            self.actions = self.task_config.get('actions', [])
-            self.refresh_action_list()
+            # 加载任务模式
+            task_mode = self.task_config.get('task_mode')
+            if task_mode:
+                self.mode_check.setChecked(True)
+                self.traditional_action_group.setVisible(False)
+                if task_mode == 'IF':
+                    self.mode_combo.setCurrentIndex(0)
+                    self.if_group.setVisible(True)
+                    self.random_group.setVisible(False)
+                    self.if_pairs = self.task_config.get('if_pairs', [])
+                    self.refresh_if_pairs_list()
+                elif task_mode == 'RANDOM':
+                    self.mode_combo.setCurrentIndex(1)
+                    self.if_group.setVisible(False)
+                    self.random_group.setVisible(True)
+                    self.random_action_sequences = self.task_config.get('random_sequences', [])
+                    self.refresh_random_actions_list()
+            else:
+                # 兼容旧版本 - 传统模式
+                self.mode_check.setChecked(False)
+                self.traditional_action_group.setVisible(True)
+                self.if_group.setVisible(False)
+                self.random_group.setVisible(False)
+                self.actions = self.task_config.get('actions', [])
+                self.refresh_action_list()
             
-            # 加载条件
-            self.conditions = self.task_config.get('conditions', [])
-            if self.conditions:
-                self.enable_condition_check.setChecked(True)
-                self.condition_panel.setVisible(True)
-            self.refresh_condition_list()
-
-    def toggle_condition_panel(self, checked):
-        """切换条件面板显示"""
-        self.condition_panel.setVisible(checked)
-        if not checked:
-            # 清空条件列表
-            self.conditions = []
-            self.refresh_condition_list()
+            # 加载统一条件
+            self.unified_conditions = self.task_config.get('unified_conditions', [])
+            
+            # 兼容旧版本 - 自动转换
+            if not self.unified_conditions:
+                # 转换旧的单一模板
+                if 'template' in self.task_config and self.task_config['template']:
+                    self.unified_conditions.append({
+                        'type': 'image',
+                        'region': self.task_config.get('region'),
+                        'template': self.task_config['template'],
+                        'expect_exist': True,
+                        'threshold': self.task_config.get('threshold', 0.85)
+                    })
+                
+                # 转换旧的变量条件
+                old_conditions = self.task_config.get('conditions', [])
+                for cond in old_conditions:
+                    self.unified_conditions.append({
+                        'type': 'variable',
+                        'variable': cond.get('variable'),
+                        'operator': cond.get('operator'),
+                        'value': cond.get('value')
+                    })
+                
+                # 转换旧的多条件
+                old_multi = self.task_config.get('multi_conditions', [])
+                for cond in old_multi:
+                    self.unified_conditions.append({
+                        'type': 'image',
+                        'region': cond.get('region'),
+                        'template': cond.get('template'),
+                        'expect_exist': cond.get('expect_exist', True),
+                        'threshold': cond.get('threshold', 0.85)
+                    })
+            
+            # 加载条件逻辑
+            logic = self.task_config.get('condition_logic')
+            if not logic:
+                # 兼容旧版本
+                logic = self.task_config.get('condition_mode', 'AND (全部满足)')
+            self.condition_logic_combo.setCurrentText(logic)
+            
+            self.refresh_unified_condition_list()
     
-    def refresh_condition_list(self):
-        """刷新条件列表"""
-        self.condition_list.clear()
-        for condition in getattr(self, 'conditions', []):
-            var = condition.get('variable', '')
-            op = condition.get('operator', '==')
-            val = condition.get('value', 0)
-            self.condition_list.addItem(f"{var} {op} {val}")
+    def refresh_unified_condition_list(self):
+        """刷新统一条件列表"""
+        self.unified_condition_list.clear()
+        for i, condition in enumerate(self.unified_conditions, 1):
+            if condition.get('type') == 'variable':
+                var = condition.get('variable', '')
+                op = condition.get('operator', '==')
+                val = condition.get('value', 0)
+                text = f"[变量] {var} {op} {val}"
+            else:  # image
+                region = condition.get('region')
+                region_text = "全屏"
+                if region and len(region) == 4:
+                    x, y, w, h = region
+                    region_text = f"({x},{y},{w},{h})"
+                
+                expect = "✔存在" if condition.get('expect_exist', True) else "❌不存在"
+                text = f"[图像] 区域{region_text} - 期望{expect}"
+            
+            self.unified_condition_list.addItem(text)
+    
+    def add_variable_condition(self):
+        """添加变量条件"""
+        dialog = ConditionDialog(self)
+        if dialog.exec():
+            condition = dialog.get_condition()
+            condition['type'] = 'variable'
+            self.unified_conditions.append(condition)
+            self.refresh_unified_condition_list()
+    
+    def add_image_condition(self):
+        """添加图像检测条件"""
+        dialog = MultiConditionDialog(self.controller, self)
+        if dialog.exec():
+            condition = dialog.get_condition()
+            if condition:
+                condition['type'] = 'image'
+                self.unified_conditions.append(condition)
+                self.refresh_unified_condition_list()
+    
+    def edit_unified_condition(self):
+        """编辑条件"""
+        current = self.unified_condition_list.currentRow()
+        if current >= 0 and current < len(self.unified_conditions):
+            condition = self.unified_conditions[current]
+            
+            if condition.get('type') == 'variable':
+                dialog = ConditionDialog(self, condition)
+                if dialog.exec():
+                    new_condition = dialog.get_condition()
+                    new_condition['type'] = 'variable'
+                    self.unified_conditions[current] = new_condition
+            else:
+                dialog = MultiConditionDialog(self.controller, self, condition)
+                if dialog.exec():
+                    new_condition = dialog.get_condition()
+                    if new_condition:
+                        new_condition['type'] = 'image'
+                        self.unified_conditions[current] = new_condition
+            
+            self.refresh_unified_condition_list()
+    
+    def remove_unified_condition(self):
+        """删除条件"""
+        current = self.unified_condition_list.currentRow()
+        if current >= 0:
+            del self.unified_conditions[current]
+            self.refresh_unified_condition_list()
+    
+    def add_condition(self):
+        """兼容旧方法"""
+        self.add_variable_condition()
+    
+    def remove_condition(self):
+        """兼容旧方法"""
+        self.remove_unified_condition()
     
     def add_condition(self):
         """添加条件"""
@@ -249,142 +528,7 @@ class MonitorTaskDialog(QDialog):
             del self.conditions[current]
             self.refresh_condition_list()
 
-    def select_region(self):
-        """选择监控区域"""
-        dialog = RegionInputDialog(self, self.region)
-        if dialog.exec():
-            self.region = dialog.get_region()
-            x, y, w, h = self.region
-            self.region_label.setText(f"起始: ({x}, {y}) → 结束: ({x + w}, {y + h})")
 
-    def clear_region(self):
-        """清除区域（全屏监控）"""
-        self.region = None
-        self.region_label.setText("监控全屏")
-
-    def select_template(self):
-        """选择模板图片"""
-        filename, _ = QFileDialog.getOpenFileName(
-            self, "选择模板图片", "", "图片文件 (*.png *.jpg *.jpeg)"
-        )
-        if filename:
-            self.template_image = Image.open(filename)
-            self.show_template_preview()
-
-    def capture_template(self):
-        """截取模板 - 从Scrcpy窗口截取"""
-        if self.main_window and hasattr(self.main_window, 'log'):
-            self.main_window.log("正在从Scrcpy窗口截取模板...")
-
-        # 使用"scrcpy"作为参数，会自动查找Scrcpy窗口
-        screenshot = WindowCapture.capture_window_safe("scrcpy", client_only=True)
-
-        if not screenshot:
-            QMessageBox.warning(self, "警告", "无法找到Scrcpy窗口，请确保Scrcpy正在运行")
-            return
-
-        # 处理区域选择
-        if self.region:
-            x, y, w, h = self.region
-
-            # 获取窗口和设备的尺寸信息
-            window_width, window_height = screenshot.size
-            device_width, device_height = self.controller.get_device_resolution()
-
-            # 判断当前显示方向
-            window_aspect = window_width / window_height
-
-            if window_aspect > 1.3:  # 横屏显示
-                actual_device_width = max(device_width, device_height)
-                actual_device_height = min(device_width, device_height)
-                scale_x = window_width / actual_device_width
-                scale_y = window_height / actual_device_height
-            else:  # 竖屏显示
-                actual_device_width = min(device_width, device_height)
-                actual_device_height = max(device_width, device_height)
-                scale_x = window_width / actual_device_width
-                scale_y = window_height / actual_device_height
-
-            # 转换坐标
-            window_x = int(x * scale_x)
-            window_y = int(y * scale_y)
-            window_w = int(w * scale_x)
-            window_h = int(h * scale_y)
-
-            # 确保坐标在有效范围内
-            window_x = max(0, min(window_x, window_width - 1))
-            window_y = max(0, min(window_y, window_height - 1))
-            window_w = min(window_w, window_width - window_x)
-            window_h = min(window_h, window_height - window_y)
-
-            if window_w > 0 and window_h > 0:
-                self.template_image = screenshot.crop((window_x, window_y,
-                                                       window_x + window_w,
-                                                       window_y + window_h))
-                self.region_label.setText(f"起始: ({x}, {y}) → 结束: ({x + w}, {y + h})")
-            else:
-                QMessageBox.warning(self, "警告", "无效的截取区域")
-                return
-        else:
-            # 弹出区域选择对话框
-            dialog = RegionInputDialog(self)
-            if dialog.exec():
-                self.region = dialog.get_region()
-                # 递归调用以处理区域
-                self.capture_template()
-                return
-
-        # 显示预览
-        self.show_template_preview()
-
-    def show_template_preview(self):
-        """显示模板预览"""
-        if self.template_image:
-            try:
-                # 确保图像是RGB模式
-                if self.template_image.mode != 'RGB':
-                    self.template_image = self.template_image.convert('RGB')
-
-                # 转换为QPixmap
-                import numpy as np
-                img_array = np.array(self.template_image)
-                height, width = img_array.shape[:2]
-
-                # 确保是3通道RGB
-                if len(img_array.shape) == 2:  # 灰度图
-                    img_array = np.stack([img_array] * 3, axis=-1)
-                elif len(img_array.shape) == 3 and img_array.shape[2] == 4:  # RGBA
-                    img_array = img_array[:, :, :3]
-
-                # 创建QImage
-                bytes_per_line = 3 * width
-                if not img_array.flags['C_CONTIGUOUS']:
-                    img_array = np.ascontiguousarray(img_array)
-
-                qimg = QImage(
-                    img_array.data,
-                    width,
-                    height,
-                    bytes_per_line,
-                    QImage.Format.Format_RGB888
-                )
-
-                # 转换为QPixmap并缩放
-                pixmap = QPixmap.fromImage(qimg)
-                max_width = 300
-                max_height = 150
-                if pixmap.width() > max_width or pixmap.height() > max_height:
-                    pixmap = pixmap.scaled(
-                        max_width,
-                        max_height,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation
-                    )
-
-                self.template_label.setPixmap(pixmap)
-
-            except Exception as e:
-                self.template_label.setText(f"预览失败: {str(e)}")
 
     def add_action(self):
         """添加动作"""
@@ -437,9 +581,6 @@ class MonitorTaskDialog(QDialog):
         elif action_type == 'recording':
             filename = os.path.basename(action.get('recording_file', ''))
             return f"执行录制: {filename}"
-        elif action_type == 'random':
-            count = len(action.get('sub_actions', []))
-            return f"随机执行 ({count}个动作之一)"
         elif action_type == 'set_variable':
             variable = action.get('variable', '')
             operation = action.get('operation', 'set')
@@ -479,23 +620,45 @@ class MonitorTaskDialog(QDialog):
             task_name = f"监控任务_{datetime.now().strftime('%H%M%S')}"
             self.name_input.setText(task_name)
 
-        # 如果没有模板图片但有条件判断，允许创建（纯条件触发）
-        conditions = getattr(self, 'conditions', [])
-        if not self.template_image and not conditions:
-            QMessageBox.warning(self, "警告", "请选择模板图片或添加条件判断")
-            return None
-
-        return {
+        config = {
             'name': task_name,
             'enabled': self.enabled_check.isChecked(),
-            'region': self.region,
-            'template': self.template_image,
-            'threshold': self.threshold_spin.value(),
             'cooldown': self.cooldown_spin.value(),
-            'actions': self.actions,
-            'conditions': getattr(self, 'conditions', []) if self.enable_condition_check.isChecked() else []
+            'unified_conditions': self.unified_conditions,
+            'condition_logic': self.condition_logic_combo.currentText()
         }
+        
+        # 根据模式保存不同的配置
+        if self.mode_check.isChecked():
+            mode_index = self.mode_combo.currentIndex()
+            if mode_index == 0:  # IF模式
+                if not self.if_pairs:
+                    QMessageBox.warning(self, "警告", "请添加至少一个条件-动作对")
+                    return None
+                config['task_mode'] = 'IF'
+                config['if_pairs'] = self.if_pairs
+                config['actions'] = []  # IF模式不使用基本动作
+            else:  # RANDOM模式
+                if not self.random_action_sequences:
+                    QMessageBox.warning(self, "警告", "请添加至少一个动作序列")
+                    return None
+                config['task_mode'] = 'RANDOM'
+                config['random_sequences'] = self.random_action_sequences
+                config['actions'] = []  # RANDOM模式不使用基本动作
+        else:
+            # 传统模式，检查基本配置
+            if not self.unified_conditions:
+                QMessageBox.warning(self, "警告", "请添加至少一个检测条件")
+                return None
+            if not self.actions:
+                QMessageBox.warning(self, "警告", "请添加至少一个执行动作")
+                return None
+            config['actions'] = self.actions
+            
+        return config
 
+
+from gui.coordinate_picker_dialog import CoordinatePickerDialog
 
 class RegionInputDialog(QDialog):
     """区域输入对话框"""
@@ -503,167 +666,87 @@ class RegionInputDialog(QDialog):
     def __init__(self, parent=None, initial_region=None):
         super().__init__(parent)
         self.initial_region = initial_region
-        self.current_device_coords = (0, 0)
-        self.pipette_mode = False
         self.pipette_target = 'start'
-        self.last_click_time = 0
+        
+        # 获取controller和main_window
+        self.controller = None
+        self.main_window = None
+        p = parent
+        while p:
+            if hasattr(p, 'controller'):
+                self.controller = p.controller
+            if hasattr(p, 'log'):
+                self.main_window = p
+            if self.controller and self.main_window:
+                break
+            p = p.parent() if hasattr(p, 'parent') and callable(p.parent) else None
+        
         self.initUI()
         if initial_region:
             self.load_region(initial_region)
-        # 启动坐标追踪
-        self.setup_coordinate_tracker()
-
-    def setup_coordinate_tracker(self):
-        """设置坐标追踪器"""
-        self.coord_timer = QTimer(self)
-        self.coord_timer.timeout.connect(self.update_mouse_coordinates)
-        self.coord_timer.start(50)  # 每50ms更新一次
-        
-        # 滴管模式
-        self.pipette_mode = False
-        self.pipette_target = 'start'
-        self.last_click_time = 0
-
-    def update_mouse_coordinates(self):
-        """更新鼠标坐标显示"""
-        try:
-            import win32gui
-
-            # 获取鼠标位置
-            cursor_pos = win32gui.GetCursorPos()
-            self.screen_coord_label.setText(f"屏幕: ({cursor_pos[0]}, {cursor_pos[1]})")
-
-            # 使用WindowCapture查找Scrcpy窗口
-            from core.window_capture import WindowCapture
-            hwnd = WindowCapture.find_scrcpy_window()
-
-            if hwnd:
-                # 获取窗口客户区
-                rect = win32gui.GetClientRect(hwnd)
-                point = win32gui.ClientToScreen(hwnd, (0, 0))
-                client_rect = (
-                    point[0], point[1],
-                    point[0] + rect[2], point[1] + rect[3]
-                )
-
-                # 检查鼠标是否在窗口内
-                if (client_rect[0] <= cursor_pos[0] <= client_rect[2] and
-                        client_rect[1] <= cursor_pos[1] <= client_rect[3]):
-
-                    # 计算相对坐标
-                    rel_x = cursor_pos[0] - client_rect[0]
-                    rel_y = cursor_pos[1] - client_rect[1]
-
-                    # 窗口大小
-                    window_width = client_rect[2] - client_rect[0]
-                    window_height = client_rect[3] - client_rect[1]
-
-                    # 获取设备分辨率（需要传入controller）
-                    # 尝试从父窗口获取controller
-                    controller = None
-                    p = self.parent()
-                    while p:
-                        if hasattr(p, 'controller'):
-                            controller = p.controller
-                            break
-                        p = p.parent() if hasattr(p, 'parent') and callable(p.parent) else None
-                    
-                    if controller:
-                        device_width, device_height = controller.get_device_resolution()
-
-                        # 判断实际显示方向
-                        window_aspect = window_width / window_height if window_height > 0 else 1
-
-                        if window_aspect > 1.3:  # 横屏
-                            actual_width = max(device_width, device_height)
-                            actual_height = min(device_width, device_height)
-                        else:  # 竖屏
-                            actual_width = min(device_width, device_height)
-                            actual_height = max(device_width, device_height)
-
-                        # 转换为设备坐标
-                        if window_width > 0 and window_height > 0:
-                            device_x = int(rel_x * actual_width / window_width)
-                            device_y = int(rel_y * actual_height / window_height)
-
-                            # 确保坐标在有效范围内
-                            device_x = max(0, min(device_x, actual_width - 1))
-                            device_y = max(0, min(device_y, actual_height - 1))
-
-                            self.current_device_coords = (device_x, device_y)
-                            self.device_coord_label.setText(f"设备: ({device_x}, {device_y})")
-                        else:
-                            self.device_coord_label.setText(f"设备: (-, -)")
-                    else:
-                        self.device_coord_label.setText(f"设备: (-, -)")
-                else:
-                    self.device_coord_label.setText(f"设备: (-, -)")
-            else:
-                self.device_coord_label.setText(f"设备: (-, -)")
-
-        except Exception:
-            self.device_coord_label.setText(f"设备: (-, -)")
             
-        # 滴管模式下检测点击
-        if self.pipette_mode:
-            self.check_pipette_click()
-    
-    def toggle_pipette_mode(self, target='start'):
-        """切换滴管模式"""
-        # 根据目标按钮决定状态
-        if target == 'start':
-            self.pipette_mode = self.pipette_start_btn.isChecked()
-            # 如果开启，关闭另一个
-            if self.pipette_mode:
-                self.pipette_end_btn.setChecked(False)
-            self.pipette_target = 'start'
-        else:
-            self.pipette_mode = self.pipette_end_btn.isChecked()
-            # 如果开启，关闭另一个
-            if self.pipette_mode:
-                self.pipette_start_btn.setChecked(False)
-            self.pipette_target = 'end'
+    def start_pipette(self, target='start'):
+        """启动截图拾取"""
+        if not self.controller:
+            QMessageBox.warning(self, "错误", "无法获取控制器")
+            return
+            
+        self.pipette_target = target
         
-        self.pipette_info.setVisible(self.pipette_mode)
-        
-        if self.pipette_mode:
-            # 设置鼠标样式为十字
-            QApplication.setOverrideCursor(Qt.CursorShape.CrossCursor)
-        else:
-            # 恢复默认鼠标样式
-            QApplication.restoreOverrideCursor()
-    
-    def check_pipette_click(self):
-        """检查滴管点击"""
-        import win32api
-        import win32con
-        
-        # 检测鼠标左键
-        if win32api.GetAsyncKeyState(win32con.VK_LBUTTON) < 0:
-            current_time = time.time()
-            # 防止重复触发
-            if current_time - self.last_click_time > 0.5:
-                self.last_click_time = current_time
-                # 自动填充坐标
-                x, y = self.current_device_coords
+        # 1. 获取截图
+        try:
+            # 检查是否是模拟器模式
+            is_simulator = False
+            hwnd = None
+            crop_rect = None
+            
+            if hasattr(self.controller, 'simulator_hwnd') and self.controller.simulator_hwnd:
+                is_simulator = True
+                hwnd = self.controller.simulator_hwnd
+                crop_rect = self.controller.simulator_crop_rect
+            
+            if is_simulator:
+                # 模拟器模式：截取整个窗口，然后裁剪
+                screenshot = WindowCapture.capture_window_by_hwnd(hwnd)
+                if not screenshot:
+                    QMessageBox.warning(self, "错误", "无法截取模拟器窗口")
+                    return
                 
-                # 根据目标填充坐标
-                if self.pipette_target == 'start':
-                    self.x1_spin.setValue(x)
-                    self.y1_spin.setValue(y)
-                    # 关闭滴管模式
-                    self.pipette_start_btn.setChecked(False)
-                    self.toggle_pipette_mode('start')
-                else:
-                    self.x2_spin.setValue(x)
-                    self.y2_spin.setValue(y)
-                    # 关闭滴管模式
-                    self.pipette_end_btn.setChecked(False)
-                    self.toggle_pipette_mode('end')
-                
-                self.update_display()
-                # 显示状态栏提示而非对话框
-                self.statusBar().showMessage(f"已拾取坐标: ({x}, {y})", 2000) if hasattr(self, 'statusBar') else None
+                # 执行裁剪
+                if crop_rect:
+                    cx, cy, cw, ch = crop_rect
+                    # 确保裁剪区域有效
+                    w, h = screenshot.size
+                    if 0 <= cx < w and 0 <= cy < h:
+                        screenshot = screenshot.crop((cx, cy, cx + cw, cy + ch))
+            else:
+                # 设备模式：截取Scrcpy
+                screenshot = WindowCapture.capture_window_safe("scrcpy", client_only=True)
+                if not screenshot:
+                    QMessageBox.warning(self, "错误", "无法找到Scrcpy窗口或截图失败")
+                    return
+            
+            # 2. 获取设备分辨率
+            device_res = self.controller.get_device_resolution()
+            
+            # 3. 打开拾取对话框
+            dialog = CoordinatePickerDialog(screenshot, device_res, self)
+            if dialog.exec():
+                coord = dialog.get_result()
+                if coord:
+                    x, y = coord
+                    if self.pipette_target == 'start':
+                        self.x1_spin.setValue(x)
+                        self.y1_spin.setValue(y)
+                    else:
+                        self.x2_spin.setValue(x)
+                        self.y2_spin.setValue(y)
+                    self.update_display()
+                    
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"拾取失败: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
     def initUI(self):
         self.setWindowTitle("输入监控区域")
@@ -671,58 +754,29 @@ class RegionInputDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        # 实时坐标显示（新增）
-        coord_display_group = QGroupBox("实时坐标")
-        coord_display_layout = QVBoxLayout()
-
-        self.screen_coord_label = QLabel("屏幕: (-, -)")
-        self.screen_coord_label.setStyleSheet("font-family: Consolas; font-size: 11px;")
-        
-        self.device_coord_label = QLabel("设备: (-, -)")
-        self.device_coord_label.setStyleSheet("font-family: Consolas; font-size: 11px; color: blue;")
-
         # 滴管按钮组
         pipette_button_layout = QHBoxLayout()
         
-        self.pipette_start_btn = QPushButton("🎯 拾取起始坐标")
-        self.pipette_start_btn.setCheckable(True)
-        self.pipette_start_btn.clicked.connect(lambda: self.toggle_pipette_mode('start'))
+        self.pipette_start_btn = QPushButton("🎯 截图拾取起始坐标")
+        self.pipette_start_btn.clicked.connect(lambda: self.start_pipette('start'))
         
-        self.pipette_end_btn = QPushButton("🎯 拾取结束坐标")
-        self.pipette_end_btn.setCheckable(True)
-        self.pipette_end_btn.clicked.connect(lambda: self.toggle_pipette_mode('end'))
-        
-        # 样式
-        pipette_style = """
-            QPushButton:checked {
-                background-color: #4CAF50;
-                color: white;
-            }
-        """
-        self.pipette_start_btn.setStyleSheet(pipette_style)
-        self.pipette_end_btn.setStyleSheet(pipette_style)
+        self.pipette_end_btn = QPushButton("🎯 截图拾取结束坐标")
+        self.pipette_end_btn.clicked.connect(lambda: self.start_pipette('end'))
         
         pipette_button_layout.addWidget(self.pipette_start_btn)
         pipette_button_layout.addWidget(self.pipette_end_btn)
-
-        coord_display_layout.addWidget(self.screen_coord_label)
-        coord_display_layout.addWidget(self.device_coord_label)
-        coord_display_layout.addLayout(pipette_button_layout)
         
-        # 滴管提示
-        self.pipette_info = QLabel("提示：点击上方按钮后，在Scrcpy窗口点击即可拾取坐标")
-        self.pipette_info.setStyleSheet("color: green; font-size: 10px;")
-        self.pipette_info.setVisible(False)
-        coord_display_layout.addWidget(self.pipette_info)
+        layout.addLayout(pipette_button_layout)
         
-        coord_display_group.setLayout(coord_display_layout)
-        
-        layout.addWidget(coord_display_group)
-
         # 说明文字
-        info_label = QLabel("输入监控区域的起始和结束坐标：")
-        info_label.setStyleSheet("color: gray; margin-bottom: 10px;")
+        info_label = QLabel("提示: 点击上方按钮截取当前画面并选择坐标")
+        info_label.setStyleSheet("color: green; font-size: 10px; margin-bottom: 5px;")
         layout.addWidget(info_label)
+
+        # 说明文字2
+        info_label2 = QLabel("输入监控区域的起始和结束坐标：")
+        info_label2.setStyleSheet("color: gray; margin-bottom: 10px;")
+        layout.addWidget(info_label2)
 
         # 坐标输入区域
         coord_group = QGroupBox("坐标设置")
@@ -820,9 +874,9 @@ class RegionInputDialog(QDialog):
 
     def closeEvent(self, event):
         """关闭事件处理"""
-        # 确保滴管模式关闭
-        if hasattr(self, 'pipette_mode') and self.pipette_mode:
-            QApplication.restoreOverrideCursor()
+        # 停止滴管
+        if hasattr(self, 'eyedropper'):
+            self.eyedropper.stop()
         # 停止坐标追踪
         if hasattr(self, 'coord_timer'):
             self.coord_timer.stop()
@@ -870,7 +924,7 @@ class ActionEditDialog(QDialog):
         type_layout = QHBoxLayout()
         type_layout.addWidget(QLabel("动作类型:"))
         self.type_combo = QComboBox()
-        self.type_combo.addItems(["点击", "滑动", "输入文本", "按键", "等待", "执行录制", "随机动作", "设置变量", "ADB命令"])
+        self.type_combo.addItems(["点击", "滑动", "输入文本", "按键", "等待", "执行录制", "设置变量", "ADB命令"])
         self.type_combo.currentIndexChanged.connect(self.on_type_changed)
         type_layout.addWidget(self.type_combo)
         layout.addLayout(type_layout)
@@ -885,7 +939,6 @@ class ActionEditDialog(QDialog):
         self.create_key_widget()
         self.create_wait_widget()
         self.create_recording_widget()
-        self.create_random_widget()
         self.create_variable_widget()
         self.create_adb_widget()
 
@@ -1011,29 +1064,7 @@ class ActionEditDialog(QDialog):
 
         self.param_stack.addWidget(widget)
     
-    def create_random_widget(self):
-        """创建随机动作widget"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        
-        # 动作列表
-        self.random_action_list = QListWidget()
-        self.random_action_list.setMaximumHeight(120)
-        
-        # 按钮
-        btn_layout = QHBoxLayout()
-        add_btn = QPushButton("添加动作选项")
-        add_btn.clicked.connect(self.add_random_action)
-        remove_btn = QPushButton("删除")
-        remove_btn.clicked.connect(self.remove_random_action)
-        btn_layout.addWidget(add_btn)
-        btn_layout.addWidget(remove_btn)
-        
-        layout.addWidget(QLabel("随机执行以下动作之一:"))
-        layout.addWidget(self.random_action_list)
-        layout.addLayout(btn_layout)
-        
-        self.param_stack.addWidget(widget)
+
     
     def create_variable_widget(self):
         """创建变量设置widget"""
@@ -1152,32 +1183,7 @@ class ActionEditDialog(QDialog):
             command = text.split('#')[0].strip()
             self.adb_command_input.setText(command)
     
-    def add_random_action(self):
-        """添加随机动作选项"""
-        dialog = RandomActionDialog(self.controller, self)
-        if dialog.exec():
-            action_data = dialog.get_action_data()
-            if action_data:
-                self.random_actions.append(action_data)
-                self.refresh_random_list()
-    
-    def remove_random_action(self):
-        """删除随机动作选项"""
-        current = self.random_action_list.currentRow()
-        if current >= 0:
-            del self.random_actions[current]
-            self.refresh_random_list()
-    
-    def refresh_random_list(self):
-        """刷新随机动作列表"""
-        self.random_action_list.clear()
-        for i, action_data in enumerate(self.random_actions, 1):
-            action_type = action_data['action'].get('type', 'unknown')
-            var_setting = action_data.get('set_variable', {})
-            text = f"选项{i}: {action_type}"
-            if var_setting.get('variable'):
-                text += f" (设置{var_setting['variable']}={var_setting.get('value', 0)})"
-            self.random_action_list.addItem(text)
+
 
     def browse_recording(self):
         """浏览选择录制文件"""
@@ -1228,13 +1234,8 @@ class ActionEditDialog(QDialog):
             self.recording_speed_spin.setValue(self.action.get('speed', 1.0))
             self.recording_random_check.setChecked(self.action.get('use_random', False))
         
-        elif action_type == 'random':
-            self.type_combo.setCurrentIndex(6)
-            self.random_actions = self.action.get('sub_actions', [])
-            self.refresh_random_list()
-        
         elif action_type == 'set_variable':
-            self.type_combo.setCurrentIndex(7)
+            self.type_combo.setCurrentIndex(6)
             self.variable_name_input.setText(self.action.get('variable', ''))
             
             operation = self.action.get('operation', 'set')
@@ -1253,7 +1254,7 @@ class ActionEditDialog(QDialog):
                     self.variable_operation.setCurrentIndex(operations.index(operation))
         
         elif action_type == 'adb_command':
-            self.type_combo.setCurrentIndex(8)
+            self.type_combo.setCurrentIndex(7)
             self.adb_command_input.setText(self.action.get('command', ''))
 
     def get_action(self):
@@ -1308,12 +1309,7 @@ class ActionEditDialog(QDialog):
                 'speed': self.recording_speed_spin.value(),
                 'use_random': self.recording_random_check.isChecked()
             }
-        elif index == 6:  # 随机动作
-            return {
-                'type': 'random',
-                'sub_actions': self.random_actions
-            }
-        elif index == 7:  # 设置变量
+        elif index == 6:  # 设置变量
             operations = ["set", "add", "subtract", "multiply", "divide", "from_variable"]
             op_index = self.variable_operation.currentIndex()
             # 确保索引有效
@@ -1337,7 +1333,7 @@ class ActionEditDialog(QDialog):
                     'operation': operations[op_index],
                     'value': self.variable_value_spin.value()
                 }
-        elif index == 8:  # ADB命令
+        elif index == 7:  # ADB命令
             return {
                 'type': 'adb_command',
                 'command': self.adb_command_input.toPlainText()
@@ -1347,9 +1343,10 @@ class ActionEditDialog(QDialog):
 class ConditionDialog(QDialog):
     """条件编辑对话框"""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, condition=None):
         super().__init__(parent)
-        self.setWindowTitle("添加条件")
+        self.condition = condition or {}
+        self.setWindowTitle("变量条件")
         self.setModal(True)
         
         layout = QFormLayout(self)
@@ -1362,6 +1359,15 @@ class ConditionDialog(QDialog):
         
         self.value_spin = QSpinBox()
         self.value_spin.setRange(-9999, 9999)
+        
+        # 加载已有数据
+        if self.condition:
+            self.variable_input.setText(self.condition.get('variable', ''))
+            op = self.condition.get('operator', '==')
+            index = self.operator_combo.findText(op)
+            if index >= 0:
+                self.operator_combo.setCurrentIndex(index)
+            self.value_spin.setValue(self.condition.get('value', 0))
         
         layout.addRow("变量名:", self.variable_input)
         layout.addRow("比较:", self.operator_combo)
@@ -1380,128 +1386,636 @@ class ConditionDialog(QDialog):
         }
 
 
-class RandomActionDialog(QDialog):
-    """随机动作选项对话框"""
+class MultiConditionDialog(QDialog):
+    """多条件检测对话框"""
     
-    def __init__(self, controller, parent=None):
+    def __init__(self, controller, parent=None, condition=None):
         super().__init__(parent)
         self.controller = controller
-        self.setWindowTitle("配置动作选项")
-        self.setModal(True)
-        self.setMinimumWidth(400)
+        self.condition = condition or {}
+        self.template_image = None
+        self.region = None
         
+        self.setWindowTitle("配置检测条件")
+        self.setModal(True)
+        self.setMinimumWidth(500)
+        
+        self.initUI()
+        self.load_condition()
+    
+    def initUI(self):
         layout = QVBoxLayout(self)
         
-        # 动作配置
-        action_group = QGroupBox("动作")
-        action_layout = QFormLayout()
+        # 检测区域
+        region_group = QGroupBox("检测区域")
+        region_layout = QVBoxLayout()
         
-        self.action_type_combo = QComboBox()
-        self.action_type_combo.addItems(["点击", "滑动", "等待"])
-        self.action_type_combo.currentIndexChanged.connect(self.on_action_type_changed)
-        action_layout.addRow("类型:", self.action_type_combo)
+        region_button_layout = QHBoxLayout()
+        self.select_region_btn = QPushButton("选择区域")
+        self.select_region_btn.clicked.connect(self.select_region)
+        self.clear_region_btn = QPushButton("全屏")
+        self.clear_region_btn.clicked.connect(self.clear_region)
+        region_button_layout.addWidget(self.select_region_btn)
+        region_button_layout.addWidget(self.clear_region_btn)
         
-        # 动作参数容器
-        self.action_widget_stack = QStackedWidget()
+        self.region_label = QLabel("检测全屏")
+        region_layout.addLayout(region_button_layout)
+        region_layout.addWidget(self.region_label)
+        region_group.setLayout(region_layout)
         
-        # 点击参数
-        click_widget = QWidget()
-        click_layout = QFormLayout(click_widget)
-        self.click_x = QSpinBox()
-        self.click_x.setRange(0, 9999)
-        self.click_y = QSpinBox()
-        self.click_y.setRange(0, 9999)
-        click_layout.addRow("X:", self.click_x)
-        click_layout.addRow("Y:", self.click_y)
-        self.action_widget_stack.addWidget(click_widget)
+        # 模板图片
+        template_group = QGroupBox("模板图片")
+        template_layout = QVBoxLayout()
         
-        # 滑动参数
-        swipe_widget = QWidget()
-        swipe_layout = QFormLayout(swipe_widget)
-        self.swipe_x1 = QSpinBox()
-        self.swipe_x1.setRange(0, 9999)
-        self.swipe_y1 = QSpinBox()
-        self.swipe_y1.setRange(0, 9999)
-        self.swipe_x2 = QSpinBox()
-        self.swipe_x2.setRange(0, 9999)
-        self.swipe_y2 = QSpinBox()
-        self.swipe_y2.setRange(0, 9999)
-        swipe_layout.addRow("起始X:", self.swipe_x1)
-        swipe_layout.addRow("起始Y:", self.swipe_y1)
-        swipe_layout.addRow("结束X:", self.swipe_x2)
-        swipe_layout.addRow("结束Y:", self.swipe_y2)
-        self.action_widget_stack.addWidget(swipe_widget)
+        template_button_layout = QHBoxLayout()
+        self.capture_template_btn = QPushButton("截取模板")
+        self.capture_template_btn.clicked.connect(self.capture_template)
+        template_button_layout.addWidget(self.capture_template_btn)
         
-        # 等待参数
-        wait_widget = QWidget()
-        wait_layout = QFormLayout(wait_widget)
-        self.wait_duration = QDoubleSpinBox()
-        self.wait_duration.setRange(0.1, 10)
-        self.wait_duration.setValue(1)
-        self.wait_duration.setSuffix(" 秒")
-        wait_layout.addRow("时长:", self.wait_duration)
-        self.action_widget_stack.addWidget(wait_widget)
+        self.template_label = QLabel("未选择模板")
+        self.template_label.setMinimumHeight(100)
+        self.template_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.template_label.setStyleSheet("border: 1px solid #ccc;")
         
-        action_layout.addRow(self.action_widget_stack)
-        action_group.setLayout(action_layout)
+        template_layout.addLayout(template_button_layout)
+        template_layout.addWidget(self.template_label)
+        template_group.setLayout(template_layout)
         
-        # 变量设置（可选）
-        variable_group = QGroupBox("执行后设置变量（可选）")
-        variable_layout = QFormLayout()
+        # 期望结果
+        expect_group = QGroupBox("期望结果")
+        expect_layout = QHBoxLayout()
         
-        self.set_variable_check = QCheckBox("设置变量")
-        self.variable_name = QLineEdit()
-        self.variable_value = QSpinBox()
-        self.variable_value.setRange(-9999, 9999)
+        self.expect_exist_radio = QRadioButton("✔ 存在（找到匹配）")
+        self.expect_exist_radio.setChecked(True)
+        self.expect_not_exist_radio = QRadioButton("❌ 不存在（找不到匹配）")
         
-        variable_layout.addRow(self.set_variable_check)
-        variable_layout.addRow("变量名:", self.variable_name)
-        variable_layout.addRow("值:", self.variable_value)
-        variable_group.setLayout(variable_layout)
+        expect_layout.addWidget(self.expect_exist_radio)
+        expect_layout.addWidget(self.expect_not_exist_radio)
+        expect_group.setLayout(expect_layout)
         
-        layout.addWidget(action_group)
-        layout.addWidget(variable_group)
+        # 匹配阈值
+        threshold_layout = QHBoxLayout()
+        threshold_layout.addWidget(QLabel("匹配阈值:"))
+        self.threshold_spin = QDoubleSpinBox()
+        self.threshold_spin.setRange(0.5, 1.0)
+        self.threshold_spin.setValue(0.85)
+        self.threshold_spin.setSingleStep(0.01)
+        threshold_layout.addWidget(self.threshold_spin)
+        threshold_layout.addStretch()
         
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
+        layout.addWidget(region_group)
+        layout.addWidget(template_group)
+        layout.addWidget(expect_group)
+        layout.addLayout(threshold_layout)
+        
+        # 按钮
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self.validate_and_accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
     
-    def on_action_type_changed(self, index):
-        self.action_widget_stack.setCurrentIndex(index)
+    def load_condition(self):
+        """加载条件"""
+        if self.condition:
+            self.region = self.condition.get('region')
+            if self.region and len(self.region) == 4:
+                x, y, w, h = self.region
+                self.region_label.setText(f"起始: ({x}, {y}) → 结束: ({x + w}, {y + h})")
+            
+            self.template_image = self.condition.get('template')
+            if self.template_image:
+                self.show_template_preview()
+            
+            expect_exist = self.condition.get('expect_exist', True)
+            if expect_exist:
+                self.expect_exist_radio.setChecked(True)
+            else:
+                self.expect_not_exist_radio.setChecked(True)
+            
+            self.threshold_spin.setValue(self.condition.get('threshold', 0.85))
     
-    def get_action_data(self):
-        index = self.action_type_combo.currentIndex()
+    def select_region(self):
+        """选择检测区域"""
+        dialog = RegionInputDialog(self, self.region)
+        if dialog.exec():
+            self.region = dialog.get_region()
+            x, y, w, h = self.region
+            self.region_label.setText(f"起始: ({x}, {y}) → 结束: ({x + w}, {y + h})")
+    
+    def clear_region(self):
+        """清除区域"""
+        self.region = None
+        self.region_label.setText("检测全屏")
+    
+    def capture_template(self):
+        """截取模板"""
+        screenshot = None
         
-        # 构建动作
-        if index == 0:  # 点击
-            action = {
-                'type': 'click',
-                'x': self.click_x.value(),
-                'y': self.click_y.value()
-            }
-        elif index == 1:  # 滑动
-            action = {
-                'type': 'swipe',
-                'x1': self.swipe_x1.value(),
-                'y1': self.swipe_y1.value(),
-                'x2': self.swipe_x2.value(),
-                'y2': self.swipe_y2.value(),
-                'duration': 300
-            }
-        else:  # 等待
-            action = {
-                'type': 'wait',
-                'duration': self.wait_duration.value()
-            }
+        # 1. 尝试获取截图
+        try:
+            # 检查是否是模拟器模式
+            is_simulator = False
+            hwnd = None
+            crop_rect = None
+            
+            if hasattr(self.controller, 'simulator_hwnd') and self.controller.simulator_hwnd:
+                is_simulator = True
+                hwnd = self.controller.simulator_hwnd
+                crop_rect = self.controller.simulator_crop_rect
+            
+            if is_simulator:
+                # 模拟器模式
+                full_screenshot = WindowCapture.capture_window_by_hwnd(hwnd)
+                if full_screenshot:
+                    if crop_rect:
+                        cx, cy, cw, ch = crop_rect
+                        w, h = full_screenshot.size
+                        if 0 <= cx < w and 0 <= cy < h:
+                            screenshot = full_screenshot.crop((cx, cy, cx + cw, cy + ch))
+                        else:
+                            screenshot = full_screenshot
+                    else:
+                        screenshot = full_screenshot
+            else:
+                # 设备模式
+                screenshot = WindowCapture.capture_window_safe("scrcpy", client_only=True)
+                
+        except Exception as e:
+            print(f"截图失败: {e}")
+            
+        if not screenshot:
+            msg = "无法截取模拟器窗口" if is_simulator else "无法找到Scrcpy窗口"
+            QMessageBox.warning(self, "警告", msg)
+            return
         
-        result = {'action': action}
+        if self.region:
+            x, y, w, h = self.region
+            
+            window_width, window_height = screenshot.size
+            device_width, device_height = self.controller.get_device_resolution()
+            
+            window_aspect = window_width / window_height
+            
+            if window_aspect > 1.3:  # 横屏
+                actual_device_width = max(device_width, device_height)
+                actual_device_height = min(device_width, device_height)
+            else:  # 竖屏
+                actual_device_width = min(device_width, device_height)
+                actual_device_height = max(device_width, device_height)
+            
+            scale_x = window_width / actual_device_width
+            scale_y = window_height / actual_device_height
+            
+            window_x = int(x * scale_x)
+            window_y = int(y * scale_y)
+            window_w = int(w * scale_x)
+            window_h = int(h * scale_y)
+            
+            window_x = max(0, min(window_x, window_width - 1))
+            window_y = max(0, min(window_y, window_height - 1))
+            window_w = min(window_w, window_width - window_x)
+            window_h = min(window_h, window_height - window_y)
+            
+            if window_w > 0 and window_h > 0:
+                self.template_image = screenshot.crop((window_x, window_y,
+                                                       window_x + window_w,
+                                                       window_y + window_h))
+        else:
+            # 提示选择区域
+            dialog = RegionInputDialog(self)
+            if dialog.exec():
+                self.region = dialog.get_region()
+                self.capture_template()
+                return
         
-        # 添加变量设置
-        if self.set_variable_check.isChecked() and self.variable_name.text():
-            result['set_variable'] = {
-                'variable': self.variable_name.text(),
-                'value': self.variable_value.value()
-            }
+        self.show_template_preview()
+    
+    def show_template_preview(self):
+        """显示模板预览"""
+        if self.template_image:
+            try:
+                if self.template_image.mode != 'RGB':
+                    self.template_image = self.template_image.convert('RGB')
+                
+                img_array = np.array(self.template_image)
+                height, width = img_array.shape[:2]
+                
+                if len(img_array.shape) == 2:
+                    img_array = np.stack([img_array] * 3, axis=-1)
+                elif len(img_array.shape) == 3 and img_array.shape[2] == 4:
+                    img_array = img_array[:, :, :3]
+                
+                bytes_per_line = 3 * width
+                if not img_array.flags['C_CONTIGUOUS']:
+                    img_array = np.ascontiguousarray(img_array)
+                
+                qimg = QImage(
+                    img_array.data,
+                    width,
+                    height,
+                    bytes_per_line,
+                    QImage.Format.Format_RGB888
+                )
+                
+                pixmap = QPixmap.fromImage(qimg)
+                max_width = 300
+                max_height = 150
+                if pixmap.width() > max_width or pixmap.height() > max_height:
+                    pixmap = pixmap.scaled(
+                        max_width,
+                        max_height,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                
+                self.template_label.setPixmap(pixmap)
+            except Exception as e:
+                self.template_label.setText(f"预览失败: {str(e)}")
+    
+    def validate_and_accept(self):
+        """验证并接受"""
+        if not self.template_image:
+            QMessageBox.warning(self, "警告", "请截取模板图片")
+            return
+        self.accept()
+    
+    def get_condition(self):
+        """获取条件配置"""
+        if not self.template_image:
+            return None
         
-        return result
+        return {
+            'region': self.region,
+            'template': self.template_image,
+            'expect_exist': self.expect_exist_radio.isChecked(),
+            'threshold': self.threshold_spin.value()
+        }
+
+
+class IFPairDialog(QDialog):
+    """IF条件-动作对配置对话框"""
+    
+    def __init__(self, controller, parent=None, pair=None):
+        super().__init__(parent)
+        self.controller = controller
+        self.pair = pair or {}
+        self.conditions = self.pair.get('conditions', [])
+        self.actions = self.pair.get('actions', [])
+        
+        self.setWindowTitle("配置条件-动作对")
+        self.setModal(True)
+        self.setMinimumSize(600, 500)
+        
+        self.initUI()
+        self.load_pair()
+    
+    def initUI(self):
+        layout = QVBoxLayout(self)
+        
+        # 条件配置
+        condition_group = QGroupBox("触发条件")
+        condition_layout = QVBoxLayout()
+        
+        # 条件逻辑
+        logic_layout = QHBoxLayout()
+        logic_layout.addWidget(QLabel("条件逻辑:"))
+        self.logic_combo = QComboBox()
+        self.logic_combo.addItems(["AND (全部满足)", "OR (任一满足)"])
+        logic_layout.addWidget(self.logic_combo)
+        logic_layout.addStretch()
+        condition_layout.addLayout(logic_layout)
+        
+        # 条件列表
+        self.condition_list = QListWidget()
+        self.condition_list.setMaximumHeight(120)
+        
+        # 条件按钮
+        cond_btn_layout = QHBoxLayout()
+        self.add_cond_menu_btn = QPushButton("添加条件")
+        cond_menu = QMenu()
+        cond_menu.addAction("变量条件", self.add_variable_condition)
+        cond_menu.addAction("图像检测", self.add_image_condition)
+        self.add_cond_menu_btn.setMenu(cond_menu)
+        
+        self.edit_cond_btn = QPushButton("编辑")
+        self.edit_cond_btn.clicked.connect(self.edit_condition)
+        self.remove_cond_btn = QPushButton("删除")
+        self.remove_cond_btn.clicked.connect(self.remove_condition)
+        
+        cond_btn_layout.addWidget(self.add_cond_menu_btn)
+        cond_btn_layout.addWidget(self.edit_cond_btn)
+        cond_btn_layout.addWidget(self.remove_cond_btn)
+        
+        condition_layout.addWidget(self.condition_list)
+        condition_layout.addLayout(cond_btn_layout)
+        condition_group.setLayout(condition_layout)
+        
+        # 动作配置
+        action_group = QGroupBox("执行动作")
+        action_layout = QVBoxLayout()
+        
+        self.action_list = QListWidget()
+        self.action_list.setMaximumHeight(120)
+        
+        # 动作按钮
+        action_btn_layout = QHBoxLayout()
+        self.add_action_btn = QPushButton("添加动作")
+        self.add_action_btn.clicked.connect(self.add_action)
+        self.edit_action_btn = QPushButton("编辑")
+        self.edit_action_btn.clicked.connect(self.edit_action)
+        self.remove_action_btn = QPushButton("删除")
+        self.remove_action_btn.clicked.connect(self.remove_action)
+        
+        action_btn_layout.addWidget(self.add_action_btn)
+        action_btn_layout.addWidget(self.edit_action_btn)
+        action_btn_layout.addWidget(self.remove_action_btn)
+        
+        action_layout.addWidget(self.action_list)
+        action_layout.addLayout(action_btn_layout)
+        action_group.setLayout(action_layout)
+        
+        layout.addWidget(condition_group)
+        layout.addWidget(action_group)
+        
+        # 按钮
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self.validate_and_accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+    
+    def load_pair(self):
+        """加载条件-动作对"""
+        if self.pair:
+            logic = self.pair.get('logic', 'AND')
+            if 'AND' in logic:
+                self.logic_combo.setCurrentIndex(0)
+            else:
+                self.logic_combo.setCurrentIndex(1)
+            
+            self.refresh_condition_list()
+            self.refresh_action_list()
+    
+    def add_variable_condition(self):
+        """添加变量条件"""
+        dialog = ConditionDialog(self)
+        if dialog.exec():
+            condition = dialog.get_condition()
+            condition['type'] = 'variable'
+            self.conditions.append(condition)
+            self.refresh_condition_list()
+    
+    def add_image_condition(self):
+        """添加图像条件"""
+        dialog = MultiConditionDialog(self.controller, self)
+        if dialog.exec():
+            condition = dialog.get_condition()
+            if condition:
+                condition['type'] = 'image'
+                self.conditions.append(condition)
+                self.refresh_condition_list()
+    
+    def edit_condition(self):
+        """编辑条件"""
+        current = self.condition_list.currentRow()
+        if current >= 0 and current < len(self.conditions):
+            condition = self.conditions[current]
+            if condition.get('type') == 'variable':
+                dialog = ConditionDialog(self, condition)
+                if dialog.exec():
+                    new_condition = dialog.get_condition()
+                    new_condition['type'] = 'variable'
+                    self.conditions[current] = new_condition
+            else:
+                dialog = MultiConditionDialog(self.controller, self, condition)
+                if dialog.exec():
+                    new_condition = dialog.get_condition()
+                    if new_condition:
+                        new_condition['type'] = 'image'
+                        self.conditions[current] = new_condition
+            self.refresh_condition_list()
+    
+    def remove_condition(self):
+        """删除条件"""
+        current = self.condition_list.currentRow()
+        if current >= 0:
+            del self.conditions[current]
+            self.refresh_condition_list()
+    
+    def refresh_condition_list(self):
+        """刷新条件列表"""
+        self.condition_list.clear()
+        for condition in self.conditions:
+            if condition.get('type') == 'variable':
+                var = condition.get('variable', '')
+                op = condition.get('operator', '==')
+                val = condition.get('value', 0)
+                text = f"[变量] {var} {op} {val}"
+            else:
+                region = condition.get('region')
+                region_text = "全屏" if not region else f"区域"
+                expect = "存在" if condition.get('expect_exist', True) else "不存在"
+                text = f"[图像] {region_text} - 期望{expect}"
+            self.condition_list.addItem(text)
+    
+    def add_action(self):
+        """添加动作"""
+        dialog = ActionEditDialog(self.controller, self)
+        if dialog.exec():
+            action = dialog.get_action()
+            if action:
+                self.actions.append(action)
+                self.refresh_action_list()
+    
+    def edit_action(self):
+        """编辑动作"""
+        current = self.action_list.currentRow()
+        if current >= 0 and current < len(self.actions):
+            dialog = ActionEditDialog(self.controller, self, self.actions[current])
+            if dialog.exec():
+                self.actions[current] = dialog.get_action()
+                self.refresh_action_list()
+    
+    def remove_action(self):
+        """删除动作"""
+        current = self.action_list.currentRow()
+        if current >= 0:
+            del self.actions[current]
+            self.refresh_action_list()
+    
+    def refresh_action_list(self):
+        """刷新动作列表"""
+        self.action_list.clear()
+        for action in self.actions:
+            # 使用父窗口的format_action_text方法
+            if hasattr(self.parent(), 'format_action_text'):
+                text = self.parent().format_action_text(action)
+            else:
+                text = str(action.get('type', 'unknown'))
+            self.action_list.addItem(text)
+    
+    def validate_and_accept(self):
+        """验证并接受"""
+        if not self.conditions:
+            QMessageBox.warning(self, "警告", "请添加至少一个条件")
+            return
+        if not self.actions:
+            QMessageBox.warning(self, "警告", "请添加至少一个动作")
+            return
+        self.accept()
+    
+    def get_if_pair(self):
+        """获取条件-动作对"""
+        return {
+            'logic': self.logic_combo.currentText(),
+            'conditions': self.conditions,
+            'actions': self.actions
+        }
+
+
+class ActionSequenceDialog(QDialog):
+    """动作序列配置对话框"""
+    
+    def __init__(self, controller, parent=None, sequence=None):
+        super().__init__(parent)
+        self.controller = controller
+        self.sequence = sequence or {}
+        self.actions = self.sequence.get('actions', [])
+        
+        self.setWindowTitle("配置动作序列")
+        self.setModal(True)
+        self.setMinimumWidth(500)
+        
+        self.initUI()
+        self.load_sequence()
+    
+    def initUI(self):
+        layout = QVBoxLayout(self)
+        
+        # 序列名称
+        name_layout = QHBoxLayout()
+        name_layout.addWidget(QLabel("序列名称:"))
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("输入序列名称...")
+        name_layout.addWidget(self.name_input)
+        layout.addLayout(name_layout)
+        
+        # 动作列表
+        action_group = QGroupBox("动作步骤")
+        action_layout = QVBoxLayout()
+        
+        self.action_list = QListWidget()
+        self.action_list.setMaximumHeight(200)
+        
+        # 动作按钮
+        action_btn_layout = QHBoxLayout()
+        self.add_action_btn = QPushButton("添加动作")
+        self.add_action_btn.clicked.connect(self.add_action)
+        self.edit_action_btn = QPushButton("编辑")
+        self.edit_action_btn.clicked.connect(self.edit_action)
+        self.remove_action_btn = QPushButton("删除")
+        self.remove_action_btn.clicked.connect(self.remove_action)
+        self.move_up_btn = QPushButton("上移")
+        self.move_up_btn.clicked.connect(self.move_action_up)
+        self.move_down_btn = QPushButton("下移")
+        self.move_down_btn.clicked.connect(self.move_action_down)
+        
+        action_btn_layout.addWidget(self.add_action_btn)
+        action_btn_layout.addWidget(self.edit_action_btn)
+        action_btn_layout.addWidget(self.remove_action_btn)
+        action_btn_layout.addWidget(self.move_up_btn)
+        action_btn_layout.addWidget(self.move_down_btn)
+        
+        action_layout.addWidget(self.action_list)
+        action_layout.addLayout(action_btn_layout)
+        action_group.setLayout(action_layout)
+        
+        layout.addWidget(action_group)
+        
+        # 按钮
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self.validate_and_accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+    
+    def load_sequence(self):
+        """加载序列"""
+        if self.sequence:
+            self.name_input.setText(self.sequence.get('name', ''))
+            self.refresh_action_list()
+    
+    def add_action(self):
+        """添加动作"""
+        dialog = ActionEditDialog(self.controller, self)
+        if dialog.exec():
+            action = dialog.get_action()
+            if action:
+                self.actions.append(action)
+                self.refresh_action_list()
+    
+    def edit_action(self):
+        """编辑动作"""
+        current = self.action_list.currentRow()
+        if current >= 0 and current < len(self.actions):
+            dialog = ActionEditDialog(self.controller, self, self.actions[current])
+            if dialog.exec():
+                self.actions[current] = dialog.get_action()
+                self.refresh_action_list()
+    
+    def remove_action(self):
+        """删除动作"""
+        current = self.action_list.currentRow()
+        if current >= 0:
+            del self.actions[current]
+            self.refresh_action_list()
+    
+    def move_action_up(self):
+        """上移动作"""
+        current = self.action_list.currentRow()
+        if current > 0:
+            self.actions[current], self.actions[current-1] = self.actions[current-1], self.actions[current]
+            self.refresh_action_list()
+            self.action_list.setCurrentRow(current - 1)
+    
+    def move_action_down(self):
+        """下移动作"""
+        current = self.action_list.currentRow()
+        if current >= 0 and current < len(self.actions) - 1:
+            self.actions[current], self.actions[current+1] = self.actions[current+1], self.actions[current]
+            self.refresh_action_list()
+            self.action_list.setCurrentRow(current + 1)
+    
+    def refresh_action_list(self):
+        """刷新动作列表"""
+        self.action_list.clear()
+        for i, action in enumerate(self.actions, 1):
+            # 使用父窗口的format_action_text方法
+            if hasattr(self.parent(), 'format_action_text'):
+                text = f"{i}. {self.parent().format_action_text(action)}"
+            else:
+                text = f"{i}. {action.get('type', 'unknown')}"
+            self.action_list.addItem(text)
+    
+    def validate_and_accept(self):
+        """验证并接受"""
+        if not self.name_input.text():
+            QMessageBox.warning(self, "警告", "请输入序列名称")
+            return
+        if not self.actions:
+            QMessageBox.warning(self, "警告", "请添加至少一个动作")
+            return
+        self.accept()
+    
+    def get_action_sequence(self):
+        """获取动作序列"""
+        return {
+            'name': self.name_input.text(),
+            'actions': self.actions
+        }
+
+

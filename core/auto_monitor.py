@@ -30,6 +30,11 @@ class AutoMonitor(QObject):
         self.check_interval = 0.5
         self.use_window_capture = True  # 强制使用窗口截图
         self.global_variables = {}  # 公共变量存储
+        self.variable_server = None  # 变量服务器实例
+        self.sync_variables = []  # 同步变量配置
+        self.sync_interval = 1.0  # 同步间隔
+        self.last_sync_time = 0  # 上次同步时间
+        self.last_variable_values = {}  # 上次的变量值，用于检测变化
 
     def add_monitor_config(self, config):
         """添加监控配置"""
@@ -40,14 +45,31 @@ class AutoMonitor(QObject):
 
     def start_monitoring(self):
         """开始监控"""
-        if self.monitoring or not self.monitor_configs:
+        if self.monitoring:
+            return False
+            
+        # 检查是否有监控配置
+        if not self.monitor_configs:
+            self.log_message.emit("警告: 没有监控任务配置")
             return False
 
         self.monitoring = True
+        
         self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self.monitor_thread.start()
         self.status_update.emit("监控中...")
         self.log_message.emit("开始自动监控")
+        
+        # 记录网络同步状态
+        if self.variable_server:
+            self.log_message.emit("✅ 变量服务器已运行")
+        if self.sync_variables:
+            self.log_message.emit(f"已配置 {len(self.sync_variables)} 个同步变量")
+            for var in self.sync_variables:
+                direction_map = {'both': '↔', 'send': '→', 'receive': '←'}
+                arrow = direction_map.get(var.get('direction', 'both'), '↔')
+                self.log_message.emit(f"  {arrow} {var.get('name')}")
+        
         return True
 
     def stop_monitoring(self):
@@ -58,6 +80,10 @@ class AutoMonitor(QObject):
             self.controller.stop_playing()
         if self.monitor_thread:
             self.monitor_thread.join(timeout=2)
+        
+        # 注意：不断开网络连接，因为可能需要继续同步变量
+        # 网络连接由高级监控对话框管理
+        
         # 清空所有公共变量
         self.global_variables.clear()
         self.log_message.emit("已清空所有变量")
@@ -67,11 +93,14 @@ class AutoMonitor(QObject):
         """监控循环 - 从Scrcpy窗口截图"""
         while self.monitoring:
             try:
-                # 从Scrcpy窗口截图
-                screenshot = WindowCapture.capture_window_safe("scrcpy", client_only=True)
+                # 处理变量同步
+                self._sync_network_variables()
+                
+                # 从控制器获取截图（支持Scrcpy和模拟器）
+                screenshot = self.controller.screenshot()
 
                 if not screenshot:
-                    self.log_message.emit("无法获取Scrcpy窗口截图")
+                    self.log_message.emit("无法获取屏幕截图(Scrcpy/模拟器)")
                     time.sleep(self.check_interval)
                     continue
 
@@ -80,45 +109,292 @@ class AutoMonitor(QObject):
                     if not config.get('enabled', True):
                         continue
 
-                    # 检查条件（公共变量）
-                    if not self._check_conditions(config.get('conditions', [])):
-                        continue
-
                     # 检查冷却时间
                     current_time = time.time()
                     if current_time - config.get('last_executed', 0) < config.get('cooldown', 5):
                         continue
 
-                    # 如果有模板图片，进行模板匹配
-                    if config.get('template'):
-                        # 处理监控区域
-                        region_img = self._get_region_image(screenshot, config.get('region'))
-                        if not region_img:
-                            continue
-
-                        # 进行模板匹配
-                        if not self._match_template(region_img, config['template'], config['threshold']):
-                            continue
+                    # 获取任务模式
+                    task_mode = config.get('task_mode')
                     
-                    # 如果没有模板但有条件，仅根据条件判断
-                    # 条件已在前面检查过，这里直接执行
-                    
-                    self.log_message.emit(f"✅ 触发成功: {config['name']}")
-                    self.match_found.emit({
-                        'config': config,
-                        'index': i,
-                        'time': datetime.now().strftime("%H:%M:%S")
-                    })
+                    if task_mode == 'IF':
+                        # IF模式：先检查统一条件，通过后再检查每个条件-动作对
+                        unified_conditions = config.get('unified_conditions', [])
+                        if unified_conditions:
+                            if not self._check_unified_conditions(screenshot, unified_conditions, config.get('condition_logic', 'AND (全部满足)'), log_details=False):
+                                continue
+                        
+                        self._execute_if_mode(config, screenshot, current_time, i)
+                    elif task_mode == 'RANDOM':
+                        # RANDOM模式：检查触发条件，然后随机执行动作序列
+                        # 检查统一条件
+                        unified_conditions = config.get('unified_conditions', [])
+                        if unified_conditions:
+                            if not self._check_unified_conditions(screenshot, unified_conditions, config.get('condition_logic', 'AND (全部满足)'), log_details=False):
+                                continue
+                        
+                        self.log_message.emit(f"✅ RANDOM模式触发: {config['name']}")
+                        self.match_found.emit({
+                            'config': config,
+                            'index': i,
+                            'time': datetime.now().strftime("%H:%M:%S")
+                        })
+                        
+                        # 随机选择并执行一个动作序列
+                        self._execute_random_mode(config)
+                        config['last_executed'] = current_time
+                    else:
+                        # 传统模式（兼容旧版本）
+                        # 检查统一条件
+                        unified_conditions = config.get('unified_conditions', [])
+                        if unified_conditions:
+                            if not self._check_unified_conditions(screenshot, unified_conditions, config.get('condition_logic', 'AND (全部满足)'), log_details=False):
+                                continue
+                        else:
+                            # 兼容旧版本：没有统一条件时，尝试使用旧格式
+                            # 检查旧版变量条件
+                            if not self._check_conditions(config.get('conditions', [])):
+                                continue
+                            
+                            # 检查旧版模板匹配
+                            if config.get('template'):
+                                region_img = self._get_region_image(screenshot, config.get('region'))
+                                if not region_img:
+                                    continue
+                                if not self._match_template(region_img, config['template'], config.get('threshold', 0.85)):
+                                    continue
+                        
+                        self.log_message.emit(f"✅ 触发成功: {config['name']}")
+                        self.match_found.emit({
+                            'config': config,
+                            'index': i,
+                            'time': datetime.now().strftime("%H:%M:%S")
+                        })
 
-                    # 执行预设动作
-                    self._execute_actions(config['actions'])
-                    config['last_executed'] = current_time
+                        # 执行预设动作
+                        self._execute_actions(config['actions'])
+                        config['last_executed'] = current_time
 
                 time.sleep(self.check_interval)
 
             except Exception as e:
+                import traceback
                 self.log_message.emit(f"监控错误: {str(e)}")
+                # 输出详细的错误信息到控制台，方便调试
+                print(f"监控循环错误详情:")
+                print(traceback.format_exc())
                 time.sleep(1)
+    
+    def _sync_network_variables(self):
+        """同步网络变量（双向）"""
+        # 如果没有配置同步变量，直接返回
+        if not self.sync_variables:
+            return
+            
+        current_time = time.time()
+        
+        # 检查同步间隔
+        if current_time - self.last_sync_time < self.sync_interval:
+            return
+        
+        self.last_sync_time = current_time
+        
+        # 检查是否有服务器运行
+        if not self.variable_server:
+            return
+        
+        # 处理每个同步变量
+        for var_config in self.sync_variables:
+            var_name = var_config.get('name')
+            direction = var_config.get('direction', 'both')
+            
+            if not var_name:
+                continue
+            
+            # 发送本地变量（send 或 both）
+            if direction in ['send', 'both']:
+                if var_name in self.global_variables:
+                    current_value = self.global_variables[var_name]
+                    last_value = self.last_variable_values.get(var_name)
+                    
+                    # 检测变量是否改变
+                    if current_value != last_value:
+                        self.last_variable_values[var_name] = current_value
+                        
+                        # 广播给所有客户端
+                        if self.variable_server:
+                            self.variable_server.set_variable(var_name, current_value)
+                            self.log_message.emit(f"📡 广播变量: {var_name} = {current_value}")
+            
+            # 注意：接收变量更新是通过variable_server的回调函数处理的
+            # 当客户端发送set_variable请求时，服务器会触发variable_updated信号
+    
+
+    
+    def _execute_if_mode(self, config, screenshot, current_time, config_index):
+        """执行IF模式"""
+        if_pairs = config.get('if_pairs', [])
+        any_condition_met = False  # 记录是否有任何条件满足
+        
+        for pair_index, pair in enumerate(if_pairs):
+            conditions = pair.get('conditions', [])
+            logic = pair.get('logic', 'AND (全部满足)')
+            
+            # 检查这个条件组（不输出详细日志）
+            if self._check_if_conditions(screenshot, conditions, logic, log_details=False):
+                # 条件满足时才输出日志
+                self.log_message.emit(f"✅ IF条件{pair_index + 1}满足: {config['name']}")
+                
+                # 执行对应的动作
+                actions = pair.get('actions', [])
+                if actions:
+                    self.log_message.emit(f"  执行条件{pair_index + 1}的动作序列...")
+                    self._execute_actions(actions)
+                
+                # 触发事件
+                self.match_found.emit({
+                    'config': config,
+                    'index': config_index,
+                    'pair_index': pair_index,
+                    'time': datetime.now().strftime("%H:%M:%S")
+                })
+                
+                any_condition_met = True
+                # 继续检查其他条件，不break
+        
+        # 只要有任何条件满足，就更新执行时间
+        if any_condition_met:
+            config['last_executed'] = current_time
+    
+    def _execute_random_mode(self, config):
+        """执行RANDOM模式"""
+        import random
+        
+        sequences = config.get('random_sequences', [])
+        if not sequences:
+            return
+        
+        # 随机选择一个序列
+        selected = random.choice(sequences)
+        selected_index = sequences.index(selected)
+        
+        self.log_message.emit(f"  随机选择序列 {selected_index + 1}/{len(sequences)}: {selected.get('name', '未命名')}")
+        
+        # 执行选中的动作序列
+        actions = selected.get('actions', [])
+        if actions:
+            self._execute_actions(actions)
+    
+    def _check_if_conditions(self, screenshot, conditions, logic, log_details=False):
+        """检查IF模式的条件组"""
+        if not conditions:
+            return False
+        
+        # 单条件优化：直接返回结果
+        if len(conditions) == 1:
+            condition = conditions[0]
+            condition_type = condition.get('type')
+            
+            if condition_type == 'variable':
+                # 变量条件
+                var_name = condition.get('variable', '')
+                operator = condition.get('operator', '==')
+                value = condition.get('value', 0)
+                
+                if var_name not in self.global_variables:
+                    return False
+                else:
+                    current_value = self.global_variables[var_name]
+                    
+                    if operator == '==':
+                        return current_value == value
+                    elif operator == '!=':
+                        return current_value != value
+                    elif operator == '>':
+                        return current_value > value
+                    elif operator == '<':
+                        return current_value < value
+                    elif operator == '>=':
+                        return current_value >= value
+                    elif operator == '<=':
+                        return current_value <= value
+                    else:
+                        return False
+                        
+            elif condition_type == 'image':
+                # 图像检测条件
+                region_img = self._get_region_image(screenshot, condition.get('region'))
+                if not region_img:
+                    return False
+                else:
+                    template = condition.get('template')
+                    threshold = condition.get('threshold', 0.85)
+                    
+                    if template:
+                        match_result = self._match_template(region_img, template, threshold)
+                    else:
+                        return False
+                    
+                    expect_exist = condition.get('expect_exist', True)
+                    return match_result if expect_exist else not match_result
+        
+        # 多条件情况
+        results = []
+        
+        for condition in conditions:
+            condition_type = condition.get('type')
+            
+            if condition_type == 'variable':
+                # 变量条件
+                var_name = condition.get('variable', '')
+                operator = condition.get('operator', '==')
+                value = condition.get('value', 0)
+                
+                if var_name not in self.global_variables:
+                    condition_met = False
+                else:
+                    current_value = self.global_variables[var_name]
+                    
+                    if operator == '==':
+                        condition_met = current_value == value
+                    elif operator == '!=':
+                        condition_met = current_value != value
+                    elif operator == '>':
+                        condition_met = current_value > value
+                    elif operator == '<':
+                        condition_met = current_value < value
+                    elif operator == '>=':
+                        condition_met = current_value >= value
+                    elif operator == '<=':
+                        condition_met = current_value <= value
+                    else:
+                        condition_met = False
+                
+                results.append(condition_met)
+                
+            elif condition_type == 'image':
+                # 图像检测条件
+                region_img = self._get_region_image(screenshot, condition.get('region'))
+                if not region_img:
+                    match_result = False
+                else:
+                    template = condition.get('template')
+                    threshold = condition.get('threshold', 0.85)
+                    
+                    if template:
+                        match_result = self._match_template(region_img, template, threshold)
+                    else:
+                        match_result = False
+                
+                expect_exist = condition.get('expect_exist', True)
+                condition_met = match_result if expect_exist else not match_result
+                results.append(condition_met)
+        
+        # 根据逻辑判断
+        if "AND" in logic:
+            return all(results) if results else False
+        else:  # OR
+            return any(results) if results else False
 
     def _get_region_image(self, screenshot, region):
         """获取区域图像（处理坐标转换）"""
@@ -190,15 +466,12 @@ class AutoMonitor(QObject):
             try:
                 action_type = action.get('type')
 
-                if action_type == 'random':
-                    # 随机选择一个子动作执行
-                    self._execute_random_action(action)
-
-                elif action_type == 'set_variable':
+                if action_type == 'set_variable':
                     # 设置或修改公共变量
                     var_name = action.get('variable', '')
                     operation = action.get('operation', 'set')
-                    
+                    if self.variable_server and self.variable_server.running:
+                        self.variable_server.set_variable(var_name, self.global_variables.get(var_name))
                     if operation == 'from_variable':
                         # 基于另一个变量的操作
                         source_var = action.get('source_variable', '')
@@ -298,32 +571,7 @@ class AutoMonitor(QObject):
             except Exception as e:
                 self.log_message.emit(f"  执行失败: {str(e)}")
     
-    def _execute_random_action(self, random_action):
-        """执行随机动作组"""
-        import random
-        
-        sub_actions = random_action.get('sub_actions', [])
-        if not sub_actions:
-            return
-            
-        # 随机选择一个子动作
-        selected = random.choice(sub_actions)
-        selected_index = sub_actions.index(selected)
-        
-        self.log_message.emit(f"  随机选择动作 {selected_index + 1}/{len(sub_actions)}")
-        
-        # 执行选中的动作
-        action_to_execute = selected.get('action', {})
-        if action_to_execute:
-            self._execute_actions([action_to_execute])
-        
-        # 设置对应的变量
-        if 'set_variable' in selected:
-            var_name = selected['set_variable'].get('variable', '')
-            var_value = selected['set_variable'].get('value', 0)
-            if var_name:
-                self.global_variables[var_name] = var_value
-                self.log_message.emit(f"    设置变量: {var_name} = {var_value}")
+
     
     def _check_conditions(self, conditions):
         """检查条件是否满足"""
@@ -354,6 +602,148 @@ class AutoMonitor(QObject):
                 return False
                 
         return True
+    
+    def _check_unified_conditions(self, screenshot, unified_conditions, logic, log_details=True):
+        """检查统一条件（支持AND/OR/NOT）"""
+        if not unified_conditions:
+            return True
+        
+        # 单条件优化：直接返回结果，不进行逻辑判断
+        if len(unified_conditions) == 1:
+            condition = unified_conditions[0]
+            condition_type = condition.get('type')
+            
+            if condition_type == 'variable':
+                # 变量条件
+                var_name = condition.get('variable', '')
+                operator = condition.get('operator', '==')
+                value = condition.get('value', 0)
+                
+                if var_name not in self.global_variables:
+                    return False
+                else:
+                    current_value = self.global_variables[var_name]
+                    
+                    if operator == '==':
+                        condition_met = current_value == value
+                    elif operator == '!=':
+                        condition_met = current_value != value
+                    elif operator == '>':
+                        condition_met = current_value > value
+                    elif operator == '<':
+                        condition_met = current_value < value
+                    elif operator == '>=':
+                        condition_met = current_value >= value
+                    elif operator == '<=':
+                        condition_met = current_value <= value
+                    else:
+                        condition_met = False
+                    
+                    # 只在满足时输出日志
+                    if condition_met and log_details:
+                        self.log_message.emit(f"  [变量] {var_name} {operator} {value} → 满足")
+                    
+                    return condition_met
+                    
+            elif condition_type == 'image':
+                # 图像检测条件
+                region_img = self._get_region_image(screenshot, condition.get('region'))
+                if not region_img:
+                    return False
+                else:
+                    template = condition.get('template')
+                    threshold = condition.get('threshold', 0.85)
+                    
+                    if template:
+                        match_result = self._match_template(region_img, template, threshold)
+                    else:
+                        return False
+                    
+                    expect_exist = condition.get('expect_exist', True)
+                    condition_met = match_result if expect_exist else not match_result
+                    
+                    # 只在满足时输出日志
+                    if condition_met and log_details:
+                        exist_text = "检测到" if match_result else "未检测到"
+                        self.log_message.emit(f"  [图像] {exist_text} → 满足")
+                    
+                    return condition_met
+        
+        # 多条件情况：需要进行逻辑判断
+        results = []
+        
+        for i, condition in enumerate(unified_conditions):
+            condition_type = condition.get('type')
+            
+            if condition_type == 'variable':
+                # 变量条件
+                var_name = condition.get('variable', '')
+                operator = condition.get('operator', '==')
+                value = condition.get('value', 0)
+                
+                if var_name not in self.global_variables:
+                    condition_met = False
+                else:
+                    current_value = self.global_variables[var_name]
+                    
+                    if operator == '==':
+                        condition_met = current_value == value
+                    elif operator == '!=':
+                        condition_met = current_value != value
+                    elif operator == '>':
+                        condition_met = current_value > value
+                    elif operator == '<':
+                        condition_met = current_value < value
+                    elif operator == '>=':
+                        condition_met = current_value >= value
+                    elif operator == '<=':
+                        condition_met = current_value <= value
+                    else:
+                        condition_met = False
+                
+                results.append(condition_met)
+                
+            elif condition_type == 'image':
+                # 图像检测条件
+                region_img = self._get_region_image(screenshot, condition.get('region'))
+                if not region_img:
+                    match_result = False
+                else:
+                    template = condition.get('template')
+                    threshold = condition.get('threshold', 0.85)
+                    
+                    if template:
+                        match_result = self._match_template(region_img, template, threshold)
+                    else:
+                        match_result = False
+                
+                expect_exist = condition.get('expect_exist', True)
+                condition_met = match_result if expect_exist else not match_result
+                
+                results.append(condition_met)
+        
+        # 根据逻辑判断最终结果
+        if "AND" in logic:
+            # AND模式：全部满足
+            final_result = all(results) if results else False
+            if final_result and log_details:
+                self.log_message.emit(f"  AND逻辑: {len(results)}/{len(results)} 满足 → 通过")
+        elif "OR" in logic:
+            # OR模式：任一满足
+            final_result = any(results) if results else False
+            if final_result and log_details:
+                satisfied = len([r for r in results if r])
+                self.log_message.emit(f"  OR逻辑: {satisfied}/{len(results)} 满足 → 通过")
+        elif "NOT" in logic:
+            # NOT模式：全部不满足
+            final_result = not any(results) if results else True
+            if final_result and log_details:
+                not_satisfied = len([r for r in results if not r])
+                self.log_message.emit(f"  NOT逻辑: {not_satisfied}/{len(results)} 不满足 → 通过")
+        else:
+            final_result = False
+        
+        return final_result
 
     def _execute_recording(self, action):
         """执行录制脚本文件"""
@@ -396,6 +786,46 @@ class AutoMonitor(QObject):
                     # 没有模板图片时保存为null
                     config_copy['template'] = None
                 
+                # 处理统一条件中的图片
+                if 'unified_conditions' in config_copy:
+                    unified_conditions_copy = []
+                    for condition in config_copy['unified_conditions']:
+                        cond_copy = condition.copy()
+                        if condition.get('type') == 'image' and 'template' in condition:
+                            template = condition.get('template')
+                            if template is not None:
+                                buffered = BytesIO()
+                                template.save(buffered, format="PNG")
+                                img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                                cond_copy['template'] = img_base64
+                            else:
+                                cond_copy['template'] = None
+                        unified_conditions_copy.append(cond_copy)
+                    config_copy['unified_conditions'] = unified_conditions_copy
+                
+                # 处理IF模式的条件-动作对中的图片
+                if 'if_pairs' in config_copy:
+                    if_pairs_copy = []
+                    for pair in config_copy['if_pairs']:
+                        pair_copy = pair.copy()
+                        if 'conditions' in pair_copy:
+                            conditions_copy = []
+                            for condition in pair_copy['conditions']:
+                                cond_copy = condition.copy()
+                                if condition.get('type') == 'image' and 'template' in condition:
+                                    template = condition.get('template')
+                                    if template is not None:
+                                        buffered = BytesIO()
+                                        template.save(buffered, format="PNG")
+                                        img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                                        cond_copy['template'] = img_base64
+                                    else:
+                                        cond_copy['template'] = None
+                                conditions_copy.append(cond_copy)
+                            pair_copy['conditions'] = conditions_copy
+                        if_pairs_copy.append(pair_copy)
+                    config_copy['if_pairs'] = if_pairs_copy
+                
                 config_copy.pop('last_executed', None)
                 configs_to_save.append(config_copy)
 
@@ -432,6 +862,30 @@ class AutoMonitor(QObject):
                 else:
                     # 没有模板图片
                     config['template'] = None
+                
+                # 处理统一条件中的图片
+                if 'unified_conditions' in config:
+                    for condition in config['unified_conditions']:
+                        if condition.get('type') == 'image' and 'template' in condition:
+                            template_data = condition.get('template')
+                            if template_data is not None and template_data != '':
+                                img_data = base64.b64decode(template_data)
+                                condition['template'] = Image.open(BytesIO(img_data))
+                            else:
+                                condition['template'] = None
+                
+                # 处理IF模式的条件-动作对中的图片
+                if 'if_pairs' in config:
+                    for pair in config['if_pairs']:
+                        if 'conditions' in pair:
+                            for condition in pair['conditions']:
+                                if condition.get('type') == 'image' and 'template' in condition:
+                                    template_data = condition.get('template')
+                                    if template_data is not None and template_data != '':
+                                        img_data = base64.b64decode(template_data)
+                                        condition['template'] = Image.open(BytesIO(img_data))
+                                    else:
+                                        condition['template'] = None
                 
                 config['last_executed'] = 0
                 self.monitor_configs.append(config)

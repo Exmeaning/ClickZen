@@ -22,7 +22,7 @@ def setup_crash_handler():
         with open(error_file, 'w', encoding='utf-8') as f:
             f.write(f"=== Phone Controller Crash Report ===\n")
             f.write(f"Time: {datetime.datetime.now()}\n")
-            f.write(f"Version: 1.0.0\n")
+            f.write(f"Version: 1.3.0\n")
             f.write(f"Python: {sys.version}\n")
             f.write(f"OS: {os.name} {sys.platform}\n\n=== Error Details ===\n")
             traceback.print_exception(exc_type, exc_value, exc_traceback, file=f)

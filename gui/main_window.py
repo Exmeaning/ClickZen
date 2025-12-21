@@ -5,13 +5,20 @@ import sys
 import json
 from datetime import datetime
 import time
+import urllib.request
 from core.auto_monitor import AutoMonitor
 from gui.monitor_dialog import MonitorTaskDialog
 from gui.settings_dialog import SettingsDialog
 from utils.config import VERSION
+from gui.device_manager import DeviceManager
+from gui.left_panel import LeftPanel
+from gui.center_panel import CenterPanel
+from gui.right_panel import RightPanel
 
 
 class MainWindow(QMainWindow):
+    # 添加自定义信号
+    version_fetched = pyqtSignal(str)
 
     def __init__(self, config, adb_manager, scrcpy_manager, controller):
         super().__init__()
@@ -25,10 +32,20 @@ class MainWindow(QMainWindow):
         self.auto_monitor.match_found.connect(self.on_auto_match_found)
         self.auto_monitor.status_update.connect(self.on_monitor_status_update)
         self.auto_monitor.log_message.connect(self.log)
-        self.initUI()
-        self.setup_shortcuts()
+        # 连接版本检测信号
+        self.version_fetched.connect(self.update_version_label)
         self.current_device_coords = (0, 0)
+        # 初始化设备管理器
+        self.device_manager = DeviceManager(self, adb_manager)
+        # 模拟器模式状态
+        self.simulator_mode_active = False
+        self.simulator_hwnd = None
+        self.simulator_crop_rect = None
+        self.simulator_window_title = None
+        # 先初始化UI，再设置坐标追踪器
+        self.initUI()
         self.setup_coordinate_tracker()
+        self.setup_shortcuts()
         self.on_randomization_changed()
 
     def setup_coordinate_tracker(self):
@@ -63,19 +80,38 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, "成功", "监控方案已加载")
 
     def update_mouse_coordinates(self):
-        """更新鼠标坐标显示 - 修复设备坐标"""
+        """更新鼠标坐标显示 - 支持设备模式和模拟器模式"""
         try:
+            # 检查UI是否已初始化
+            if not hasattr(self, 'screen_coord_label') or not hasattr(self, 'device_coord_label'):
+                return
+                
             import win32gui
 
             # 获取鼠标位置
             cursor_pos = win32gui.GetCursorPos()
             self.screen_coord_label.setText(f"屏幕: ({cursor_pos[0]}, {cursor_pos[1]})")
 
-            # 使用WindowCapture查找Scrcpy窗口
-            from core.window_capture import WindowCapture
-            hwnd = WindowCapture.find_scrcpy_window()
+            # 根据模式选择窗口
+            if self.simulator_mode_active and self.simulator_hwnd:
+                # 模拟器模式
+                hwnd = self.simulator_hwnd
+                crop_rect = self.simulator_crop_rect
+                window_title = self.simulator_window_title or "模拟器"
+            else:
+                # 设备模式 - 使用WindowCapture查找Scrcpy窗口
+                from core.window_capture import WindowCapture
+                hwnd = WindowCapture.find_scrcpy_window()
+                crop_rect = None
+                window_title = "Scrcpy"
 
             if hwnd:
+                # 检查窗口是否有效
+                if not win32gui.IsWindow(hwnd) or not win32gui.IsWindowVisible(hwnd):
+                    self.device_coord_label.setText(f"设备: (-, -)")
+                    self.window_status_label.setText(f"{window_title}: 窗口无效")
+                    return
+                    
                 # 获取窗口客户区
                 rect = win32gui.GetClientRect(hwnd)
                 point = win32gui.ClientToScreen(hwnd, (0, 0))
@@ -96,42 +132,79 @@ class MainWindow(QMainWindow):
                     window_width = client_rect[2] - client_rect[0]
                     window_height = client_rect[3] - client_rect[1]
 
-                    # 获取设备分辨率
-                    device_width, device_height = self.controller.get_device_resolution()
-
-                    # 判断实际显示方向
-                    window_aspect = window_width / window_height if window_height > 0 else 1
-
-                    if window_aspect > 1.3:  # 横屏
-                        actual_width = max(device_width, device_height)
-                        actual_height = min(device_width, device_height)
-                        orientation = "横屏"
-                    else:  # 竖屏
-                        actual_width = min(device_width, device_height)
-                        actual_height = max(device_width, device_height)
-                        orientation = "竖屏"
-
-                    # 转换为设备坐标
-                    if window_width > 0 and window_height > 0:
-                        device_x = int(rel_x * actual_width / window_width)
-                        device_y = int(rel_y * actual_height / window_height)
-
-                        # 确保坐标在有效范围内
-                        device_x = max(0, min(device_x, actual_width - 1))
-                        device_y = max(0, min(device_y, actual_height - 1))
-
-                        self.current_device_coords = (device_x, device_y)
-                        self.device_coord_label.setText(f"设备: ({device_x}, {device_y})")
-                        self.window_status_label.setText(f"Scrcpy: {orientation} ({actual_width}x{actual_height})")
+                    if self.simulator_mode_active and crop_rect:
+                        # 模拟器模式 - 使用裁剪区域
+                        cx, cy, cw, ch = crop_rect
+                        
+                        # 检查是否在裁剪区域内
+                        if cx <= rel_x <= cx + cw and cy <= rel_y <= cy + ch:
+                            crop_rel_x = rel_x - cx
+                            crop_rel_y = rel_y - cy
+                            
+                            # 获取设备分辨率进行缩放映射
+                            device_w, device_h = self.controller.get_device_resolution()
+                            
+                            if cw > 0 and ch > 0:
+                                scale_x = device_w / cw
+                                scale_y = device_h / ch
+                                
+                                device_x = int(crop_rel_x * scale_x)
+                                device_y = int(crop_rel_y * scale_y)
+                            else:
+                                device_x = int(crop_rel_x)
+                                device_y = int(crop_rel_y)
+                            
+                            device_x = max(0, min(device_x, device_w - 1))
+                            device_y = max(0, min(device_y, device_h - 1))
+                            
+                            self.current_device_coords = (device_x, device_y)
+                            self.device_coord_label.setText(f"设备: ({device_x}, {device_y})")
+                            self.window_status_label.setText(f"模拟器: 裁剪区域 ({cw}x{ch}) -> 设备 ({device_w}x{device_h})")
+                        else:
+                            self.device_coord_label.setText(f"设备: (-, -)")
+                            self.window_status_label.setText(f"模拟器: 鼠标在裁剪区域外")
                     else:
-                        self.device_coord_label.setText(f"设备: (-, -)")
-                        self.window_status_label.setText(f"Scrcpy: 计算错误")
+                        # 设备模式 - 原有逻辑
+                        # 获取设备分辨率
+                        device_width, device_height = self.controller.get_device_resolution()
+
+                        # 判断实际显示方向
+                        window_aspect = window_width / window_height if window_height > 0 else 1
+
+                        if window_aspect > 1.3:  # 横屏
+                            actual_width = max(device_width, device_height)
+                            actual_height = min(device_width, device_height)
+                            orientation = "横屏"
+                        else:  # 竖屏
+                            actual_width = min(device_width, device_height)
+                            actual_height = max(device_width, device_height)
+                            orientation = "竖屏"
+
+                        # 转换为设备坐标
+                        if window_width > 0 and window_height > 0:
+                            device_x = int(rel_x * actual_width / window_width)
+                            device_y = int(rel_y * actual_height / window_height)
+
+                            # 确保坐标在有效范围内
+                            device_x = max(0, min(device_x, actual_width - 1))
+                            device_y = max(0, min(device_y, actual_height - 1))
+
+                            self.current_device_coords = (device_x, device_y)
+                            self.device_coord_label.setText(f"设备: ({device_x}, {device_y})")
+                            self.window_status_label.setText(f"Scrcpy: {orientation} ({actual_width}x{actual_height})")
+                        else:
+                            self.device_coord_label.setText(f"设备: (-, -)")
+                            self.window_status_label.setText(f"Scrcpy: 计算错误")
                 else:
                     self.device_coord_label.setText(f"设备: (-, -)")
-                    self.window_status_label.setText(f"Scrcpy: 鼠标在窗口外")
+                    status_text = "模拟器" if self.simulator_mode_active else "Scrcpy"
+                    self.window_status_label.setText(f"{status_text}: 鼠标在窗口外")
             else:
                 self.device_coord_label.setText(f"设备: (-, -)")
-                self.window_status_label.setText(f"Scrcpy: 未找到窗口")
+                if self.simulator_mode_active:
+                    self.window_status_label.setText(f"模拟器: 未选择窗口")
+                else:
+                    self.window_status_label.setText(f"Scrcpy: 未找到窗口")
 
         except Exception as e:
             self.device_coord_label.setText(f"设备: (-, -)")
@@ -146,50 +219,108 @@ class MainWindow(QMainWindow):
                                      2000)
     def initUI(self):
         self.setWindowTitle(f"ClickZen - 智能点击助手 v{VERSION}")
-        self.setGeometry(100, 100, 900, 700)
+        
+        # 设置窗口
+        screen = QApplication.primaryScreen()
+        screen = QApplication.primaryScreen()
+        screen_rect = screen.availableGeometry()
+        width = int(1280)
+        height = int(900)
+        self.setGeometry(
+            int((screen_rect.width() - width) / 2),
+            int((screen_rect.height() - height) / 2),
+            width, height
+        )
+        
+        # 设置最小窗口大小
+        self.setMinimumSize(1280, 720)
         
         # 设置窗口图标（可选）
         self.setWindowIcon(QIcon())
+        
+        # 设置现代化样式
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #f5f5f5;
+            }
+            QStatusBar {
+                background-color: #37474F;
+                color: white;
+                font-size: 13px;
+            }
+            QStatusBar::item {
+                border: none;
+            }
+        """)
         
         # 创建菜单栏
         self.create_menu_bar()
 
         # 创建中心部件
         central_widget = QWidget()
+        central_widget.setStyleSheet("background-color: #f5f5f5;")
         self.setCentralWidget(central_widget)
 
-        # 主布局
+        # 主布局 - 三栏设计
         main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
 
-        # 左侧控制面板
-        left_panel = self.create_left_panel()
-        main_layout.addWidget(left_panel, 1)
-
-        # 右侧信息面板
-        right_panel = self.create_right_panel()
-        main_layout.addWidget(right_panel, 2)
+        # 左栏 - 设备和Scrcpy控制
+        self.left_panel = LeftPanel(self)
+        self.left_panel.setMaximumWidth(400)
+        self.left_panel.setMinimumWidth(350)
+        
+        # 中栏 - 操作录制和智能监控
+        self.center_panel = CenterPanel(self)
+        self.center_panel.setMinimumWidth(400)
+        
+        # 右栏 - 坐标显示和日志
+        self.right_panel = RightPanel(self)
+        self.right_panel.setMinimumWidth(400)
+        
+        # 添加分隔器使面板可调整大小
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.addWidget(self.left_panel)
+        splitter.addWidget(self.center_panel)
+        splitter.addWidget(self.right_panel)
+        splitter.setStretchFactor(0, 2)  # 左栏比例
+        splitter.setStretchFactor(1, 3)  # 中栏比例
+        splitter.setStretchFactor(2, 3)  # 右栏比例
+        
+        main_layout.addWidget(splitter)
 
         # 状态栏
         status_bar = self.statusBar()
         status_bar.showMessage("就绪")
         
-        # 添加GitHub链接到状态栏
-        github_label = QLabel('<a href="https://github.com/Exmeaning/ClickZen">GitHub: ClickZen</a>')
-        github_label.setOpenExternalLinks(True)
-        github_label.setStyleSheet("margin-right: 10px;")
-        status_bar.addPermanentWidget(github_label)
-
-        # 连接信号
-        self.scrcpy.started.connect(lambda: self.statusBar().showMessage("Scrcpy已启动"))
-        self.scrcpy.stopped.connect(lambda: self.statusBar().showMessage("Scrcpy已停止"))
-        self.scrcpy.error.connect(lambda msg: self.statusBar().showMessage(f"错误: {msg}"))
+        # 连接面板信号
+        self.connect_panel_signals()
+        
+        # 连接Scrcpy信号
+        self.scrcpy.started.connect(lambda: self.statusBar().showMessage("✓ Scrcpy已启动"))
+        self.scrcpy.stopped.connect(lambda: self.statusBar().showMessage("■ Scrcpy已停止"))
+        self.scrcpy.error.connect(lambda msg: self.statusBar().showMessage(f"✗ 错误: {msg}"))
         self.scrcpy.log.connect(self.log)
 
         # 连接控制器信号
         self.controller.action_recorded.connect(self.on_action_recorded)
         
+        # 连接设备监控器信号（如果存在）
+        if hasattr(self.controller, 'device_monitor'):
+            self.controller.device_monitor.log_message.connect(self.log)
+            self.controller.device_monitor.error_occurred.connect(
+                lambda msg: self.log(f"设备监控错误: {msg}", "error")
+            )
+        
+        # 初始化面板引用（兼容旧代码）
+        self.setup_widget_references()
+        
         # 加载并应用设置
         self.load_and_apply_settings()
+        
+        # 检查版本
+        QTimer.singleShot(1000, self.check_latest_version)
 
     def create_menu_bar(self):
         """创建菜单栏"""
@@ -229,6 +360,13 @@ class MainWindow(QMainWindow):
         
         tools_menu.addSeparator()
         
+        # 高级监控功能
+        advanced_monitor_action = QAction("🌐 高级监控功能", self)
+        advanced_monitor_action.triggered.connect(self.open_advanced_monitor)
+        tools_menu.addAction(advanced_monitor_action)
+        
+        tools_menu.addSeparator()
+        
         # 截图
         screenshot_action = QAction("截图", self)
         screenshot_action.setShortcut("Ctrl+P")
@@ -255,6 +393,12 @@ class MainWindow(QMainWindow):
         dialog.settings_changed.connect(self.on_settings_changed)
         dialog.exec()
     
+    def open_advanced_monitor(self):
+        """打开高级监控功能对话框"""
+        from gui.advanced_monitor_dialog import AdvancedMonitorDialog
+        dialog = AdvancedMonitorDialog(self.auto_monitor, self)
+        dialog.exec()
+    
     def on_settings_changed(self, settings):
         """设置改变时的处理"""
         # 应用坐标更新间隔
@@ -268,6 +412,41 @@ class MainWindow(QMainWindow):
         
         self.log(f"设置已更新")
     
+    def check_latest_version(self):
+        """检查GitHub最新版本（使用信号机制）"""
+        from threading import Thread
+        
+        def fetch():
+            try:
+                req = urllib.request.Request(
+                    'https://github.com/Exmeaning/ClickZen/releases/latest',
+                    headers={'User-Agent': 'Mozilla/5.0'}  # 添加UA避免被拒绝
+                )
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    final_url = response.geturl()
+                    # 从URL提取版本号
+                    if '/tag/' in final_url:
+                        version = final_url.split('/tag/')[-1]
+                        self.version_fetched.emit(version)  # 发射信号
+                    else:
+                        self.version_fetched.emit('')  # 空字符串表示失败
+            except Exception as e:
+                # 出错时也发射信号，显示获取失败
+                self.version_fetched.emit('')
+        
+        Thread(target=fetch, daemon=True).start()
+
+    def update_version_label(self, version):
+        """更新版本标签（槽函数，自动在主线程执行）"""
+        if version:
+            text = f'<a href="https://github.com/Exmeaning/ClickZen/releases/latest" style="color: #2196F3;">最新版本: v{version}</a>'
+            self.log(f"GitHub最新版本: v{version}", "info")
+        else:
+            text = f'<span style="color: #999;">版本检测失败</span>'
+            self.log("版本检测失败", "warning")
+            
+        self.left_panel.version_check_label.setText(text)
+    
     def load_and_apply_settings(self):
         """加载并应用设置"""
         try:
@@ -280,12 +459,11 @@ class MainWindow(QMainWindow):
                 # 应用捕获方法
                 from core.window_capture import WindowCapture
                 # 默认使用PrintWindow方法
-                capture_method = settings.get("capture", {}).get("method", "printwindow")
-                WindowCapture.set_capture_method(capture_method == "printwindow")
                 WindowCapture.enable_log(settings.get("capture", {}).get("debug_log", False))
                 
-                # 应用其他设置
-                self.on_settings_changed(settings)
+                # 仅在coord_timer存在时应用设置
+                if hasattr(self, 'coord_timer'):
+                    self.on_settings_changed(settings)
                 
                 # 自动刷新设备
                 if settings.get("ui", {}).get("auto_refresh_devices", False):
@@ -334,8 +512,6 @@ class MainWindow(QMainWindow):
             if result:
                 x, y, conf = result
                 self.match_result.setText(f"✅ 找到位置: ({x}, {y}) 置信度: {conf:.2%}")
-                self.x_input.setValue(x)
-                self.y_input.setValue(y)
             else:
                 self.match_result.setText("❌ 未找到匹配")
             self.search_btn.setText("🔍 搜索")
@@ -343,464 +519,104 @@ class MainWindow(QMainWindow):
             self.log(f"搜索耗时: {elapsed:.2f}s")
 
         Thread(target=search, daemon=True).start()
-    def create_left_panel(self):
-        panel = QWidget()
-        layout = QVBoxLayout(panel)
-
-        # 设备选择
-        device_group = QGroupBox("设备管理")
-        device_layout = QVBoxLayout()
-
-        self.device_combo = QComboBox()
-        self.refresh_btn = QPushButton("刷新设备")
-        self.refresh_btn.clicked.connect(self.refresh_devices)
-
-        device_layout.addWidget(QLabel("选择设备:"))
-        device_layout.addWidget(self.device_combo)
-        device_layout.addWidget(self.refresh_btn)
-        device_group.setLayout(device_layout)
-
-        # Scrcpy控制
-        scrcpy_group = QGroupBox("Scrcpy控制")
-        scrcpy_layout = QVBoxLayout()
-
-        self.start_scrcpy_btn = QPushButton("启动Scrcpy")
-        self.start_scrcpy_btn.clicked.connect(self.start_scrcpy)
-
-        self.stop_scrcpy_btn = QPushButton("停止Scrcpy")
-        self.stop_scrcpy_btn.clicked.connect(self.stop_scrcpy)
-        self.stop_scrcpy_btn.setEnabled(False)
+    def connect_panel_signals(self):
+        """连接各面板的信号"""
+        # 左侧面板信号
+        self.left_panel.start_scrcpy_clicked.connect(self.start_scrcpy)
+        self.left_panel.stop_scrcpy_clicked.connect(self.stop_scrcpy)
+        self.left_panel.refresh_devices_clicked.connect(self.refresh_devices)
         
-        # 版本信息标签
-        scrcpy_version = self.config.get("scrcpy_version", "未知")
-        self.scrcpy_version_label = QLabel(f"Scrcpy版本: v{scrcpy_version}")
-        self.scrcpy_version_label.setStyleSheet("color: gray; font-size: 10px;")
+        # 连接无线设备按钮
+        self.left_panel.connect_btn.clicked.connect(self.connect_saved_wireless_device)
+        self.left_panel.disconnect_btn.clicked.connect(self.disconnect_wireless_device)
+        self.left_panel.pair_btn.clicked.connect(self.show_pairing_dialog)
         
-        # ClickZen版本信息
-        version_info_label = QLabel(
-            f'当前版本: v{VERSION} | '
-            f'<a href="https://github.com/Exmeaning/ClickZen/releases">GitHub最新版本 →</a>'
+        # 中间面板信号
+        self.center_panel.recording_toggled.connect(self.toggle_recording)
+        self.center_panel.play_btn.clicked.connect(self.play_recording)
+        self.center_panel.stop_btn.clicked.connect(self.stop_playing)
+        self.center_panel.monitor_toggled.connect(self.toggle_monitoring)
+        
+        # 文件操作
+        self.center_panel.save_btn.clicked.connect(self.save_recording)
+        self.center_panel.load_btn.clicked.connect(self.load_recording)
+        
+        # 监控任务管理
+        self.center_panel.add_task_btn.clicked.connect(self.add_monitor_task)
+        self.center_panel.edit_task_btn.clicked.connect(self.edit_monitor_task)
+        self.center_panel.copy_task_btn.clicked.connect(self.copy_monitor_task)
+        self.center_panel.remove_task_btn.clicked.connect(self.remove_monitor_task)
+        self.center_panel.save_scheme_btn.clicked.connect(self.save_monitor_scheme)
+        self.center_panel.load_scheme_btn.clicked.connect(self.load_monitor_scheme)
+        
+        # 随机化设置
+        self.center_panel.random_check.toggled.connect(self.on_randomization_changed)
+        self.center_panel.position_spin.valueChanged.connect(self.on_randomization_changed)
+        self.center_panel.delay_spin.valueChanged.connect(self.on_randomization_changed)
+        self.center_panel.longpress_spin.valueChanged.connect(self.on_randomization_changed)
+        
+        # 监控间隔
+        self.center_panel.interval_spin.valueChanged.connect(self.on_interval_changed)
+        
+        # 右侧面板信号
+        self.right_panel.adb_command_entered.connect(self.execute_adb_command)
+        self.right_panel.copy_coords_clicked.connect(self.copy_device_coordinates)
+        self.right_panel.clear_log_btn.clicked.connect(self.clear_log)
+        
+        # 连接系统快捷键按钮（从左侧移到右侧）
+        self.right_panel.back_btn.clicked.connect(self.controller.press_back)
+        self.right_panel.home_btn.clicked.connect(self.controller.press_home)
+        self.right_panel.recent_btn.clicked.connect(self.controller.press_recent)
+        self.right_panel.screenshot_btn.clicked.connect(self.take_screenshot)
+        
+        # ADB快捷命令
+        self.right_panel.activity_btn.clicked.connect(
+            lambda: self.quick_adb_command("dumpsys window | grep mCurrentFocus")
         )
-        version_info_label.setOpenExternalLinks(True)
-        version_info_label.setStyleSheet("color: gray; font-size: 10px;")
-
-        scrcpy_layout.addWidget(self.start_scrcpy_btn)
-        scrcpy_layout.addWidget(self.stop_scrcpy_btn)
-        scrcpy_layout.addWidget(self.scrcpy_version_label)
-        scrcpy_layout.addWidget(version_info_label)
-        scrcpy_group.setLayout(scrcpy_layout)
+        self.right_panel.package_btn.clicked.connect(
+            lambda: self.quick_adb_command("pm list packages -3")
+        )
+        self.right_panel.screen_btn.clicked.connect(
+            lambda: self.quick_adb_command("wm size")
+        )
         
-        # 录制控制
-        record_group = QGroupBox("操作录制")
-        record_layout = QVBoxLayout()
-        # 快捷操作
-        action_group = QGroupBox("快捷操作")
-        action_layout = QGridLayout()
-
-        self.back_btn = QPushButton("返回")
-        self.back_btn.clicked.connect(self.controller.press_back)
-
-        self.home_btn = QPushButton("主页")
-        self.home_btn.clicked.connect(self.controller.press_home)
-
-        self.recent_btn = QPushButton("最近任务")
-        self.recent_btn.clicked.connect(self.controller.press_recent)
-
-        self.screenshot_btn = QPushButton("截图")
-        self.screenshot_btn.clicked.connect(self.take_screenshot)
-
-        action_layout.addWidget(self.back_btn, 0, 0)
-        action_layout.addWidget(self.home_btn, 0, 1)
-        action_layout.addWidget(self.recent_btn, 1, 0)
-        action_layout.addWidget(self.screenshot_btn, 1, 1)
-        action_group.setLayout(action_layout)
+        # 模拟器模式信号
+        self.left_panel.simulator_mode_changed.connect(self.on_simulator_mode_changed)
+        self.left_panel.simulator_window_selected.connect(self.on_simulator_window_selected)
         
-        # ADB命令执行
-        adb_group = QGroupBox("ADB命令")
-        adb_layout = QVBoxLayout()
+    def setup_widget_references(self):
+        """设置控件引用（兼容旧代码）"""
+        # 左侧面板控件
+        self.device_combo = self.left_panel.device_combo
+        self.refresh_btn = self.left_panel.refresh_btn
+        self.wireless_device_combo = self.left_panel.saved_devices_combo
+        self.wireless_ip_input = self.left_panel.ip_input
         
-        self.adb_command_input = QLineEdit()
-        self.adb_command_input.setPlaceholderText("输入shell命令，如: input keyevent 4")
-        self.adb_command_input.returnPressed.connect(self.execute_adb_command)
+        # 中间面板控件
+        self.record_mode_combo = self.center_panel.record_mode_combo
+        self.record_btn = self.center_panel.record_btn
+        self.play_btn = self.center_panel.play_btn
+        self.stop_play_btn = self.center_panel.stop_btn
+        self.speed_spin = self.center_panel.speed_spin
+        self.record_info_label = self.center_panel.record_info_label
+        self.action_list = self.center_panel.action_list
         
-        adb_button_layout = QHBoxLayout()
-        self.adb_execute_btn = QPushButton("执行")
-        self.adb_execute_btn.clicked.connect(self.execute_adb_command)
+        self.monitor_task_list = self.center_panel.monitor_task_list
+        self.monitor_start_btn = self.center_panel.monitor_btn
+        self.monitor_status_label = self.center_panel.monitor_status_label
+        self.interval_spin = self.center_panel.interval_spin
         
-        self.adb_clear_btn = QPushButton("清空")
-        self.adb_clear_btn.clicked.connect(self.adb_command_input.clear)
+        self.random_enabled_check = self.center_panel.random_check
+        self.position_random_spin = self.center_panel.position_spin
+        self.delay_random_spin = self.center_panel.delay_spin
+        self.longpress_random_spin = self.center_panel.longpress_spin
         
-        adb_button_layout.addWidget(self.adb_execute_btn)
-        adb_button_layout.addWidget(self.adb_clear_btn)
-        
-        # 常用命令快速按钮
-        quick_cmd_layout = QGridLayout()
-        
-        self.adb_screenshot_btn = QPushButton("截屏到设备")
-        self.adb_screenshot_btn.clicked.connect(lambda: self.quick_adb_command("screencap -p /sdcard/screenshot.png"))
-        
-        self.adb_ime_list_btn = QPushButton("输入法列表")
-        self.adb_ime_list_btn.clicked.connect(lambda: self.quick_adb_command("ime list -s"))
-        
-        self.adb_activity_btn = QPushButton("当前Activity")
-        self.adb_activity_btn.clicked.connect(lambda: self.quick_adb_command("dumpsys window | grep mCurrentFocus"))
-        
-        self.adb_packages_btn = QPushButton("包名列表")
-        self.adb_packages_btn.clicked.connect(lambda: self.quick_adb_command("pm list packages"))
-        
-        quick_cmd_layout.addWidget(self.adb_screenshot_btn, 0, 0)
-        quick_cmd_layout.addWidget(self.adb_ime_list_btn, 0, 1)
-        quick_cmd_layout.addWidget(self.adb_activity_btn, 1, 0)
-        quick_cmd_layout.addWidget(self.adb_packages_btn, 1, 1)
-        
-        adb_layout.addWidget(self.adb_command_input)
-        adb_layout.addLayout(adb_button_layout)
-        adb_layout.addWidget(QLabel("快速命令:"))
-        adb_layout.addLayout(quick_cmd_layout)
-        adb_group.setLayout(adb_layout)
-        play_control_layout = QHBoxLayout()
-
-        self.play_btn = QPushButton("播放录制")
-        self.play_btn.clicked.connect(self.play_recording)
-        self.play_btn.setEnabled(False)
-
-        # 添加停止播放按钮
-        self.stop_play_btn = QPushButton("停止播放")
-        self.stop_play_btn.clicked.connect(self.stop_playing)
-        self.stop_play_btn.setEnabled(False)
-        self.stop_play_btn.setStyleSheet("""
-            QPushButton:enabled {
-                background-color: #ff4444;
-                color: white;
-            }
-        """)
-
-        play_control_layout.addWidget(self.play_btn)
-        play_control_layout.addWidget(self.stop_play_btn)
-        # 随机化设置组（新增）
-        random_group = QGroupBox("随机化设置")
-        random_layout = QVBoxLayout()
-
-        # 启用随机化
-        self.random_enabled_check = QCheckBox("启用随机化")
-        self.random_enabled_check.setChecked(False)
-        self.random_enabled_check.toggled.connect(self.on_randomization_changed)
-
-        # 随机化参数
-        param_layout = QFormLayout()
-
-        # 位置随机
-        self.position_random_spin = QDoubleSpinBox()
-        self.position_random_spin.setRange(0, 10)
-        self.position_random_spin.setValue(1.0)
-        self.position_random_spin.setSingleStep(0.1)
-        self.position_random_spin.setSuffix("%")
-        self.position_random_spin.valueChanged.connect(self.on_randomization_changed)
-        param_layout.addRow("位置偏移:", self.position_random_spin)
-
-        # 延迟随机
-        self.delay_random_spin = QDoubleSpinBox()
-        self.delay_random_spin.setRange(0, 50)
-        self.delay_random_spin.setValue(20)
-        self.delay_random_spin.setSingleStep(1)
-        self.delay_random_spin.setSuffix("%")
-        self.delay_random_spin.valueChanged.connect(self.on_randomization_changed)
-        param_layout.addRow("延迟波动:", self.delay_random_spin)
-
-        # 长按随机
-        self.longpress_random_spin = QDoubleSpinBox()
-        self.longpress_random_spin.setRange(0, 30)
-        self.longpress_random_spin.setValue(15)
-        self.longpress_random_spin.setSingleStep(1)
-        self.longpress_random_spin.setSuffix("%")
-        self.longpress_random_spin.valueChanged.connect(self.on_randomization_changed)
-        param_layout.addRow("长按波动:", self.longpress_random_spin)
-
-        # 说明文字
-        info_label = QLabel("随机化可使操作更自然，避免被检测")
-        info_label.setStyleSheet("color: gray; font-size: 10px; margin-top: 5px;")
-
-        random_layout.addWidget(self.random_enabled_check)
-        random_layout.addLayout(param_layout)
-        random_layout.addWidget(info_label)
-        random_group.setLayout(random_layout)
-
-        # 录制控制
-        record_group = QGroupBox("操作录制")
-        record_layout = QVBoxLayout()
-
-        self.record_btn = QPushButton("开始录制")
-        self.record_btn.setCheckable(True)
-        self.record_btn.toggled.connect(self.toggle_recording)
-        self.record_btn.setStyleSheet("""
-            QPushButton:checked {
-                background-color: #ff4444;
-                color: white;
-            }
-        """)
-
-        # 播放速度控制
-        speed_layout = QHBoxLayout()
-        speed_layout.addWidget(QLabel("播放速度:"))
-        self.speed_spin = QDoubleSpinBox()
-        self.speed_spin.setRange(0.1, 5.0)
-        self.speed_spin.setValue(1.0)
-        self.speed_spin.setSingleStep(0.1)
-        self.speed_spin.setSuffix("x")
-        speed_layout.addWidget(self.speed_spin)
-
-        # 保存/加载按钮
-        file_layout = QHBoxLayout()
-        self.save_btn = QPushButton("保存")
-        self.save_btn.clicked.connect(self.save_recording)
-        self.load_btn = QPushButton("加载")
-        self.load_btn.clicked.connect(self.load_recording)
-        file_layout.addWidget(self.save_btn)
-        file_layout.addWidget(self.load_btn)
-
-        record_layout.addWidget(self.record_btn)
-        record_layout.addLayout(play_control_layout)  # 使用新的布局
-        record_layout.addLayout(speed_layout)
-        record_layout.addLayout(file_layout)
-        record_group.setLayout(record_layout)
-
-        # 添加到主布局
-        layout.addWidget(device_group)
-        layout.addWidget(scrcpy_group)
-        layout.addWidget(action_group)
-        layout.addWidget(adb_group)
-        layout.addWidget(random_group)
-        layout.addWidget(record_group)
-        layout.addStretch()
-
-        return panel
-
-    def create_right_panel(self):
-        panel = QWidget()
-        layout = QVBoxLayout(panel)
-
-        # 实时坐标显示（新增）
-        coord_display_group = QGroupBox("实时坐标")
-        coord_display_layout = QGridLayout()
-
-        # 屏幕坐标
-        self.screen_coord_label = QLabel("屏幕: (-, -)")
-        self.screen_coord_label.setStyleSheet("font-family: Consolas; font-size: 11px;")
-
-        # 设备坐标
-        self.device_coord_label = QLabel("设备: (-, -)")
-        self.device_coord_label.setStyleSheet("font-family: Consolas; font-size: 11px; color: blue;")
-
-        # 窗口状态
-        self.window_status_label = QLabel("Scrcpy窗口: 未检测")
-        self.window_status_label.setStyleSheet("font-size: 10px; color: gray;")
-
-        # 复制坐标按钮
-        copy_layout = QHBoxLayout()
-        self.copy_device_coord_btn = QPushButton("复制设备坐标")
-        self.copy_device_coord_btn.clicked.connect(self.copy_device_coordinates)
-        self.copy_device_coord_btn.setMaximumHeight(25)
-        copy_layout.addWidget(self.copy_device_coord_btn)
-
-        coord_display_layout.addWidget(self.screen_coord_label, 0, 0)
-        coord_display_layout.addWidget(self.device_coord_label, 1, 0)
-        coord_display_layout.addWidget(self.window_status_label, 2, 0)
-        coord_display_layout.addLayout(copy_layout, 3, 0)
-        coord_display_group.setLayout(coord_display_layout)
-
-        layout.addWidget(coord_display_group)  # 添加到最顶部
-        # 录制信息
-        record_info_group = QGroupBox("录制信息")
-        record_info_layout = QVBoxLayout()
-
-        self.record_info_label = QLabel("未录制")
-        self.record_info_label.setStyleSheet("font-size: 12px;")
-
-        self.action_list = QListWidget()
-        self.action_list.setMaximumHeight(150)
-
-        record_info_layout.addWidget(self.record_info_label)
-        record_info_layout.addWidget(self.action_list)
-        record_info_group.setLayout(record_info_layout)
-
-        # 坐标输入
-        coord_group = QGroupBox("坐标控制")
-        coord_layout = QGridLayout()
-
-        self.x_input = QSpinBox()
-        self.x_input.setRange(0, 9999)
-        self.x_input.setValue(500)
-
-        self.y_input = QSpinBox()
-        self.y_input.setRange(0, 9999)
-        self.y_input.setValue(500)
-
-        self.click_coord_btn = QPushButton("点击坐标")
-        self.click_coord_btn.clicked.connect(self.click_coordinate)
-
-        coord_layout.addWidget(QLabel("X:"), 0, 0)
-        coord_layout.addWidget(self.x_input, 0, 1)
-        coord_layout.addWidget(QLabel("Y:"), 0, 2)
-        coord_layout.addWidget(self.y_input, 0, 3)
-        coord_layout.addWidget(self.click_coord_btn, 1, 0, 1, 4)
-        coord_group.setLayout(coord_layout)
-
-        # 文本输入
-        text_group = QGroupBox("文本输入")
-        text_layout = QVBoxLayout()
-
-        self.text_input = QLineEdit()
-        self.text_input.setPlaceholderText("输入要发送的文本...")
-        self.text_input.returnPressed.connect(self.send_text)
-
-        self.send_text_btn = QPushButton("发送文本")
-        self.send_text_btn.clicked.connect(self.send_text)
-
-        text_layout.addWidget(self.text_input)
-        text_layout.addWidget(self.send_text_btn)
-        text_group.setLayout(text_layout)
-        # 图像识别组
-        image_group = QGroupBox("图像识别")
-        image_layout = QVBoxLayout()
-
-        # 模板选择
-        template_layout = QHBoxLayout()
-        self.template_input = QLineEdit()
-        self.template_input.setPlaceholderText("选择模板图片...")
-        template_btn = QPushButton("选择模板")
-        template_btn.clicked.connect(self.select_template)
-        template_layout.addWidget(self.template_input)
-        template_layout.addWidget(template_btn)
-
-        # 参数
-        param_layout = QHBoxLayout()
-        self.threshold_spin = QDoubleSpinBox()
-        self.threshold_spin.setRange(0.50, 1.00)
-        self.threshold_spin.setValue(0.85)
-        self.threshold_spin.setSingleStep(0.01)
-        self.threshold_spin.setSuffix("")
-        param_layout.addWidget(QLabel("容差:"))
-        param_layout.addWidget(self.threshold_spin)
-        param_layout.addStretch()
-
-        # 方法选择
-        method_layout = QHBoxLayout()
-        self.method_combo = QComboBox()
-        self.method_combo.addItems(["CCOEFF_NORMED (推荐)", "CCORR_NORMED", "SQDIFF_NORMED"])
-        self.method_combo.currentTextChanged.connect(self.on_method_changed)
-        method_layout.addWidget(QLabel("算法:"))
-        method_layout.addWidget(self.method_combo)
-
-        # 搜索按钮
-        self.search_btn = QPushButton("🔍 搜索")
-        self.search_btn.clicked.connect(self.search_template)
-
-        # 结果显示
-        self.match_result = QLabel("未搜索")
-        self.match_result.setStyleSheet("color: green; font-weight: bold;")
-
-        image_layout.addLayout(template_layout)
-        image_layout.addLayout(param_layout)
-        image_layout.addLayout(method_layout)
-        image_layout.addWidget(self.search_btn)
-        image_layout.addWidget(self.match_result)
-        image_group.setLayout(image_layout)
-        # 自动监控组（在录制控制组之后添加）
-        monitor_group = QGroupBox("自动监控 (类Klickr)")
-        monitor_layout = QVBoxLayout()
-
-        # 监控任务列表
-        self.monitor_task_list = QListWidget()
-        self.monitor_task_list.setMaximumHeight(100)
-
-        # 任务管理按钮
-        task_button_layout = QHBoxLayout()
-        self.add_task_btn = QPushButton("添加任务")
-        self.add_task_btn.clicked.connect(self.add_monitor_task)
-        self.edit_task_btn = QPushButton("编辑")
-        self.edit_task_btn.clicked.connect(self.edit_monitor_task)
-        self.remove_task_btn = QPushButton("删除")
-        self.remove_task_btn.clicked.connect(self.remove_monitor_task)
-        task_button_layout.addWidget(self.add_task_btn)
-        task_button_layout.addWidget(self.edit_task_btn)
-        task_button_layout.addWidget(self.remove_task_btn)
-        scheme_button_layout = QHBoxLayout()
-        self.save_scheme_btn = QPushButton("保存方案")
-        self.save_scheme_btn.clicked.connect(self.save_monitor_scheme)
-        self.load_scheme_btn = QPushButton("加载方案")
-        self.load_scheme_btn.clicked.connect(self.load_monitor_scheme)
-        scheme_button_layout.addWidget(self.save_scheme_btn)
-        scheme_button_layout.addWidget(self.load_scheme_btn)
-
-        monitor_layout.addLayout(scheme_button_layout)
-        # 监控控制
-        control_layout = QHBoxLayout()
-        self.monitor_start_btn = QPushButton("▶ 开始监控")
-        self.monitor_start_btn.setCheckable(True)
-        self.monitor_start_btn.toggled.connect(self.toggle_monitoring)
-        self.monitor_start_btn.setStyleSheet("""
-               QPushButton:checked {
-                   background-color: #4CAF50;
-                   color: white;
-               }
-           """)
-
-        # 检查间隔
-        interval_layout = QHBoxLayout()
-        interval_label = QLabel("检查间隔:")
-        interval_label.setToolTip("最小间隔为0.05秒，过小可能影响性能")
-        interval_layout.addWidget(interval_label)
-        self.interval_spin = QDoubleSpinBox()
-        self.interval_spin.setRange(0.05, 10)  # 最小值改为0.05秒
-        self.interval_spin.setValue(0.5)
-        self.interval_spin.setSingleStep(0.05)
-        self.interval_spin.setSuffix(" 秒")
-        self.interval_spin.setToolTip("建议不低于0.1秒")
-        self.interval_spin.valueChanged.connect(self.on_interval_changed)
-        interval_layout.addWidget(self.interval_spin)
-        
-        # 添加提示标签
-        min_interval_label = QLabel("(最小: 0.05秒 过低可能影响性能)")
-        min_interval_label.setStyleSheet("color: gray; font-size: 10px;")
-        interval_layout.addWidget(min_interval_label)
-
-        # 监控状态
-        self.monitor_status_label = QLabel("状态: 已停止")
-        self.monitor_status_label.setStyleSheet("color: gray; font-size: 10px;")
-
-        monitor_layout.addWidget(QLabel("监控任务:"))
-        monitor_layout.addWidget(self.monitor_task_list)
-        monitor_layout.addLayout(task_button_layout)
-        monitor_layout.addWidget(self.monitor_start_btn)
-        monitor_layout.addLayout(interval_layout)
-        monitor_layout.addWidget(self.monitor_status_label)
-        monitor_group.setLayout(monitor_layout)
-
-        # 添加到主布局（在record_group之后）
-        layout.addWidget(monitor_group)
-
-        # 日志显示
-        log_group = QGroupBox("操作日志")
-        log_layout = QVBoxLayout()
-
-        self.log_text = QTextEdit()
-        self.log_text.setReadOnly(True)
-
-        # 清空日志按钮
-        clear_log_btn = QPushButton("清空日志")
-        clear_log_btn.clicked.connect(self.log_text.clear)
-
-        log_layout.addWidget(self.log_text)
-        log_layout.addWidget(clear_log_btn)
-        log_group.setLayout(log_layout)
-
-        # 添加到主布局
-        layout.addWidget(record_info_group)
-        layout.addWidget(coord_group)
-        layout.addWidget(text_group)
-        layout.addWidget(log_group, 1)
-
-        return panel
+        # 右侧面板控件
+        self.screen_coord_label = self.right_panel.screen_coord_label
+        self.device_coord_label = self.right_panel.device_coord_label
+        self.window_status_label = self.right_panel.window_status_label
+        self.log_text = self.right_panel.log_text
+        self.adb_command_input = self.right_panel.adb_input
 
     def add_monitor_task(self):
         """添加监控任务"""
@@ -811,6 +627,30 @@ class MainWindow(QMainWindow):
                 index = self.auto_monitor.add_monitor_config(config)
                 self.refresh_monitor_task_list()
                 self.log(f"添加监控任务: {config['name']}")
+    
+    def copy_monitor_task(self):
+        """复制监控任务"""
+        current = self.monitor_task_list.currentRow()
+        if current >= 0 and current < len(self.auto_monitor.monitor_configs):
+            import copy
+            # 深拷贝配置
+            original_config = self.auto_monitor.monitor_configs[current]
+            config_copy = copy.deepcopy(original_config)
+            
+            # 修改名称
+            original_name = config_copy.get('name', '未命名')
+            config_copy['name'] = f"{original_name}_副本"
+            
+            # 重置执行时间
+            if 'last_executed' in config_copy:
+                config_copy['last_executed'] = 0
+            
+            # 添加副本
+            self.auto_monitor.add_monitor_config(config_copy)
+            self.refresh_monitor_task_list()
+            self.log(f"复制监控任务: {original_name} → {config_copy['name']}")
+        else:
+            QMessageBox.information(self, "提示", "请先选择要复制的任务")
 
     def edit_monitor_task(self):
         """编辑监控任务"""
@@ -849,15 +689,17 @@ class MainWindow(QMainWindow):
         """切换自动监控状态"""
         if checked:
             if self.auto_monitor.start_monitoring():
-                self.monitor_start_btn.setText("■ 停止监控")
-                self.log("开始自动监控")
+                self.log("开始自动监控", "success")
+                self.center_panel.monitor_status_label.setText("状态: 监控中...")
+                self.center_panel.monitor_status_label.setStyleSheet("color: #4CAF50;")
             else:
-                self.monitor_start_btn.setChecked(False)
+                self.center_panel.monitor_btn.setChecked(False)
                 QMessageBox.warning(self, "警告", "无法启动监控，请检查是否有配置任务")
         else:
             self.auto_monitor.stop_monitoring()
-            self.monitor_start_btn.setText("▶ 开始监控")
-            self.log("停止自动监控")
+            self.log("停止自动监控", "info")
+            self.center_panel.monitor_status_label.setText("状态: 已停止")
+            self.center_panel.monitor_status_label.setStyleSheet("color: #666;")
 
     def on_interval_changed(self, value):
         """检查间隔改变"""
@@ -878,18 +720,21 @@ class MainWindow(QMainWindow):
         """处理录制的操作"""
         # 更新操作列表
         action_text = ""
+        source = action.get('source', 'unknown')
+        source_icon = "📱" if source == 'device' else "🖱️"
+
         if action['type'] == 'click':
-            action_text = f"点击 ({action['x']}, {action['y']})"
+            action_text = f"{source_icon} 点击 ({action['x']}, {action['y']})"
         elif action['type'] == 'long_click':
             duration = action.get('duration', 1000)
-            action_text = f"长按 ({action['x']}, {action['y']}) {duration}ms"
+            action_text = f"{source_icon} 长按 ({action['x']}, {action['y']}) {duration}ms"
         elif action['type'] == 'swipe':
             duration = action.get('duration', 300)
-            action_text = f"滑动 ({action['x1']}, {action['y1']}) → ({action['x2']}, {action['y2']}) {duration}ms"
+            action_text = f"{source_icon} 滑动 ({action['x1']}, {action['y1']}) → ({action['x2']}, {action['y2']}) {duration}ms"
         elif action['type'] == 'key':
-            action_text = f"按键 {action.get('key_name', action['keycode'])}"
+            action_text = f"{source_icon} 按键 {action.get('key_name', action['keycode'])}"
         elif action['type'] == 'text':
-            action_text = f"输入文本: {action['text']}"
+            action_text = f"{source_icon} 输入文本: {action['text']}"
 
         if action_text:
             self.action_list.addItem(action_text)
@@ -898,50 +743,74 @@ class MainWindow(QMainWindow):
 
         # 更新录制信息
         count = len(self.controller.recorded_actions)
-        self.record_info_label.setText(f"已录制 {count} 个操作")
+        mode_text = "设备录制" if source == 'device' else "窗口录制"
+        self.record_info_label.setText(f"已录制 {count} 个操作 ({mode_text})")
+
+    def load_saved_wireless_devices(self):
+        """加载已保存的无线设备"""
+        self.device_manager.load_saved_wireless_devices()
+
+    def save_wireless_device(self, name, ip, port):
+        """保存无线设备到设置"""
+        return self.device_manager.save_wireless_device(name, ip, port)
+
+    def connect_saved_wireless_device(self):
+        """连接已保存的无线设备"""
+        self.device_manager.connect_saved_wireless_device()
+
+    def manual_connect_wireless(self):
+        """手动连接无线设备"""
+        self.device_manager.manual_connect_wireless()
+
+    def disconnect_wireless_device(self):
+        """断开所有无线设备"""
+        self.device_manager.disconnect_wireless_device()
+
+    def show_pairing_dialog(self):
+        """显示配对对话框"""
+        self.device_manager.show_pairing_dialog()
 
     def refresh_devices(self):
         """刷新设备列表"""
-        self.log("正在刷新设备列表...")
-        devices = self.adb.get_devices()
-
-        self.device_combo.clear()
-        for serial, info in devices:
-            self.device_combo.addItem(f"{info} ({serial})", serial)
-
-        if devices:
-            self.log(f"发现 {len(devices)} 个设备")
-        else:
-            self.log("未发现设备，请检查USB连接")
+        self.device_manager.refresh_devices()
 
     def start_scrcpy(self):
         """启动Scrcpy"""
         if self.device_combo.count() == 0:
             QMessageBox.warning(self, "警告", "请先刷新并选择设备")
+            self.left_panel.scrcpy_btn.setChecked(False)
             return
 
         serial = self.device_combo.currentData()
         if not serial:
             QMessageBox.warning(self, "警告", "请先选择设备")
+            self.left_panel.scrcpy_btn.setChecked(False)
             return
 
-        self.log(f"正在启动Scrcpy...")
+        self.log(f"正在启动Scrcpy...", "info")
+        
+        # 设置自动重启选项
+        self.scrcpy.auto_restart_enabled = self.left_panel.auto_restart_check.isChecked()
 
         if self.adb.connect_device(serial):
             if self.scrcpy.start(serial):
-                self.start_scrcpy_btn.setEnabled(False)
-                self.stop_scrcpy_btn.setEnabled(True)
+                self.left_panel.scrcpy_btn.setChecked(True)
+                self.log("Scrcpy启动成功", "success")
+                if self.scrcpy.auto_restart_enabled:
+                    self.log("自动重启已启用", "info")
             else:
                 QMessageBox.critical(self, "错误", "Scrcpy启动失败")
+                self.left_panel.scrcpy_btn.setChecked(False)
+                self.log("Scrcpy启动失败", "error")
         else:
-            self.log("设备连接失败")
+            self.log("设备连接失败", "error")
+            self.left_panel.scrcpy_btn.setChecked(False)
 
     def stop_scrcpy(self):
         """停止Scrcpy"""
         self.scrcpy.stop()
-        self.start_scrcpy_btn.setEnabled(True)
-        self.stop_scrcpy_btn.setEnabled(False)
-        self.log("Scrcpy已停止")
+        self.left_panel.scrcpy_btn.setChecked(False)
+        self.log("Scrcpy已停止", "info")
 
     def toggle_recording(self, checked=None):
         """切换录制状态"""
@@ -949,16 +818,46 @@ class MainWindow(QMainWindow):
             checked = not self.is_recording
 
         if checked:
+            # 获取录制模式
+            mode = 'device' if self.record_mode_combo.currentText() == "设备录制" else 'window'
+
+            # 设备录制需要先确保设备已连接
+            if mode == 'device':
+                # 如果没有连接设备，尝试连接当前选中的设备
+                if not self.adb.device_serial:
+                    serial = self.device_combo.currentData()
+                    if not serial:
+                        QMessageBox.warning(self, "警告", "请先选择设备")
+                        self.record_btn.setChecked(False)
+                        return
+                    if not self.adb.connect_device(serial):
+                        QMessageBox.warning(self, "警告", "设备连接失败")
+                        self.record_btn.setChecked(False)
+                        return
+                    self.log(f"已连接设备: {serial}")
+
+            self.controller.set_recording_mode(mode)
+
             # 开始录制
             if self.controller.start_recording():
                 self.is_recording = True
                 self.record_btn.setChecked(True)
                 self.record_btn.setText("停止录制 (F9)")
-                self.log("开始录制操作，请在Scrcpy窗口进行操作...")
+                self.record_mode_combo.setEnabled(False)  # 录制时禁用模式选择
+
+                if mode == 'device':
+                    self.log("开始设备录制，请直接在手机上进行操作...")
+                    self.statusBar().showMessage("🔴 正在录制 (设备模式)...")
+                else:
+                    self.log("开始窗口录制，请在Scrcpy窗口进行操作...")
+                    self.statusBar().showMessage("🔴 正在录制 (窗口模式)...")
+
                 self.action_list.clear()
-                self.statusBar().showMessage("🔴 正在录制...")
             else:
-                QMessageBox.warning(self, "警告", "无法找到Scrcpy窗口，请先启动Scrcpy")
+                if mode == 'window':
+                    QMessageBox.warning(self, "警告", "无法找到Scrcpy窗口，请先启动Scrcpy")
+                else:
+                    QMessageBox.warning(self, "警告", "无法启动设备录制，请检查设备连接")
                 self.record_btn.setChecked(False)
         else:
             # 停止录制
@@ -966,16 +865,17 @@ class MainWindow(QMainWindow):
             self.is_recording = False
             self.record_btn.setChecked(False)
             self.record_btn.setText("开始录制")
+            self.record_mode_combo.setEnabled(True)  # 恢复模式选择
             self.log(f"录制完成，共 {len(actions)} 个操作")
             self.play_btn.setEnabled(len(actions) > 0)
             self.statusBar().showMessage("就绪")
 
     def on_randomization_changed(self):
         """随机化设置改变"""
-        enabled = self.random_enabled_check.isChecked()
-        position_range = self.position_random_spin.value() / 100.0  # 转换为小数
-        delay_range = self.delay_random_spin.value() / 100.0
-        longpress_range = self.longpress_random_spin.value() / 100.0
+        enabled = self.center_panel.random_check.isChecked()
+        position_range = self.center_panel.position_spin.value() / 100.0
+        delay_range = self.center_panel.delay_spin.value() / 100.0
+        longpress_range = self.center_panel.longpress_spin.value() / 100.0
 
         # 更新控制器的随机化设置
         self.controller.set_randomization(
@@ -986,16 +886,16 @@ class MainWindow(QMainWindow):
         )
 
         # 根据是否启用来启用/禁用参数输入框
-        self.position_random_spin.setEnabled(enabled)
-        self.delay_random_spin.setEnabled(enabled)
-        self.longpress_random_spin.setEnabled(enabled)
+        self.center_panel.position_spin.setEnabled(enabled)
+        self.center_panel.delay_spin.setEnabled(enabled)
+        self.center_panel.longpress_spin.setEnabled(enabled)
 
         # 记录到日志
         if enabled:
             self.log(f"随机化已启用: 位置±{position_range * 100:.1f}%, "
-                     f"延迟±{delay_range * 100:.1f}%, 长按±{longpress_range * 100:.1f}%")
+                     f"延迟±{delay_range * 100:.1f}%, 长按±{longpress_range * 100:.1f}%", "success")
         else:
-            self.log("随机化已禁用")
+            self.log("随机化已禁用", "info")
 
     def play_recording(self):
         """播放录制（使用当前的随机化设置）"""
@@ -1072,21 +972,6 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "错误", f"加载失败: {str(e)}")
 
-    def click_coordinate(self):
-        """点击指定坐标"""
-        x = self.x_input.value()
-        y = self.y_input.value()
-        self.controller.click(x, y)
-        self.log(f"点击坐标: ({x}, {y})")
-
-    def send_text(self):
-        """发送文本"""
-        text = self.text_input.text()
-        if text:
-            self.controller.input_text(text)
-            self.log(f"发送文本: {text}")
-            self.text_input.clear()
-
     def take_screenshot(self):
         """截图 - 带HDR提示"""
         # 检查是否需要显示HDR警告
@@ -1136,14 +1021,16 @@ class MainWindow(QMainWindow):
         else:
             self.log("截图失败")
 
-    def log(self, message):
+    def log(self, message, level="info"):
         """添加日志"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        self.log_text.append(f"[{timestamp}] {message}")
+        self.right_panel.log(message, level)
+        
+    def clear_log(self):
+        """清空日志"""
+        self.log_text.clear()
 
-    def execute_adb_command(self):
+    def execute_adb_command(self, command):
         """执行ADB命令"""
-        command = self.adb_command_input.text().strip()
         if not command:
             return
         
@@ -1160,11 +1047,70 @@ class MainWindow(QMainWindow):
             self.log(f"结果:\n{result_display}")
         else:
             self.log("命令执行失败或无返回")
+
+    def on_simulator_mode_changed(self, is_simulator_mode):
+        """模拟器模式切换"""
+        self.simulator_mode_active = is_simulator_mode
+        if is_simulator_mode:
+            self.log("已切换到模拟器模式", "info")
+            # 配置控制器的监控器为模拟器模式
+        else:
+            self.log("已切换到设备模式", "info")
+            # 清除模拟器配置
+            self.simulator_hwnd = None
+            self.simulator_crop_rect = None
+            self.simulator_window_title = None
+            self.simulator_window_title = None
+            self.controller.clear_simulator_config()
     
+    def on_simulator_window_selected(self, hwnd, crop_rect, window_title):
+        """模拟器窗口选择完成"""
+        self.simulator_hwnd = hwnd
+        self.simulator_crop_rect = crop_rect
+        self.simulator_window_title = window_title
+        
+        # 1. 检查是否有已保存的配置
+        saved_config = self.controller.load_simulator_config(window_title)
+        
+        target_resolution = None
+        
+        # 如果有保存的配置且CropRect一样(或者用户想直接复用)，这里我们简单处理：
+        # 弹出对话框确认，但预填保存的值
+        
+        default_res = self.controller.get_device_resolution()
+        if saved_config:
+            if 'resolution' in saved_config:
+                default_res = tuple(saved_config['resolution'])
+                
+        # 2. 弹出配置对话框
+        from gui.simulator_config_dialog import SimulatorConfigDialog
+        dialog = SimulatorConfigDialog(crop_rect, window_title, default_res, self)
+        
+        if dialog.exec():
+            target_resolution, should_save = dialog.get_result()
+            
+            # 保存配置
+            if should_save:
+                self.controller.save_simulator_config(window_title, crop_rect, target_resolution)
+        else:
+            # 用户取消，使用默认
+            target_resolution = default_res
+        
+        # 3. 配置控制器
+        self.controller.set_simulator_config(hwnd, crop_rect, target_resolution)
+        
+        self.log(f"模拟器窗口已配置: {window_title[:40]}", "success")
+        x, y, w, h = crop_rect
+        self.log(f"裁剪区域: ({x}, {y}) - {w}x{h}", "info")
+        self.log(f"目标分辨率: {target_resolution[0]}x{target_resolution[1]}", "info")
+        
+        # 更新显示
+        self.window_status_label.setText(f"模拟器: {target_resolution[0]}x{target_resolution[1]}")
+        
     def quick_adb_command(self, command):
         """快速执行ADB命令"""
         self.adb_command_input.setText(command)
-        self.execute_adb_command()
+        self.execute_adb_command(command)
     
     def closeEvent(self, event):
         """关闭事件 - 添加保存提示"""

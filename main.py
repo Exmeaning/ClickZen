@@ -120,8 +120,7 @@ class PhoneControllerApp:
 
             # 启动ADB服务
             if not adb_manager.start_server():
-                QMessageBox.critical(None, "错误",
-                                     f"无法启动ADB服务\n请确认ADB路径正确: {config.get('adb_path')}")
+                QMessageBox.critical(None, "错误",f"无法启动ADB服务\n请确认ADB路径正确: {config.get('adb_path')}")
                 return 1
 
             # 创建Scrcpy管理器

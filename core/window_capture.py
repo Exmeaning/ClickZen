@@ -15,7 +15,6 @@ class WindowCapture:
     # 类变量，控制日志输出
     _last_found_hwnd = None
     _log_enabled = False  # 默认关闭日志
-    _use_printwindow = True  # 默认使用PrintWindow API
 
     @staticmethod
     def find_scrcpy_window():
@@ -57,20 +56,9 @@ class WindowCapture:
 
     @staticmethod
     def capture_window(window_title="scrcpy", client_only=True):
-        """截取指定窗口（自动选择最佳方法）"""
+        """截取指定窗口"""
         try:
-            # 按照用户设置使用相应方法，不预判SDL窗口
-            if WindowCapture._use_printwindow:
-                result = WindowCapture._capture_window_printwindow(window_title, client_only)
-                # PrintWindow失败时自动回退
-                if result is None:
-                    if WindowCapture._log_enabled:
-                        print(f"[WindowCapture] PrintWindow失败，回退到屏幕DC方法")
-                    return WindowCapture.capture_window_original(window_title, client_only)
-                return result
-            else:
-                return WindowCapture.capture_window_original(window_title, client_only)
-                
+            return WindowCapture._capture_window_printwindow(window_title, client_only)
         except Exception as e:
             if WindowCapture._log_enabled:
                 print(f"[WindowCapture] 捕获异常: {e}")
@@ -225,63 +213,6 @@ class WindowCapture:
             return None
 
     @staticmethod
-    def capture_window_original(window_title="scrcpy", client_only=True):
-        """原始截取方法（从屏幕DC截取）"""
-        try:
-            hwnd = WindowCapture.find_scrcpy_window()
-
-            if not hwnd:
-                return None
-
-            # 只在调试模式下输出详细信息
-            if WindowCapture._log_enabled:
-                window_text = win32gui.GetWindowText(hwnd)
-                class_name = win32gui.GetClassName(hwnd)
-                print(f"[WindowCapture] 准备截取窗口: '{window_text}' (类名: {class_name})")
-
-            # 获取客户区
-            client_rect = win32gui.GetClientRect(hwnd)
-            client_point = win32gui.ClientToScreen(hwnd, (0, 0))
-
-            x = client_point[0]
-            y = client_point[1]
-            width = client_rect[2] - client_rect[0]
-            height = client_rect[3] - client_rect[1]
-
-            # 使用屏幕DC进行截图
-            desktop_dc = win32gui.GetDC(0)
-            desktop_mfc_dc = win32ui.CreateDCFromHandle(desktop_dc)
-            mem_dc = desktop_mfc_dc.CreateCompatibleDC()
-
-            bitmap = win32ui.CreateBitmap()
-            bitmap.CreateCompatibleBitmap(desktop_mfc_dc, width, height)
-            mem_dc.SelectObject(bitmap)
-
-            mem_dc.BitBlt((0, 0), (width, height), desktop_mfc_dc, (x, y), win32con.SRCCOPY)
-
-            bmpinfo = bitmap.GetInfo()
-            bmpstr = bitmap.GetBitmapBits(True)
-
-            img = Image.frombuffer(
-                'RGB',
-                (width, height),
-                bmpstr, 'raw', 'BGRX', 0, 1
-            )
-
-            # 清理资源
-            mem_dc.DeleteDC()
-            desktop_mfc_dc.DeleteDC()
-            win32gui.ReleaseDC(0, desktop_dc)
-            win32gui.DeleteObject(bitmap.GetHandle())
-
-            return img
-
-        except Exception as e:
-            if WindowCapture._log_enabled:
-                print(f"[WindowCapture] 截图失败: {e}")
-            return None
-
-    @staticmethod
     def capture_window_safe(window_title="scrcpy", client_only=True):
         """安全的截图方法"""
         return WindowCapture.capture_window(window_title, client_only)
@@ -292,18 +223,179 @@ class WindowCapture:
         WindowCapture._log_enabled = enabled
     
     @staticmethod
-    def set_capture_method(use_printwindow=True):
-        """设置捕获方法
+    def get_all_visible_windows():
+        """获取所有可见窗口列表
         
-        Args:
-            use_printwindow: True使用PrintWindow API（支持被遮挡），False使用屏幕DC（传统方法）
+        Returns:
+            list: [(hwnd, title, class_name), ...]
         """
-        WindowCapture._use_printwindow = use_printwindow
-        if WindowCapture._log_enabled:
-            method = "PrintWindow API" if use_printwindow else "屏幕DC"
-            print(f"[WindowCapture] 切换到{method}捕获方式")
+        windows = []
+        
+        def enum_callback(hwnd, _):
+            if win32gui.IsWindowVisible(hwnd):
+                title = win32gui.GetWindowText(hwnd)
+                class_name = win32gui.GetClassName(hwnd)
+                # 过滤掉无标题和特殊窗口
+                if title and title.strip() and class_name not in ['Progman', 'Shell_TrayWnd', 'WorkerW']:
+                    windows.append((hwnd, title, class_name))
+            return True
+        
+        win32gui.EnumWindows(enum_callback, None)
+        # 按标题排序
+        windows.sort(key=lambda x: x[1].lower())
+        return windows
     
     @staticmethod
-    def get_capture_method():
-        """获取当前捕获方法"""
-        return WindowCapture._use_printwindow
+    def find_window_by_hwnd(hwnd):
+        """验证窗口句柄是否有效
+        
+        Args:
+            hwnd: 窗口句柄
+            
+        Returns:
+            bool: 窗口是否有效
+        """
+        try:
+            if not hwnd:
+                return False
+            return win32gui.IsWindow(hwnd) and win32gui.IsWindowVisible(hwnd)
+        except Exception:
+            return False
+    
+    @staticmethod
+    def capture_window_by_hwnd(hwnd, crop_rect=None):
+        """通过句柄捕获窗口
+        
+        Args:
+            hwnd: 窗口句柄
+            crop_rect: 裁剪区域 (x, y, width, height)，相对于窗口客户区
+            
+        Returns:
+            PIL.Image or None
+        """
+        try:
+            if not WindowCapture.find_window_by_hwnd(hwnd):
+                if WindowCapture._log_enabled:
+                    print(f"[WindowCapture] 窗口句柄无效: {hwnd}")
+                return None
+            
+            window_text = win32gui.GetWindowText(hwnd)
+            class_name = win32gui.GetClassName(hwnd)
+            if WindowCapture._log_enabled:
+                print(f"[WindowCapture] 捕获窗口: '{window_text}' (类名: {class_name})")
+            
+            # 获取窗口客户区矩形
+            client_rect = win32gui.GetClientRect(hwnd)
+            width = client_rect[2] - client_rect[0]
+            height = client_rect[3] - client_rect[1]
+            
+            if width <= 0 or height <= 0:
+                if WindowCapture._log_enabled:
+                    print(f"[WindowCapture] 窗口尺寸无效: {width}x{height}")
+                return None
+            
+            # 创建设备上下文
+            wDC = win32gui.GetWindowDC(hwnd)
+            dcObj = win32ui.CreateDCFromHandle(wDC)
+            cDC = dcObj.CreateCompatibleDC()
+            
+            # 创建位图对象
+            dataBitMap = win32ui.CreateBitmap()
+            dataBitMap.CreateCompatibleBitmap(dcObj, width, height)
+            cDC.SelectObject(dataBitMap)
+            
+            # 使用PrintWindow API捕获窗口内容
+            flags_to_try = [3, 2, 1, 0]
+            result = 0
+            
+            for flag in flags_to_try:
+                if flag != flags_to_try[0]:
+                    dcObj.DeleteDC()
+                    cDC.DeleteDC()
+                    win32gui.DeleteObject(dataBitMap.GetHandle())
+                    
+                    dcObj = win32ui.CreateDCFromHandle(wDC)
+                    cDC = dcObj.CreateCompatibleDC()
+                    dataBitMap = win32ui.CreateBitmap()
+                    dataBitMap.CreateCompatibleBitmap(dcObj, width, height)
+                    cDC.SelectObject(dataBitMap)
+                
+                result = ctypes.windll.user32.PrintWindow(hwnd, cDC.GetSafeHdc(), flag)
+                if result:
+                    break
+            
+            if not result:
+                dcObj.DeleteDC()
+                cDC.DeleteDC()
+                win32gui.ReleaseDC(hwnd, wDC)
+                win32gui.DeleteObject(dataBitMap.GetHandle())
+                return None
+            
+            # 获取位图数据
+            bmpstr = dataBitMap.GetBitmapBits(True)
+            if not bmpstr or len(bmpstr) == 0:
+                dcObj.DeleteDC()
+                cDC.DeleteDC()
+                win32gui.ReleaseDC(hwnd, wDC)
+                win32gui.DeleteObject(dataBitMap.GetHandle())
+                return None
+            
+            # 转换为PIL图像
+            img = Image.frombuffer(
+                'RGB',
+                (width, height),
+                bmpstr, 'raw', 'BGRX', 0, 1
+            )
+            
+            # 清理资源
+            dcObj.DeleteDC()
+            cDC.DeleteDC()
+            win32gui.ReleaseDC(hwnd, wDC)
+            win32gui.DeleteObject(dataBitMap.GetHandle())
+            
+            # 应用裁剪
+            if crop_rect:
+                cx, cy, cw, ch = crop_rect
+                # 确保裁剪区域在图像范围内
+                cx = max(0, min(cx, width - 1))
+                cy = max(0, min(cy, height - 1))
+                cw = min(cw, width - cx)
+                ch = min(ch, height - cy)
+                if cw > 0 and ch > 0:
+                    img = img.crop((cx, cy, cx + cw, cy + ch))
+                    if WindowCapture._log_enabled:
+                        print(f"[WindowCapture] 应用裁剪: ({cx}, {cy}, {cw}, {ch})")
+            
+            if WindowCapture._log_enabled:
+                print(f"[WindowCapture] 捕获成功: {img.size}")
+            
+            return img
+            
+        except Exception as e:
+            if WindowCapture._log_enabled:
+                print(f"[WindowCapture] 捕获异常: {e}")
+            return None
+    
+    @staticmethod
+    def get_window_client_rect(hwnd):
+        """获取窗口客户区的屏幕坐标
+        
+        Args:
+            hwnd: 窗口句柄
+            
+        Returns:
+            tuple: (left, top, right, bottom) 或 None
+        """
+        try:
+            if not WindowCapture.find_window_by_hwnd(hwnd):
+                return None
+            rect = win32gui.GetClientRect(hwnd)
+            point = win32gui.ClientToScreen(hwnd, (0, 0))
+            return (
+                point[0],
+                point[1],
+                point[0] + rect[2],
+                point[1] + rect[3]
+            )
+        except Exception:
+            return None

@@ -19,6 +19,11 @@ class ScrcpyManager(QObject):
         self.adb_manager = adb_manager
         self.process = None
         self.window_handle = None
+        self.current_serial = None
+        self.auto_restart_enabled = True
+        self.restart_attempts = 0
+        self.max_restart_attempts = 10
+        self.is_stopping = False
 
     def check_environment(self):
         """检查Scrcpy环境"""
@@ -43,7 +48,10 @@ class ScrcpyManager(QObject):
         if self.process:
             return False
         try:
-
+            # 保存当前设备serial用于自动重启
+            if serial:
+                self.current_serial = serial
+            
             if not self.check_environment():
                 return False
 
@@ -97,6 +105,12 @@ class ScrcpyManager(QObject):
             # 指定设备
             if serial:
                 cmd.extend(["-s", serial])
+                
+                # 如果是无线设备，添加额外参数
+                if ':' in serial:
+                    self.log.emit(f"检测到无线设备: {serial}")
+                    # 无线连接时可能需要调整缓冲
+                    cmd.extend(["--video-buffer", "50"])  # 增加视频缓冲
 
             # 打印命令用于调试
             self.log.emit(f"执行命令: {' '.join(cmd)}")
@@ -144,6 +158,7 @@ class ScrcpyManager(QObject):
                 # 这个会在_monitor_output中处理
 
             if window_found or self.process.poll() is None:
+                self.is_stopping = False
                 self.started.emit()
                 self.log.emit("Scrcpy启动成功")
                 return True
@@ -197,17 +212,70 @@ class ScrcpyManager(QObject):
                         else:
                             self.error.emit(f"Scrcpy错误: {line}")
                     elif "Device disconnected" in line:
-                        self.error.emit("设备断开连接")
-                        self.stop()
+                        self.error.emit("检测到设备断开连接")
+                        if self.auto_restart_enabled and not self.is_stopping:
+                            self.log.emit("准备自动重启Scrcpy...")
+                            threading.Thread(target=self._auto_restart, daemon=True).start()
+                        else:
+                            self.stop()
                     elif "INFO: Renderer:" in line:
                         # 渲染器初始化成功，窗口应该已创建
                         self.log.emit("Scrcpy窗口初始化成功")
+                        # 重启成功，重置重试计数
+                        self.restart_attempts = 0
 
         except Exception as e:
             self.log.emit(f"输出监控错误: {e}")
 
+    def _auto_restart(self):
+        """自动重启Scrcpy"""
+        if self.is_stopping:
+            return
+            
+        self.restart_attempts += 1
+        
+        if self.restart_attempts > self.max_restart_attempts:
+            self.error.emit(f"自动重启失败次数过多({self.max_restart_attempts}次)，已停止尝试")
+            self.log.emit("请手动检查设备连接后重新启动Scrcpy")
+            self.stop()
+            return
+        
+        self.log.emit(f"正在尝试自动重启Scrcpy (第{self.restart_attempts}次尝试)...")
+        
+        # 停止当前进程
+        if self.process:
+            try:
+                self.process.terminate()
+                time.sleep(1)
+                if self.process.poll() is None:
+                    self.process.kill()
+            except:
+                pass
+            finally:
+                self.process = None
+        
+        # 等待5秒后重启
+        self.log.emit("等待5秒后重启...")
+        time.sleep(5)
+        
+        # 尝试重启
+        if self.current_serial:
+            success = self.start(self.current_serial)
+            if success:
+                self.log.emit(f"✓ 自动重启成功 (尝试次数: {self.restart_attempts})")
+                self.restart_attempts = 0
+            else:
+                self.log.emit(f"✗ 第{self.restart_attempts}次重启失败，将继续尝试...")
+                # 递归调用自己继续尝试
+                time.sleep(2)
+                self._auto_restart()
+        else:
+            self.error.emit("无法重启：未记录设备信息")
+            self.stop()
+
     def stop(self):
         """停止Scrcpy"""
+        self.is_stopping = True
         if self.process:
             try:
                 self.process.terminate()
@@ -227,6 +295,11 @@ class ScrcpyManager(QObject):
 
     def restart(self):
         """重启Scrcpy"""
+        self.is_stopping = False
+        serial = self.current_serial
         self.stop()
         time.sleep(1)
-        self.start()
+        if serial:
+            self.start(serial)
+        else:
+            self.start()

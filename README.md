@@ -179,7 +179,7 @@ ClickZen/
 
 ## 🤝 贡献指南
 
-非常欢迎您的贡献！请通过以下方式参与：
+非常欢迎您的贡献！请通过以下方式参与： 
 
 1.  Fork 本项目
 2.  创建功能分支 (`git checkout -b feature/AmazingFeature`)

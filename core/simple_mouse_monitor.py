@@ -26,6 +26,10 @@ class SimpleMouseMonitor(QObject):
         self.last_mouse_state = False
         self.mouse_down_time = None
         self.mouse_down_pos = None
+        
+        # 滑动轨迹记录
+        self.swipe_trajectory = []  # [(x, y, time_ms), ...]
+        self.min_trajectory_distance = 5  # 最小轨迹记录距离（像素）
 
         # 时间记录
         self.recording_start_time = None  # 录制开始时间
@@ -35,11 +39,53 @@ class SimpleMouseMonitor(QObject):
         self.position_random_range = 0.01
 
         self.poll_interval = 10  # 轮询间隔（毫秒）
+        
+        # 模拟器模式配置
+        self.simulator_mode = False
+        self.custom_hwnd = None  # 自定义窗口句柄
+        self.crop_rect = None  # 裁剪区域 (x, y, width, height)
+        self.manual_resolution = None # 手动指定的分辨率 (模拟器模式)
+
+    def set_simulator_config(self, hwnd, crop_rect):
+        """设置模拟器配置"""
+        self.simulator_mode = True
+        self.simulator_hwnd = hwnd
+        self.custom_hwnd = hwnd  # 确保custom_hwnd也被设置，以便find_scrcpy_window使用
+        self.crop_rect = crop_rect
+        print(f"[Monitor] 模拟器模式配置: hwnd={hwnd}, crop_rect={crop_rect}")
+    
+    def set_manual_resolution(self, resolution):
+        """设置手动分辨率 (width, height)"""
+        self.manual_resolution = resolution
+        
+    def clear_manual_resolution(self):
+        self.manual_resolution = None
+
+    def clear_simulator_config(self):
+        """清除模拟器配置"""
+        self.simulator_mode = False
+        self.simulator_hwnd = None
+        self.crop_rect = None
+        self.manual_resolution = None
+        print("[Monitor] 模拟器模式配置已清除")
 
     def find_scrcpy_window(self):
-        """查找Scrcpy窗口"""
+        """查找Scrcpy窗口或使用自定义窗口"""
         from core.window_capture import WindowCapture
+        
+        # 模拟器模式：使用自定义窗口
+        if self.simulator_mode and self.custom_hwnd:
+            if WindowCapture.find_window_by_hwnd(self.custom_hwnd):
+                self.scrcpy_hwnd = self.custom_hwnd
+                self.update_window_rect()
+                self.detect_orientation()
+                print(f"[Monitor] 使用模拟器窗口: {self.custom_hwnd}")
+                return True
+            else:
+                print("[Monitor] 模拟器窗口无效")
+                return False
 
+        # 普通模式：查找Scrcpy窗口
         self.scrcpy_hwnd = WindowCapture.find_scrcpy_window()
 
         if self.scrcpy_hwnd:
@@ -95,7 +141,7 @@ class SimpleMouseMonitor(QObject):
                 self.client_rect[1] <= y <= self.client_rect[3])
 
     def screen_to_device_coords(self, x, y):
-        """将屏幕坐标转换为设备坐标"""
+        """将屏幕坐标转换为设备/裁剪区域坐标"""
         if not self.client_rect:
             return None, None
 
@@ -109,7 +155,44 @@ class SimpleMouseMonitor(QObject):
 
         if window_width <= 0 or window_height <= 0:
             return None, None
+        
+        # 模拟器模式：使用设置的裁剪区域
+        if self.simulator_mode and self.crop_rect:
+            cx, cy, cw, ch = self.crop_rect
+            
+            # 检查相对坐标是否在裁剪区域内
+            if not (cx <= rel_x <= cx + cw and cy <= rel_y <= cy + ch):
+                return None, None
+            
+            # 转换为相对于裁剪区域的坐标
+            crop_rel_x = rel_x - cx
+            crop_rel_y = rel_y - cy
+            
+            # 获取设备分辨率进行缩放映射
+            # 逻辑：将裁剪区域映射到整个设备屏幕
+            if self.manual_resolution:
+               device_w, device_h = self.manual_resolution
+            else:
+               device_w, device_h = self.device_resolution
+            
+            # 防止除零错误
+            if cw > 0 and ch > 0:
+                scale_x = device_w / cw
+                scale_y = device_h / ch
+                
+                device_x = int(crop_rel_x * scale_x)
+                device_y = int(crop_rel_y * scale_y)
+            else:
+                device_x = int(crop_rel_x)
+                device_y = int(crop_rel_y)
+            
+            # 确保坐标在有效范围内
+            device_x = max(0, min(device_x, device_w - 1))
+            device_y = max(0, min(device_y, device_h - 1))
+            
+            return device_x, device_y
 
+        # 设备模式（Scrcpy）
         # 获取设备原始分辨率
         original_width, original_height = self.device_resolution
 
@@ -196,7 +279,24 @@ class SimpleMouseMonitor(QObject):
                         # 记录按下时间（动作开始时间）
                         self.mouse_down_time = self.get_time_ms()
                         self.mouse_down_pos = (x, y, device_x, device_y)
+                        # 初始化轨迹
+                        self.swipe_trajectory = [(device_x, device_y, self.mouse_down_time)]
                         print(f"[Monitor] 鼠标按下: 设备({device_x}, {device_y}) 时间: {self.mouse_down_time}ms")
+                
+                # 检测鼠标移动（按下状态）
+                elif left_button_state and self.last_mouse_state:
+                    # 鼠标按下并移动
+                    if self.mouse_down_pos is not None:
+                        device_x, device_y = self.screen_to_device_coords(x, y)
+                        if device_x is not None:
+                            # 检查是否需要记录轨迹点
+                            if self.swipe_trajectory:
+                                last_x, last_y, _ = self.swipe_trajectory[-1]
+                                distance = ((device_x - last_x) ** 2 + (device_y - last_y) ** 2) ** 0.5
+                                # 只记录有意义的移动
+                                if distance >= self.min_trajectory_distance:
+                                    current_time = self.get_time_ms()
+                                    self.swipe_trajectory.append((device_x, device_y, current_time))
 
                 # 检测鼠标释放
                 elif not left_button_state and self.last_mouse_state:
@@ -215,6 +315,14 @@ class SimpleMouseMonitor(QObject):
                             action = None
 
                             if move_distance > 10:  # 滑动
+                                # 添加最后一个点到轨迹
+                                if self.swipe_trajectory and (device_x, device_y, release_time) not in self.swipe_trajectory:
+                                    self.swipe_trajectory.append((device_x, device_y, release_time))
+                                
+                                # 简化轨迹
+                                from core.trajectory_utils import simplify_trajectory
+                                simplified_trajectory = simplify_trajectory(self.swipe_trajectory) if len(self.swipe_trajectory) > 2 else self.swipe_trajectory
+                                
                                 action = {
                                     'type': 'swipe',
                                     'x1': start_device_x,
@@ -224,10 +332,11 @@ class SimpleMouseMonitor(QObject):
                                     'start_time_ms': self.mouse_down_time,  # 动作开始时间
                                     'end_time_ms': release_time,  # 动作结束时间
                                     'duration': duration_ms,  # 持续时间
-                                    'orientation': self.device_orientation
+                                    'orientation': self.device_orientation,
+                                    'trajectory': simplified_trajectory  # 添加轨迹数据
                                 }
                                 print(
-                                    f"[Monitor] 滑动: 持续{duration_ms}ms, 开始:{self.mouse_down_time}ms, 结束:{release_time}ms")
+                                    f"[Monitor] 滑动: 持续{duration_ms}ms, 轨迹点数:{len(simplified_trajectory)}, 开始:{self.mouse_down_time}ms, 结束:{release_time}ms")
 
                             elif duration_ms >= 500:  # 长按
                                 action = {
@@ -275,11 +384,9 @@ class SimpleMouseMonitor(QObject):
         pass
 
     def set_device_resolution(self, width, height):
-        """设置设备分辨率"""
         self.device_resolution = (width, height)
         print(f"[Monitor] 设备分辨率设置为: {width}x{height}")
 
     def set_randomization(self, enabled, position_range=0.01, *args):
-        """设置随机化参数（录制时不使用）"""
         self.enable_randomization = False
         self.position_random_range = position_range

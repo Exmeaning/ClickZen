@@ -11,6 +11,7 @@ class ADBManager:
         self.client = None
         self.device = None
         self.device_serial = None
+        self.wireless_devices = []  # 存储无线设备信息
 
     # 在 ADBManager 类中添加以下方法
 
@@ -149,10 +150,162 @@ class ADBManager:
         except:
             return ""
 
+    def pair_wireless_device(self, ip_port, pairing_code):
+        """配对无线设备（Android 11+）"""
+        try:
+            # 格式：adb pair ip:port pairing_code
+            cmd = [str(self.adb_path), "pair", ip_port]
+            
+            # 使用stdin输入配对码
+            result = subprocess.run(
+                cmd,
+                input=f"{pairing_code}\n",
+                capture_output=True, 
+                text=True, 
+                timeout=10
+            )
+            
+            output = result.stdout.strip()
+            
+            # 解析配对结果
+            if "Successfully paired" in output or "成功配对" in output:
+                # 提取IP地址用于后续连接
+                ip = ip_port.split(':')[0] if ':' in ip_port else ip_port
+                return True, f"配对成功|{ip}"  # 返回IP用于后续连接
+            elif "Failed" in output or "失败" in output:
+                return False, f"配对失败: {output}"
+            else:
+                return False, f"未知结果: {output}"
+                
+        except subprocess.TimeoutExpired:
+            return False, "配对超时"
+        except Exception as e:
+            return False, f"配对错误: {str(e)}"
+    
+    def connect_wireless_device(self, ip_port):
+        """连接无线设备"""
+        try:
+            # 格式：adb connect ip:port
+            result = subprocess.run(
+                [str(self.adb_path), "connect", ip_port],
+                capture_output=True, 
+                text=True, 
+                timeout=10
+            )
+            
+            output = result.stdout.strip()
+            
+            # 判断各种可能的返回信息
+            if "connected" in output.lower():
+                # 添加到无线设备列表
+                if ip_port not in self.wireless_devices:
+                    self.wireless_devices.append(ip_port)
+                return True, output
+            elif "already connected" in output.lower():
+                # 已经连接也是成功
+                if ip_port not in self.wireless_devices:
+                    self.wireless_devices.append(ip_port)
+                return True, "设备已连接"
+            elif "failed" in output.lower():
+                return False, f"连接失败: {output}"
+            elif "cannot connect" in output.lower():
+                return False, f"无法连接: {output}"
+            elif "refused" in output.lower():
+                return False, f"连接被拒绝，请检查设备是否开启无线调试"
+            else:
+                # 未知响应，但可能成功了，尝试检查设备列表
+                if result.returncode == 0:
+                    return True, f"可能已连接: {output}"
+                else:
+                    return False, f"连接结果未知: {output}"
+                
+        except subprocess.TimeoutExpired:
+            return False, "连接超时"
+        except Exception as e:
+            return False, f"连接错误: {str(e)}"
+    
+    def disconnect_wireless_device(self, ip_port=None):
+        """断开无线设备"""
+        try:
+            if ip_port:
+                cmd = [str(self.adb_path), "disconnect", ip_port]
+            else:
+                cmd = [str(self.adb_path), "disconnect"]
+                
+            result = subprocess.run(
+                cmd,
+                capture_output=True, 
+                text=True, 
+                timeout=5
+            )
+            
+            # 从列表中移除
+            if ip_port and ip_port in self.wireless_devices:
+                self.wireless_devices.remove(ip_port)
+                
+            return True, result.stdout
+            
+        except Exception as e:
+            return False, f"断开错误: {str(e)}"
+    
+    def enable_wireless_debugging(self, port=5555):
+        """在设备上启用无线调试（需要先USB连接）"""
+        try:
+            if not self.device_serial:
+                return False, "请先连接设备"
+            
+            # 设置TCP/IP模式
+            result = self.shell(f"setprop service.adb.tcp.port {port}")
+            
+            # 重启adbd
+            self.shell("stop adbd")
+            time.sleep(1)
+            self.shell("start adbd")
+            time.sleep(2)
+            
+            # 获取设备IP
+            ip = self.get_device_ip()
+            if ip:
+                return True, f"{ip}:{port}"
+            else:
+                return False, "无法获取设备IP"
+                
+        except Exception as e:
+            return False, f"启用失败: {str(e)}"
+    
+    def get_device_ip(self):
+        """获取设备IP地址"""
+        try:
+            # 尝试多种方式获取IP
+            result = self.shell("ip addr show wlan0")
+            if result:
+                import re
+                match = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', result)
+                if match:
+                    return match.group(1)
+            
+            # 备用方法
+            result = self.shell("ifconfig wlan0")
+            if result:
+                import re
+                match = re.search(r'inet addr:(\d+\.\d+\.\d+\.\d+)', result)
+                if match:
+                    return match.group(1)
+                    
+            return None
+            
+        except:
+            return None
+
     def connect_device(self, serial=None):
-        """连接设备"""
+        """连接设备（支持USB和无线）"""
         if serial:
             self.device_serial = serial
+            # 如果是IP地址格式，先尝试连接
+            if ':' in serial and '.' in serial:
+                success, msg = self.connect_wireless_device(serial)
+                if not success:
+                    return False
         else:
             devices = self.get_devices()
             if devices:
@@ -189,7 +342,8 @@ class ADBManager:
     def swipe(self, x1, y1, x2, y2, duration=300):
         """滑动屏幕"""
         if self.device_serial:
-            self.shell(f"input swipe {x1} {y1} {x2} {y2} {duration}")
+            return self.shell(f"input swipe {x1} {y1} {x2} {y2} {duration}")
+        return None
 
     def text(self, text):
         """输入文本"""
@@ -206,7 +360,7 @@ class ADBManager:
             self.shell(f"input keyevent {keycode}")
 
     def screenshot(self):
-        """截图 - 改进版本"""
+        """截图 """
         if not self.device_serial:
             return None
 
@@ -223,41 +377,7 @@ class ADBManager:
                     print("[ADB] 截图成功 (exec-out)")
                     return result.stdout
 
-            # 方法2: 使用临时文件
-            print("[ADB] 尝试使用临时文件方式截图...")
-
-            # 在设备上截图
-            device_path = "/sdcard/screenshot.png"
-            result = self.shell(f"screencap -p {device_path}")
-
-            if result is not None:
-                # 下载到本地
-                import tempfile
-                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-                    local_path = tmp.name
-
-                # Pull文件
-                pull_result = subprocess.run(
-                    [str(self.adb_path), "-s", self.device_serial, "pull", device_path, local_path],
-                    capture_output=True, timeout=5
-                )
-
-                if pull_result.returncode == 0:
-                    # 读取文件内容
-                    with open(local_path, 'rb') as f:
-                        data = f.read()
-
-                    # 删除临时文件
-                    import os
-                    os.unlink(local_path)
-
-                    # 删除设备上的文件
-                    self.shell(f"rm {device_path}")
-
-                    print("[ADB] 截图成功 (pull文件)")
-                    return data
-
-            print("[ADB] 所有截图方法都失败了")
+            print("[ADB] 截图失败")
             return None
 
         except Exception as e:

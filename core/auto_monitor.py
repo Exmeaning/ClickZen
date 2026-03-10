@@ -285,116 +285,128 @@ class AutoMonitor(QObject):
         if actions:
             self._execute_actions(actions)
     
-    def _check_if_conditions(self, screenshot, conditions, logic, log_details=False):
-        """检查IF模式的条件组"""
+    def _evaluate_single_condition(self, condition, screenshot):
+        """评估单个条件（统一的条件评估方法）
+        
+        Args:
+            condition: 条件配置字典
+            screenshot: 当前截图
+            
+        Returns:
+            bool: 条件是否满足
+        """
+        condition_type = condition.get('type')
+        
+        if condition_type == 'variable':
+            return self._evaluate_variable_condition(condition)
+        elif condition_type == 'image':
+            return self._evaluate_image_condition(condition, screenshot)
+        return False
+    
+    def _evaluate_variable_condition(self, condition):
+        """评估变量条件"""
+        var_name = condition.get('variable', '')
+        operator = condition.get('operator', '==')
+        value = condition.get('value', 0)
+        
+        if var_name not in self.global_variables:
+            return False
+        
+        current_value = self.global_variables[var_name]
+        
+        ops = {
+            '==': lambda a, b: a == b,
+            '!=': lambda a, b: a != b,
+            '>':  lambda a, b: a > b,
+            '<':  lambda a, b: a < b,
+            '>=': lambda a, b: a >= b,
+            '<=': lambda a, b: a <= b,
+        }
+        op_func = ops.get(operator)
+        return op_func(current_value, value) if op_func else False
+    
+    def _evaluate_image_condition(self, condition, screenshot):
+        """评估图像条件"""
+        region_img = self._get_region_image(screenshot, condition.get('region'))
+        if not region_img:
+            match_result = False
+        else:
+            template = condition.get('template')
+            threshold = condition.get('threshold', 0.85)
+            
+            if template:
+                # 模板尺寸校验
+                tw, th = template.size
+                sw, sh = region_img.size
+                if tw > sw or th > sh:
+                    self.log_message.emit(f"  ⚠️ 模板({tw}x{th})大于搜索区域({sw}x{sh})，跳过")
+                    match_result = False
+                else:
+                    match_result = self._match_template(region_img, template, threshold)
+            else:
+                match_result = False
+        
+        expect_exist = condition.get('expect_exist', True)
+        return match_result if expect_exist else not match_result
+    
+    def _evaluate_conditions(self, screenshot, conditions, logic, log_details=False):
+        """统一的条件组评估方法（替代 _check_if_conditions 和 _check_unified_conditions）
+        
+        Args:
+            screenshot: 当前截图
+            conditions: 条件列表
+            logic: 逻辑关系字符串 ('AND ...', 'OR ...', 'NOT ...')
+            log_details: 是否输出详细日志
+            
+        Returns:
+            bool: 条件组是否满足
+        """
         if not conditions:
             return False
         
-        # 单条件优化：直接返回结果
+        # 单条件优化
         if len(conditions) == 1:
-            condition = conditions[0]
-            condition_type = condition.get('type')
-            
-            if condition_type == 'variable':
-                # 变量条件
-                var_name = condition.get('variable', '')
-                operator = condition.get('operator', '==')
-                value = condition.get('value', 0)
-                
-                if var_name not in self.global_variables:
-                    return False
-                else:
-                    current_value = self.global_variables[var_name]
-                    
-                    if operator == '==':
-                        return current_value == value
-                    elif operator == '!=':
-                        return current_value != value
-                    elif operator == '>':
-                        return current_value > value
-                    elif operator == '<':
-                        return current_value < value
-                    elif operator == '>=':
-                        return current_value >= value
-                    elif operator == '<=':
-                        return current_value <= value
-                    else:
-                        return False
-                        
-            elif condition_type == 'image':
-                # 图像检测条件
-                region_img = self._get_region_image(screenshot, condition.get('region'))
-                if not region_img:
-                    return False
-                else:
-                    template = condition.get('template')
-                    threshold = condition.get('threshold', 0.85)
-                    
-                    if template:
-                        match_result = self._match_template(region_img, template, threshold)
-                    else:
-                        return False
-                    
-                    expect_exist = condition.get('expect_exist', True)
-                    return match_result if expect_exist else not match_result
+            result = self._evaluate_single_condition(conditions[0], screenshot)
+            if result and log_details:
+                cond = conditions[0]
+                if cond.get('type') == 'variable':
+                    self.log_message.emit(f"  [变量] {cond.get('variable')} {cond.get('operator')} {cond.get('value')} → 满足")
+                elif cond.get('type') == 'image':
+                    self.log_message.emit(f"  [图像] 检测到 → 满足")
+            return result
         
-        # 多条件情况
-        results = []
-        
-        for condition in conditions:
-            condition_type = condition.get('type')
-            
-            if condition_type == 'variable':
-                # 变量条件
-                var_name = condition.get('variable', '')
-                operator = condition.get('operator', '==')
-                value = condition.get('value', 0)
-                
-                if var_name not in self.global_variables:
-                    condition_met = False
-                else:
-                    current_value = self.global_variables[var_name]
-                    
-                    if operator == '==':
-                        condition_met = current_value == value
-                    elif operator == '!=':
-                        condition_met = current_value != value
-                    elif operator == '>':
-                        condition_met = current_value > value
-                    elif operator == '<':
-                        condition_met = current_value < value
-                    elif operator == '>=':
-                        condition_met = current_value >= value
-                    elif operator == '<=':
-                        condition_met = current_value <= value
-                    else:
-                        condition_met = False
-                
-                results.append(condition_met)
-                
-            elif condition_type == 'image':
-                # 图像检测条件
-                region_img = self._get_region_image(screenshot, condition.get('region'))
-                if not region_img:
-                    match_result = False
-                else:
-                    template = condition.get('template')
-                    threshold = condition.get('threshold', 0.85)
-                    
-                    if template:
-                        match_result = self._match_template(region_img, template, threshold)
-                    else:
-                        match_result = False
-                
-                expect_exist = condition.get('expect_exist', True)
-                condition_met = match_result if expect_exist else not match_result
-                results.append(condition_met)
+        # 多条件评估
+        results = [self._evaluate_single_condition(c, screenshot) for c in conditions]
         
         # 根据逻辑判断
         if "AND" in logic:
-            return all(results) if results else False
-        else:  # OR
-            return any(results) if results else False
+            final_result = all(results)
+            if final_result and log_details:
+                self.log_message.emit(f"  AND逻辑: {len(results)}/{len(results)} 满足 → 通过")
+        elif "OR" in logic:
+            final_result = any(results)
+            if final_result and log_details:
+                satisfied = sum(results)
+                self.log_message.emit(f"  OR逻辑: {satisfied}/{len(results)} 满足 → 通过")
+        elif "NOT" in logic:
+            final_result = not any(results)
+            if final_result and log_details:
+                not_satisfied = sum(1 for r in results if not r)
+                self.log_message.emit(f"  NOT逻辑: {not_satisfied}/{len(results)} 不满足 → 通过")
+        else:
+            final_result = False
+        
+        return final_result
+
+    def _check_if_conditions(self, screenshot, conditions, logic, log_details=False):
+        """检查IF模式的条件组（委托给统一方法）"""
+        return self._evaluate_conditions(screenshot, conditions, logic, log_details)
+    
+    def _check_unified_conditions(self, screenshot, unified_conditions, logic, log_details=True):
+        """检查统一条件（委托给统一方法）"""
+        if not unified_conditions:
+            return True
+        return self._evaluate_conditions(screenshot, unified_conditions, logic, log_details)
 
     def _get_region_image(self, screenshot, region):
         """获取区域图像（处理坐标转换）"""
@@ -603,148 +615,6 @@ class AutoMonitor(QObject):
                 
         return True
     
-    def _check_unified_conditions(self, screenshot, unified_conditions, logic, log_details=True):
-        """检查统一条件（支持AND/OR/NOT）"""
-        if not unified_conditions:
-            return True
-        
-        # 单条件优化：直接返回结果，不进行逻辑判断
-        if len(unified_conditions) == 1:
-            condition = unified_conditions[0]
-            condition_type = condition.get('type')
-            
-            if condition_type == 'variable':
-                # 变量条件
-                var_name = condition.get('variable', '')
-                operator = condition.get('operator', '==')
-                value = condition.get('value', 0)
-                
-                if var_name not in self.global_variables:
-                    return False
-                else:
-                    current_value = self.global_variables[var_name]
-                    
-                    if operator == '==':
-                        condition_met = current_value == value
-                    elif operator == '!=':
-                        condition_met = current_value != value
-                    elif operator == '>':
-                        condition_met = current_value > value
-                    elif operator == '<':
-                        condition_met = current_value < value
-                    elif operator == '>=':
-                        condition_met = current_value >= value
-                    elif operator == '<=':
-                        condition_met = current_value <= value
-                    else:
-                        condition_met = False
-                    
-                    # 只在满足时输出日志
-                    if condition_met and log_details:
-                        self.log_message.emit(f"  [变量] {var_name} {operator} {value} → 满足")
-                    
-                    return condition_met
-                    
-            elif condition_type == 'image':
-                # 图像检测条件
-                region_img = self._get_region_image(screenshot, condition.get('region'))
-                if not region_img:
-                    return False
-                else:
-                    template = condition.get('template')
-                    threshold = condition.get('threshold', 0.85)
-                    
-                    if template:
-                        match_result = self._match_template(region_img, template, threshold)
-                    else:
-                        return False
-                    
-                    expect_exist = condition.get('expect_exist', True)
-                    condition_met = match_result if expect_exist else not match_result
-                    
-                    # 只在满足时输出日志
-                    if condition_met and log_details:
-                        exist_text = "检测到" if match_result else "未检测到"
-                        self.log_message.emit(f"  [图像] {exist_text} → 满足")
-                    
-                    return condition_met
-        
-        # 多条件情况：需要进行逻辑判断
-        results = []
-        
-        for i, condition in enumerate(unified_conditions):
-            condition_type = condition.get('type')
-            
-            if condition_type == 'variable':
-                # 变量条件
-                var_name = condition.get('variable', '')
-                operator = condition.get('operator', '==')
-                value = condition.get('value', 0)
-                
-                if var_name not in self.global_variables:
-                    condition_met = False
-                else:
-                    current_value = self.global_variables[var_name]
-                    
-                    if operator == '==':
-                        condition_met = current_value == value
-                    elif operator == '!=':
-                        condition_met = current_value != value
-                    elif operator == '>':
-                        condition_met = current_value > value
-                    elif operator == '<':
-                        condition_met = current_value < value
-                    elif operator == '>=':
-                        condition_met = current_value >= value
-                    elif operator == '<=':
-                        condition_met = current_value <= value
-                    else:
-                        condition_met = False
-                
-                results.append(condition_met)
-                
-            elif condition_type == 'image':
-                # 图像检测条件
-                region_img = self._get_region_image(screenshot, condition.get('region'))
-                if not region_img:
-                    match_result = False
-                else:
-                    template = condition.get('template')
-                    threshold = condition.get('threshold', 0.85)
-                    
-                    if template:
-                        match_result = self._match_template(region_img, template, threshold)
-                    else:
-                        match_result = False
-                
-                expect_exist = condition.get('expect_exist', True)
-                condition_met = match_result if expect_exist else not match_result
-                
-                results.append(condition_met)
-        
-        # 根据逻辑判断最终结果
-        if "AND" in logic:
-            # AND模式：全部满足
-            final_result = all(results) if results else False
-            if final_result and log_details:
-                self.log_message.emit(f"  AND逻辑: {len(results)}/{len(results)} 满足 → 通过")
-        elif "OR" in logic:
-            # OR模式：任一满足
-            final_result = any(results) if results else False
-            if final_result and log_details:
-                satisfied = len([r for r in results if r])
-                self.log_message.emit(f"  OR逻辑: {satisfied}/{len(results)} 满足 → 通过")
-        elif "NOT" in logic:
-            # NOT模式：全部不满足
-            final_result = not any(results) if results else True
-            if final_result and log_details:
-                not_satisfied = len([r for r in results if not r])
-                self.log_message.emit(f"  NOT逻辑: {not_satisfied}/{len(results)} 不满足 → 通过")
-        else:
-            final_result = False
-        
-        return final_result
-
     def _execute_recording(self, action):
         """执行录制脚本文件"""
         recording_file = action.get('recording_file', '')

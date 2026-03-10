@@ -30,6 +30,9 @@ class DeviceController(QObject):
         self.target_resolution = None
 
         
+        # Root 模式
+        self.root_mode = False
+        
         # 分辨率缓存
         self._cached_resolution = None
         self._resolution_cache_time = 0
@@ -109,6 +112,12 @@ class DeviceController(QObject):
         except Exception as e:
             print(f"保存模拟器配置失败: {e}")
         
+    def set_root_mode(self, enabled):
+        """设置 Root 模式"""
+        self.root_mode = enabled
+        self.adb.root_mode = enabled
+        print(f"[Controller] Root 模式: {'启用' if enabled else '禁用'}")
+
     def set_recording_mode(self, mode):
         """设置录制模式: 'window' 或 'device'"""
         if mode in ['window', 'device']:
@@ -204,7 +213,10 @@ class DeviceController(QObject):
             x = self.add_random_offset(x, self.position_random_range)
             y = self.add_random_offset(y, self.position_random_range)
 
-        self.adb.tap(x, y)
+        if self.root_mode:
+            self.adb.root_tap(x, y)
+        else:
+            self.adb.tap(x, y)
 
         if self.recording:
             self.recorded_actions.append({
@@ -221,7 +233,10 @@ class DeviceController(QObject):
             y = self.add_random_offset(y, self.position_random_range)
             duration = self.add_random_offset(duration, self.long_press_random_range)
 
-        self.adb.swipe(x, y, x, y, duration)
+        if self.root_mode:
+            self.adb.root_swipe(x, y, x, y, duration)
+        else:
+            self.adb.swipe(x, y, x, y, duration)
 
         if self.recording:
             self.recorded_actions.append({
@@ -241,7 +256,10 @@ class DeviceController(QObject):
             y2 = self.add_random_offset(y2, self.position_random_range)
             duration = self.add_random_offset(duration, 0.1)  # 10%的持续时间随机
 
-        self.adb.swipe(x1, y1, x2, y2, duration)
+        if self.root_mode:
+            self.adb.root_swipe(x1, y1, x2, y2, duration)
+        else:
+            self.adb.swipe(x1, y1, x2, y2, duration)
 
         if self.recording:
             self.recorded_actions.append({
@@ -254,7 +272,10 @@ class DeviceController(QObject):
 
     def input_text(self, text):
         """输入文本"""
-        self.adb.text(text)
+        if self.root_mode:
+            self.adb.root_text(text)
+        else:
+            self.adb.text(text)
 
         if self.recording:
             self.recorded_actions.append({
@@ -265,7 +286,10 @@ class DeviceController(QObject):
 
     def press_back(self):
         """返回键"""
-        self.adb.keyevent(4)
+        if self.root_mode:
+            self.adb.root_keyevent(4)
+        else:
+            self.adb.keyevent(4)
         if self.recording:
             self.recorded_actions.append({
                 'type': 'key',
@@ -276,7 +300,10 @@ class DeviceController(QObject):
 
     def press_home(self):
         """主页键"""
-        self.adb.keyevent(3)
+        if self.root_mode:
+            self.adb.root_keyevent(3)
+        else:
+            self.adb.keyevent(3)
         if self.recording:
             self.recorded_actions.append({
                 'type': 'key',
@@ -287,7 +314,10 @@ class DeviceController(QObject):
 
     def press_recent(self):
         """最近任务键"""
-        self.adb.keyevent(187)
+        if self.root_mode:
+            self.adb.root_keyevent(187)
+        else:
+            self.adb.keyevent(187)
         if self.recording:
             self.recorded_actions.append({
                 'type': 'key',
@@ -456,7 +486,10 @@ class DeviceController(QObject):
                     x = self.add_random_offset(x, self.position_random_range)
                     y = self.add_random_offset(y, self.position_random_range)
                 print(f"    点击: ({x}, {y})")
-                self.adb.tap(x, y)
+                if self.root_mode:
+                    self.adb.root_tap(x, y)
+                else:
+                    self.adb.tap(x, y)
 
             elif action_type == 'long_click':
                 x, y = action['x'], action['y']
@@ -470,7 +503,10 @@ class DeviceController(QObject):
                 # 根据播放速度调整持续时间
                 actual_duration = max(50, int(duration / speed))
                 print(f"    长按: ({x}, {y}) 持续 {actual_duration}ms")
-                self.adb.swipe(x, y, x, y, actual_duration)
+                if self.root_mode:
+                    self.adb.root_swipe(x, y, x, y, actual_duration)
+                else:
+                    self.adb.swipe(x, y, x, y, actual_duration)
 
             elif action_type == 'swipe':
                 x1, y1 = action['x1'], action['y1']
@@ -494,15 +530,24 @@ class DeviceController(QObject):
                 else:
                     # 兼容旧版本：简单的直线滑动
                     print(f"    滑动（直线）: ({x1}, {y1}) -> ({x2}, {y2}) 持续 {actual_duration}ms")
-                    self.adb.swipe(x1, y1, x2, y2, actual_duration)
+                    if self.root_mode:
+                        self.adb.root_swipe(x1, y1, x2, y2, actual_duration)
+                    else:
+                        self.adb.swipe(x1, y1, x2, y2, actual_duration)
 
             elif action_type == 'text':
                 print(f"    输入文本: {action['text']}")
-                self.adb.text(action['text'])
+                if self.root_mode:
+                    self.adb.root_text(action['text'])
+                else:
+                    self.adb.text(action['text'])
 
             elif action_type == 'key':
                 print(f"    按键: {action.get('key_name', action['keycode'])}")
-                self.adb.keyevent(action['keycode'])
+                if self.root_mode:
+                    self.adb.root_keyevent(action['keycode'])
+                else:
+                    self.adb.keyevent(action['keycode'])
 
         except Exception as e:
             print(f"    ❌ 执行失败: {e}")

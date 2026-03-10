@@ -13,6 +13,13 @@ def setup_crash_handler():
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
             return
 
+        # 动态获取版本号，避免硬编码
+        try:
+            from utils.config import VERSION
+            version = VERSION
+        except Exception:
+            version = "unknown"
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         error_dir = Path.home() / ".phone_controller" / "crash_reports"
         error_dir.mkdir(parents=True, exist_ok=True)
@@ -20,9 +27,9 @@ def setup_crash_handler():
         error_file = error_dir / f"crash_{timestamp}.txt"
 
         with open(error_file, 'w', encoding='utf-8') as f:
-            f.write(f"=== Phone Controller Crash Report ===\n")
+            f.write(f"=== ClickZen Crash Report ===\n")
             f.write(f"Time: {datetime.datetime.now()}\n")
-            f.write(f"Version: 1.3.0\n")
+            f.write(f"Version: {version}\n")
             f.write(f"Python: {sys.version}\n")
             f.write(f"OS: {os.name} {sys.platform}\n\n=== Error Details ===\n")
             traceback.print_exception(exc_type, exc_value, exc_traceback, file=f)

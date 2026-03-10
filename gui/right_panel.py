@@ -10,6 +10,7 @@ class RightPanel(QWidget):
     # 信号定义
     adb_command_entered = pyqtSignal(str)
     copy_coords_clicked = pyqtSignal()
+    root_mode_toggled = pyqtSignal(bool)  # Root 模式切换信号
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -188,6 +189,34 @@ class RightPanel(QWidget):
         layout = QVBoxLayout(widget)
         layout.setSpacing(8)
         
+        # Root 模式切换
+        root_layout = QHBoxLayout()
+        self.root_check = QCheckBox("🔓 Root 模式")
+        self.root_check.setToolTip(
+            "启用后，ADB 命令将以 su 权限执行\n"
+            "需要设备已 Root 并在 Root 管理器中授权"
+        )
+        self.root_check.setStyleSheet("""
+            QCheckBox {
+                font-size: 13px;
+                font-weight: bold;
+                color: #FF9800;
+                padding: 4px;
+            }
+            QCheckBox:checked {
+                color: #E65100;
+            }
+        """)
+        self.root_check.toggled.connect(self._on_root_check_toggled)
+        
+        # Root 状态指示
+        self.root_status_label = QLabel("")
+        self.root_status_label.setStyleSheet("font-size: 11px; color: #999;")
+        
+        root_layout.addWidget(self.root_check)
+        root_layout.addWidget(self.root_status_label)
+        root_layout.addStretch()
+        
         # 命令输入框
         input_layout = QHBoxLayout()
         
@@ -224,16 +253,103 @@ class RightPanel(QWidget):
         self.activity_btn = QPushButton("📱 Activity")
         self.package_btn = QPushButton("📦 包名")
         self.screen_btn = QPushButton("📺 屏幕信息")
+        self.root_detect_btn = QPushButton("🔓 Root检测")
+        self.root_detect_btn.setToolTip("检测设备是否已 Root")
         
-        for btn in [self.activity_btn, self.package_btn, self.screen_btn]:
+        for btn in [self.activity_btn, self.package_btn, self.screen_btn, self.root_detect_btn]:
             shortcut_layout.addWidget(btn)
         
         shortcut_layout.addStretch()
         
+        layout.addLayout(root_layout)
         layout.addLayout(input_layout)
         layout.addLayout(shortcut_layout)
         
         return widget
+    
+    def _on_root_check_toggled(self, checked):
+        """Root 复选框切换"""
+        if checked:
+            self.adb_input.setPlaceholderText("输入ADB Root Shell命令... (以su权限执行)")
+            self.adb_input.setStyleSheet("""
+                QLineEdit {
+                    font-size: 14px;
+                    padding: 10px;
+                    border: 2px solid #FF9800;
+                    border-radius: 6px;
+                    background-color: #FFF8E1;
+                }
+                QLineEdit:focus {
+                    border-color: #E65100;
+                    background-color: #FFF3E0;
+                }
+            """)
+            self.execute_btn.setText("🔓 执行")
+        else:
+            self.adb_input.setPlaceholderText("输入ADB Shell命令... (按Enter执行)")
+            self.adb_input.setStyleSheet("""
+                QLineEdit {
+                    font-size: 14px;
+                    padding: 10px;
+                    border: 2px solid #9E9E9E;
+                    border-radius: 6px;
+                    background-color: white;
+                }
+                QLineEdit:focus {
+                    border-color: #757575;
+                    background-color: #f8f8f8;
+                }
+            """)
+            self.execute_btn.setText("▶ 执行")
+        self.root_mode_toggled.emit(checked)
+    
+    def set_root_mode(self, enabled):
+        """外部设置 Root 模式状态（不触发信号）"""
+        self.root_check.blockSignals(True)
+        self.root_check.setChecked(enabled)
+        # 手动更新 UI 样式
+        if enabled:
+            self.adb_input.setPlaceholderText("输入ADB Root Shell命令... (以su权限执行)")
+            self.adb_input.setStyleSheet("""
+                QLineEdit {
+                    font-size: 14px;
+                    padding: 10px;
+                    border: 2px solid #FF9800;
+                    border-radius: 6px;
+                    background-color: #FFF8E1;
+                }
+                QLineEdit:focus {
+                    border-color: #E65100;
+                    background-color: #FFF3E0;
+                }
+            """)
+            self.execute_btn.setText("🔓 执行")
+        else:
+            self.adb_input.setPlaceholderText("输入ADB Shell命令... (按Enter执行)")
+            self.adb_input.setStyleSheet("""
+                QLineEdit {
+                    font-size: 14px;
+                    padding: 10px;
+                    border: 2px solid #9E9E9E;
+                    border-radius: 6px;
+                    background-color: white;
+                }
+                QLineEdit:focus {
+                    border-color: #757575;
+                    background-color: #f8f8f8;
+                }
+            """)
+            self.execute_btn.setText("▶ 执行")
+        self.root_check.blockSignals(False)
+    
+    def update_root_status(self, text, success=True):
+        """更新 Root 状态显示"""
+        if success:
+            self.root_status_label.setText(f"✓ {text}")
+            self.root_status_label.setStyleSheet("font-size: 11px; color: #4CAF50;")
+        else:
+            self.root_status_label.setText(f"✗ {text}")
+            self.root_status_label.setStyleSheet("font-size: 11px; color: #f44336;")
         
     def on_adb_command_entered(self):
         """处理ADB命令输入"""

@@ -2,7 +2,7 @@ import os
 import json
 from pathlib import Path
 
-VERSION = "1.6.3"
+VERSION = "1.7.0"
 
 
 class Config:

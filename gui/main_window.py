@@ -19,6 +19,8 @@ from gui.right_panel import RightPanel
 class MainWindow(QMainWindow):
     # 添加自定义信号
     version_fetched = pyqtSignal(str)
+    playback_finished = pyqtSignal(bool)  # 播放完成信号（线程安全）
+    scan_completed = pyqtSignal(list)  # 扫描完成信号
 
     def __init__(self, config, adb_manager, scrcpy_manager, controller):
         super().__init__()
@@ -34,6 +36,10 @@ class MainWindow(QMainWindow):
         self.auto_monitor.log_message.connect(self.log)
         # 连接版本检测信号
         self.version_fetched.connect(self.update_version_label)
+        # 连接播放完成信号（线程安全）
+        self.playback_finished.connect(self._on_playback_finished)
+        # 连接扫描完成信号
+        self.scan_completed.connect(self._on_scan_complete)
         self.current_device_coords = (0, 0)
         # 初始化设备管理器
         self.device_manager = DeviceManager(self, adb_manager)
@@ -42,6 +48,8 @@ class MainWindow(QMainWindow):
         self.simulator_hwnd = None
         self.simulator_crop_rect = None
         self.simulator_window_title = None
+        # Root 模式状态
+        self.root_mode_active = False
         # 先初始化UI，再设置坐标追踪器
         self.initUI()
         self.setup_coordinate_tracker()
@@ -221,7 +229,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"ClickZen - 智能点击助手 v{VERSION}")
         
         # 设置窗口
-        screen = QApplication.primaryScreen()
         screen = QApplication.primaryScreen()
         screen_rect = screen.availableGeometry()
         width = int(1280)
@@ -410,6 +417,10 @@ class MainWindow(QMainWindow):
         doc = self.log_text.document()
         doc.setMaximumBlockCount(max_lines)
         
+        # 应用 Root 设置
+        root_settings = settings.get("root", {})
+        self.adb.root_click_method = root_settings.get("click_method", "su_input")
+        
         self.log(f"设置已更新")
     
     def check_latest_version(self):
@@ -468,6 +479,13 @@ class MainWindow(QMainWindow):
                 # 自动刷新设备
                 if settings.get("ui", {}).get("auto_refresh_devices", False):
                     QTimer.singleShot(500, self.refresh_devices)
+                
+                # 加载 Root 设置
+                root_settings = settings.get("root", {})
+                if root_settings.get("enabled", False):
+                    # 延迟启用 Root 模式（等设备列表刷新后）
+                    QTimer.singleShot(2000, self._auto_enable_root)
+                self.adb.root_click_method = root_settings.get("click_method", "su_input")
         except Exception as e:
             self.log(f"加载设置失败: {str(e)}")
     
@@ -530,6 +548,7 @@ class MainWindow(QMainWindow):
         self.left_panel.connect_btn.clicked.connect(self.connect_saved_wireless_device)
         self.left_panel.disconnect_btn.clicked.connect(self.disconnect_wireless_device)
         self.left_panel.pair_btn.clicked.connect(self.show_pairing_dialog)
+        self.left_panel.scan_emulator_btn.clicked.connect(self.scan_emulator_ports)
         
         # 中间面板信号
         self.center_panel.recording_toggled.connect(self.toggle_recording)
@@ -583,6 +602,11 @@ class MainWindow(QMainWindow):
         # 模拟器模式信号
         self.left_panel.simulator_mode_changed.connect(self.on_simulator_mode_changed)
         self.left_panel.simulator_window_selected.connect(self.on_simulator_window_selected)
+        
+        # Root 模式信号
+        self.left_panel.root_mode_changed.connect(self.on_root_mode_changed)
+        self.right_panel.root_mode_toggled.connect(self.on_root_toggle)
+        self.right_panel.root_detect_btn.clicked.connect(self.detect_root_status)
         
     def setup_widget_references(self):
         """设置控件引用（兼容旧代码）"""
@@ -770,6 +794,39 @@ class MainWindow(QMainWindow):
         """显示配对对话框"""
         self.device_manager.show_pairing_dialog()
 
+    def scan_emulator_ports(self):
+        """扫描本地模拟器端口"""
+        self.log("正在扫描本地模拟器端口...", "info")
+        self.left_panel.scan_emulator_btn.setEnabled(False)
+        self.left_panel.scan_emulator_btn.setText("扫描中...")
+        
+        from threading import Thread
+        def scan_thread():
+            found = self.adb.scan_emulator_ports()
+            self.scan_completed.emit(found)
+        
+        Thread(target=scan_thread, daemon=True).start()
+    
+    @pyqtSlot(list)
+    def _on_scan_complete(self, found):
+        """扫描完成回调（主线程）"""
+        self.left_panel.scan_emulator_btn.setEnabled(True)
+        self.left_panel.scan_emulator_btn.setText("🔍 扫描本地模拟器")
+        
+        if found:
+            self.log(f"发现 {len(found)} 个模拟器: {', '.join(found)}", "success")
+            # 自动填入第一个找到的地址
+            self.left_panel.ip_input.setText(found[0])
+            if len(found) > 1:
+                msg = "发现以下模拟器:\n" + "\n".join(f"  • {addr}" for addr in found)
+                msg += f"\n\n已自动填入第一个地址，请点击[连接]"
+                QMessageBox.information(self, "扫描结果", msg)
+            # 刷新设备列表
+            self.refresh_devices()
+        else:
+            self.log("未发现运行中的模拟器", "warning")
+            QMessageBox.information(self, "扫描结果", "未发现运行中的模拟器\n\n请确认模拟器已启动")
+
     def refresh_devices(self):
         """刷新设备列表"""
         self.device_manager.refresh_devices()
@@ -918,18 +975,21 @@ class MainWindow(QMainWindow):
         def play_thread():
             result = self.controller.play_recording(
                 self.controller.recorded_actions, speed, use_random)
-
-            # 播放完成后恢复按钮状态
-            self.play_btn.setEnabled(True)
-            self.stop_play_btn.setEnabled(False)
-
-            if result:
-                self.statusBar().showMessage("播放完成")
-            else:
-                self.statusBar().showMessage("播放中断或失败")
+            # 通过信号回到主线程更新UI（线程安全）
+            self.playback_finished.emit(result if result else False)
 
         thread = Thread(target=play_thread, daemon=True)
         thread.start()
+
+    @pyqtSlot(bool)
+    def _on_playback_finished(self, success):
+        """播放完成回调（主线程，线程安全）"""
+        self.play_btn.setEnabled(True)
+        self.stop_play_btn.setEnabled(False)
+        if success:
+            self.statusBar().showMessage("播放完成")
+        else:
+            self.statusBar().showMessage("播放中断或失败")
 
     # 添加停止播放方法
     def stop_playing(self):
@@ -985,9 +1045,7 @@ class MainWindow(QMainWindow):
                     show_warning = settings.get("capture", {}).get("show_hdr_warning", True)
                     
             if show_warning:
-                from core.window_capture import WindowCapture
-                # 只在使用屏幕DC方法时才检查HDR
-                if not WindowCapture.get_capture_method():
+                try:
                     import win32api
                     import win32con
                     
@@ -1008,7 +1066,9 @@ class MainWindow(QMainWindow):
                         )
                         if reply == QMessageBox.StandardButton.No:
                             return
-        except:
+                except Exception:
+                    pass
+        except Exception:
             pass
 
         self.log("正在截图...")
@@ -1034,8 +1094,15 @@ class MainWindow(QMainWindow):
         if not command:
             return
         
-        self.log(f"执行ADB命令: {command}")
-        result = self.adb.shell(command)
+        # 检查是否使用 Root 模式执行
+        use_root = self.right_panel.root_check.isChecked()
+        
+        if use_root:
+            self.log(f"执行ADB Root命令: {command}")
+            result = self.adb.root_shell(command)
+        else:
+            self.log(f"执行ADB命令: {command}")
+            result = self.adb.shell(command)
         
         if result:
             # 显示结果（限制长度）
@@ -1048,6 +1115,166 @@ class MainWindow(QMainWindow):
         else:
             self.log("命令执行失败或无返回")
 
+    def on_root_mode_changed(self, is_root):
+        """左侧面板 Root 模式切换"""
+        if is_root:
+            # 尝试启用 Root 模式
+            self.log("正在检测 Root 权限...", "info")
+            
+            # 检查是否有设备连接
+            if not self.adb.device_serial:
+                serial = self.device_combo.currentData()
+                if serial:
+                    self.adb.connect_device(serial)
+            
+            if not self.adb.device_serial:
+                QMessageBox.warning(self, "警告", "请先连接设备后再启用 Root 模式")
+                # 回退到普通设备模式
+                self.left_panel.mode_combo.blockSignals(True)
+                self.left_panel.mode_combo.setCurrentIndex(0)
+                self.left_panel.mode_combo.blockSignals(False)
+                self.left_panel.on_mode_changed(0)
+                return
+            
+            # 加载 Root 点击方式设置
+            try:
+                root_settings = self._load_root_settings()
+                self.adb.root_click_method = root_settings.get("click_method", "su_input")
+            except:
+                pass
+            
+            success, msg = self.adb.enable_root_mode()
+            if success:
+                self.root_mode_active = True
+                self.controller.set_root_mode(True)
+                self.right_panel.set_root_mode(True)
+                self.right_panel.update_root_status("Root 已启用", True)
+                self.log("✓ Root 权限验证成功，Root 模式已启用", "success")
+                self.log(f"  点击方式: {self.adb.root_click_method}", "info")
+                if self.adb.touch_device_path:
+                    self.log(f"  触摸设备: {self.adb.touch_device_path}", "info")
+            else:
+                self.root_mode_active = False
+                self.controller.set_root_mode(False)
+                self.right_panel.set_root_mode(False)
+                self.right_panel.update_root_status("Root 未授权", False)
+                self.log("✗ Root 权限获取失败", "error")
+                
+                # 弹出详细提示
+                QMessageBox.warning(
+                    self, "🔓 Root 权限获取失败",
+                    msg + "\n\n设置完成后，请重新选择 Root 模式。"
+                )
+                
+                # 回退到普通设备模式
+                self.left_panel.mode_combo.blockSignals(True)
+                self.left_panel.mode_combo.setCurrentIndex(0)
+                self.left_panel.mode_combo.blockSignals(False)
+                self.left_panel.on_mode_changed(0)
+        else:
+            # 禁用 Root 模式
+            if self.root_mode_active:
+                self.root_mode_active = False
+                self.adb.disable_root_mode()
+                self.controller.set_root_mode(False)
+                self.right_panel.set_root_mode(False)
+                self.right_panel.update_root_status("", True)
+                self.log("Root 模式已禁用", "info")
+    
+    def on_root_toggle(self, enabled):
+        """右侧面板 Root 复选框切换"""
+        if enabled:
+            # 检查设备连接
+            if not self.adb.device_serial:
+                serial = self.device_combo.currentData()
+                if serial:
+                    self.adb.connect_device(serial)
+            
+            if not self.adb.device_serial:
+                QMessageBox.warning(self, "警告", "请先连接设备")
+                self.right_panel.set_root_mode(False)
+                return
+            
+            # 加载设置
+            try:
+                root_settings = self._load_root_settings()
+                self.adb.root_click_method = root_settings.get("click_method", "su_input")
+            except:
+                pass
+            
+            success, msg = self.adb.enable_root_mode()
+            if success:
+                self.root_mode_active = True
+                self.controller.set_root_mode(True)
+                self.right_panel.update_root_status("Root 已启用", True)
+                self.log("✓ Root 模式已启用 (ADB栏)", "success")
+            else:
+                self.right_panel.set_root_mode(False)
+                self.right_panel.update_root_status("Root 未授权", False)
+                self.log("✗ Root 权限获取失败", "error")
+                QMessageBox.warning(self, "🔓 Root 权限获取失败", msg)
+        else:
+            self.root_mode_active = False
+            self.adb.disable_root_mode()
+            self.controller.set_root_mode(False)
+            self.right_panel.update_root_status("", True)
+            self.log("Root 模式已禁用 (ADB栏)", "info")
+    
+    def detect_root_status(self):
+        """检测设备 Root 状态"""
+        if not self.adb.device_serial:
+            serial = self.device_combo.currentData()
+            if serial:
+                self.adb.connect_device(serial)
+        
+        if not self.adb.device_serial:
+            self.log("请先连接设备", "warning")
+            QMessageBox.warning(self, "提示", "请先连接设备")
+            return
+        
+        self.log("正在检测设备 Root 状态...", "info")
+        success, msg = self.adb.check_root_access()
+        
+        if success:
+            self.log("✓ 设备已 Root，权限正常", "success")
+            self.right_panel.update_root_status("设备已 Root", True)
+            QMessageBox.information(self, "Root 检测", "✓ 设备已 Root，权限正常\n\n可以启用 Root 模式使用。")
+        else:
+            self.log(f"✗ {msg}", "warning")
+            self.right_panel.update_root_status("未检测到 Root", False)
+            QMessageBox.warning(self, "Root 检测", msg)
+    
+    def _load_root_settings(self):
+        """加载 Root 相关设置"""
+        try:
+            import os
+            if os.path.exists("settings.json"):
+                with open("settings.json", 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    return settings.get("root", {})
+        except:
+            pass
+        return {}
+    
+    def _auto_enable_root(self):
+        """自动启用 Root 模式（从设置加载）"""
+        if self.adb.device_serial:
+            self.log("设置中已启用 Root 模式，正在自动检测...", "info")
+            success, msg = self.adb.enable_root_mode()
+            if success:
+                self.root_mode_active = True
+                self.controller.set_root_mode(True)
+                self.right_panel.set_root_mode(True)
+                self.right_panel.update_root_status("Root 已启用", True)
+                # 切换左侧面板到 Root 模式
+                self.left_panel.mode_combo.blockSignals(True)
+                self.left_panel.mode_combo.setCurrentIndex(1)  # Root 设备模式
+                self.left_panel.mode_combo.blockSignals(False)
+                self.left_panel.on_mode_changed(1)
+                self.log("✓ Root 模式自动启用成功", "success")
+            else:
+                self.log("Root 模式自动启用失败，使用普通模式", "warning")
+
     def on_simulator_mode_changed(self, is_simulator_mode):
         """模拟器模式切换"""
         self.simulator_mode_active = is_simulator_mode
@@ -1059,7 +1286,6 @@ class MainWindow(QMainWindow):
             # 清除模拟器配置
             self.simulator_hwnd = None
             self.simulator_crop_rect = None
-            self.simulator_window_title = None
             self.simulator_window_title = None
             self.controller.clear_simulator_config()
     

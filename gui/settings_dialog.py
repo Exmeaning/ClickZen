@@ -277,6 +277,45 @@ class SettingsDialog(QDialog):
         log_layout.addRow("最大日志行数:", self.max_log_lines)
         log_group.setLayout(log_layout)
         
+        # Root 设置组
+        root_group = QGroupBox("🔓 Root 设置")
+        root_layout = QVBoxLayout()
+        
+        self.root_enabled_check = QCheckBox("默认启用 Root 模式")
+        self.root_enabled_check.setToolTip("启动时自动尝试获取 Root 权限")
+        
+        self.root_auto_detect_check = QCheckBox("自动检测 Root 权限")
+        self.root_auto_detect_check.setToolTip("切换到 Root 模式时自动检测设备 Root 状态")
+        self.root_auto_detect_check.setChecked(True)
+        
+        # Root 点击方式
+        root_method_layout = QHBoxLayout()
+        root_method_label = QLabel("Root 点击方式:")
+        self.root_method_combo = QComboBox()
+        self.root_method_combo.addItem("su -c input (兼容性好)", "su_input")
+        self.root_method_combo.addItem("sendevent (延迟最低)", "sendevent")
+        self.root_method_combo.setToolTip(
+            "su -c input: 通过 su 执行 input 命令，兼容性最好\n"
+            "sendevent: 直接写入触摸设备节点，延迟最低但兼容性较差"
+        )
+        root_method_layout.addWidget(root_method_label)
+        root_method_layout.addWidget(self.root_method_combo)
+        
+        root_info = QLabel(
+            "⚠️ Root 模式使用前提：\n"
+            "1. 设备已安装 Magisk / KernelSU / SuperSU\n"
+            "2. 在 Root 管理器中允许 Shell 的超级用户权限\n"
+            "3. 首次使用时手机上可能弹出授权请求，请点击\"允许\""
+        )
+        root_info.setStyleSheet("color: #FF9800; font-size: 10px; margin: 10px;")
+        root_info.setWordWrap(True)
+        
+        root_layout.addWidget(self.root_enabled_check)
+        root_layout.addWidget(self.root_auto_detect_check)
+        root_layout.addLayout(root_method_layout)
+        root_layout.addWidget(root_info)
+        root_group.setLayout(root_layout)
+        
         # 开发者调试组
         debug_group = QGroupBox("开发者调试")
         debug_layout = QVBoxLayout()
@@ -320,6 +359,7 @@ class SettingsDialog(QDialog):
         layout.addWidget(wireless_group)  # 添加无线设置组
         layout.addWidget(ui_group)
         layout.addWidget(log_group)
+        layout.addWidget(root_group)
         layout.addWidget(debug_group)
         layout.addStretch()
         
@@ -400,6 +440,11 @@ class SettingsDialog(QDialog):
                 "adb_commands": False,
                 "touch_events": False,
                 "save_raw_events": False
+            },
+            "root": {
+                "enabled": False,
+                "click_method": "su_input",
+                "auto_detect": True
             }
         }
         
@@ -441,6 +486,15 @@ class SettingsDialog(QDialog):
         self.debug_adb_commands_check.setChecked(debug.get("adb_commands", False))
         self.debug_touch_events_check.setChecked(debug.get("touch_events", False))
         self.save_raw_events_check.setChecked(debug.get("save_raw_events", False))
+        
+        # Root 设置
+        root = self.settings.get("root", {})
+        self.root_enabled_check.setChecked(root.get("enabled", False))
+        self.root_auto_detect_check.setChecked(root.get("auto_detect", True))
+        method = root.get("click_method", "su_input")
+        idx = self.root_method_combo.findData(method)
+        if idx >= 0:
+            self.root_method_combo.setCurrentIndex(idx)
         
     def get_current_settings(self):
         """从UI获取当前设置"""
@@ -489,6 +543,11 @@ class SettingsDialog(QDialog):
                 "adb_commands": self.debug_adb_commands_check.isChecked(),
                 "touch_events": self.debug_touch_events_check.isChecked(),
                 "save_raw_events": self.save_raw_events_check.isChecked()
+            },
+            "root": {
+                "enabled": self.root_enabled_check.isChecked(),
+                "click_method": self.root_method_combo.currentData(),
+                "auto_detect": self.root_auto_detect_check.isChecked()
             }
         }
         

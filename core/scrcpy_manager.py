@@ -228,49 +228,48 @@ class ScrcpyManager(QObject):
             self.log.emit(f"输出监控错误: {e}")
 
     def _auto_restart(self):
-        """自动重启Scrcpy"""
-        if self.is_stopping:
-            return
+        """自动重启Scrcpy（循环方式，避免递归栈溢出）"""
+        while not self.is_stopping and self.restart_attempts < self.max_restart_attempts:
+            self.restart_attempts += 1
+            self.log.emit(f"正在尝试自动重启Scrcpy (第{self.restart_attempts}次尝试)...")
             
-        self.restart_attempts += 1
+            # 停止当前进程
+            if self.process:
+                try:
+                    self.process.terminate()
+                    time.sleep(1)
+                    if self.process.poll() is None:
+                        self.process.kill()
+                except Exception:
+                    pass
+                finally:
+                    self.process = None
+            
+            # 等待后重启
+            self.log.emit("等待5秒后重启...")
+            time.sleep(5)
+            
+            if self.is_stopping:
+                return
+            
+            # 尝试重启
+            if self.current_serial:
+                success = self.start(self.current_serial)
+                if success:
+                    self.log.emit(f"✓ 自动重启成功 (尝试次数: {self.restart_attempts})")
+                    self.restart_attempts = 0
+                    return
+                else:
+                    self.log.emit(f"✗ 第{self.restart_attempts}次重启失败，将继续尝试...")
+                    time.sleep(2)
+            else:
+                self.error.emit("无法重启：未记录设备信息")
+                self.stop()
+                return
         
-        if self.restart_attempts > self.max_restart_attempts:
+        if self.restart_attempts >= self.max_restart_attempts:
             self.error.emit(f"自动重启失败次数过多({self.max_restart_attempts}次)，已停止尝试")
             self.log.emit("请手动检查设备连接后重新启动Scrcpy")
-            self.stop()
-            return
-        
-        self.log.emit(f"正在尝试自动重启Scrcpy (第{self.restart_attempts}次尝试)...")
-        
-        # 停止当前进程
-        if self.process:
-            try:
-                self.process.terminate()
-                time.sleep(1)
-                if self.process.poll() is None:
-                    self.process.kill()
-            except:
-                pass
-            finally:
-                self.process = None
-        
-        # 等待5秒后重启
-        self.log.emit("等待5秒后重启...")
-        time.sleep(5)
-        
-        # 尝试重启
-        if self.current_serial:
-            success = self.start(self.current_serial)
-            if success:
-                self.log.emit(f"✓ 自动重启成功 (尝试次数: {self.restart_attempts})")
-                self.restart_attempts = 0
-            else:
-                self.log.emit(f"✗ 第{self.restart_attempts}次重启失败，将继续尝试...")
-                # 递归调用自己继续尝试
-                time.sleep(2)
-                self._auto_restart()
-        else:
-            self.error.emit("无法重启：未记录设备信息")
             self.stop()
 
     def stop(self):
@@ -282,7 +281,7 @@ class ScrcpyManager(QObject):
                 time.sleep(1)
                 if self.process.poll() is None:
                     self.process.kill()
-            except:
+            except Exception:
                 pass
             finally:
                 self.process = None
@@ -295,9 +294,9 @@ class ScrcpyManager(QObject):
 
     def restart(self):
         """重启Scrcpy"""
-        self.is_stopping = False
         serial = self.current_serial
         self.stop()
+        self.is_stopping = False  # stop后重置标志，允许重新启动
         time.sleep(1)
         if serial:
             self.start(serial)

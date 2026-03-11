@@ -1,5 +1,11 @@
 # ClickZen - 基于ADB的Android自动化控制工具
 
+---
+
+需要Windows的自动化控制工具？ 试试[ClickYen](https://github.com/Exmeaning/ClickYen)！
+
+---
+
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python Version">
   <img src="https://img.shields.io/badge/platform-Windows-lightgrey.svg" alt="Platform">

@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import *
+from utils.theme import theme
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PIL import Image
@@ -134,7 +135,7 @@ class MonitorTaskDialog(QDialog):
             "说明：配置多个条件-动作对，当条件满足时执行对应动作序列\n"
             "每个条件可以包含多个子条件（AND/OR逻辑）"
         )
-        if_help.setStyleSheet("color: gray; font-size: 10px;")
+        if_help.setStyleSheet(f"color: {theme.color('text_secondary')}; font-size: 10px;")
         if_layout.addWidget(if_help)
         
         self.if_group.setLayout(if_layout)
@@ -167,7 +168,7 @@ class MonitorTaskDialog(QDialog):
             "说明：配置多个动作序列，触发时随机选择一个执行\n"
             "每个序列可以包含多个动作步骤"
         )
-        random_help.setStyleSheet("color: gray; font-size: 10px;")
+        random_help.setStyleSheet(f"color: {theme.color('text_secondary')}; font-size: 10px;")
         random_layout.addWidget(random_help)
         
         self.random_group.setLayout(random_layout)
@@ -225,7 +226,7 @@ class MonitorTaskDialog(QDialog):
             "• OR：任一条件满足时触发\n"
             "• NOT：所有条件都不满足时触发"
         )
-        help_text.setStyleSheet("color: gray; font-size: 10px;")
+        help_text.setStyleSheet(f"color: {theme.color('text_secondary')}; font-size: 10px;")
         condition_layout.addWidget(help_text)
         
         condition_group.setLayout(condition_layout)
@@ -770,12 +771,12 @@ class RegionInputDialog(QDialog):
         
         # 说明文字
         info_label = QLabel("提示: 点击上方按钮截取当前画面并选择坐标")
-        info_label.setStyleSheet("color: green; font-size: 10px; margin-bottom: 5px;")
+        info_label.setStyleSheet(f"color: {theme.color('success_text')}; font-size: 10px; margin-bottom: 5px;")
         layout.addWidget(info_label)
 
         # 说明文字2
         info_label2 = QLabel("输入监控区域的起始和结束坐标：")
-        info_label2.setStyleSheet("color: gray; margin-bottom: 10px;")
+        info_label2.setStyleSheet(f"color: {theme.color('text_secondary')}; margin-bottom: 10px;")
         layout.addWidget(info_label2)
 
         # 坐标输入区域
@@ -820,7 +821,7 @@ class RegionInputDialog(QDialog):
         display_layout = QVBoxLayout()
 
         self.coord_display = QLabel("起始: (0, 0) → 结束: (100, 100)")
-        self.coord_display.setStyleSheet("font-family: Consolas; font-size: 11px; color: blue;")
+        self.coord_display.setStyleSheet(f"font-family: Consolas; font-size: 11px; color: {theme.color('link_accent')};")
 
         self.size_display = QLabel("大小: 100 × 100 像素")
         self.size_display.setStyleSheet("font-family: Consolas; font-size: 11px;")
@@ -1109,7 +1110,7 @@ class ActionEditDialog(QDialog):
         
         # 说明文字
         self.variable_hint = QLabel("提示: 所有变量运算结果都将转换为整数")
-        self.variable_hint.setStyleSheet("color: gray; font-size: 10px;")
+        self.variable_hint.setStyleSheet(f"color: {theme.color('text_secondary')}; font-size: 10px;")
         layout.addRow("", self.variable_hint)
         
         self.param_stack.addWidget(widget)
@@ -1435,7 +1436,7 @@ class MultiConditionDialog(QDialog):
         self.template_label = QLabel("未选择模板")
         self.template_label.setMinimumHeight(100)
         self.template_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.template_label.setStyleSheet("border: 1px solid #ccc;")
+        self.template_label.setStyleSheet(f"border: 1px solid {theme.color('border')};")
         
         template_layout.addLayout(template_button_layout)
         template_layout.addWidget(self.template_label)

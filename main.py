@@ -9,6 +9,7 @@ from PyQt6.QtCore import Qt, QCoreApplication
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from utils.config import config
+from utils.theme import theme
 from utils.downloader import ScrcpyDownloader
 from core.adb_manager import ADBManager
 from core.scrcpy_manager import ScrcpyManager
@@ -23,12 +24,20 @@ class PhoneControllerApp:
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
         )
         
-        self.app = QApplication(sys.argv)
+        # 复用已存在的实例（例如测试环境），否则新建
+        self.app = QApplication.instance() or QApplication(sys.argv)
         self.app.setStyle('Fusion')
 
         # 设置应用信息
         self.app.setApplicationName("Phone Controller")
         self.app.setOrganizationName("PhoneController")
+
+        # 应用界面主题（深色/浅色）
+        # 必须在创建任何窗口之前执行：显式设置与主题匹配的调色板，
+        # 避免系统深色主题下出现"白底白字"（issue #1）
+        theme.bind_config(config)
+        theme.apply(self.app)
+        theme.watch_system(self.app)
 
     def check_and_install_tools(self):
         """检查并安装ADB和Scrcpy"""

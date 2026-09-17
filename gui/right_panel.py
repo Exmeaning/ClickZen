@@ -2,6 +2,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
+from utils.theme import theme
 
 
 class RightPanel(QWidget):
@@ -38,22 +39,120 @@ class RightPanel(QWidget):
         adb_widget = self.create_adb_widget()
         layout.addWidget(adb_widget)
         
-        # 设置样式
-        self.setStyleSheet("""
-            QGroupBox {
+        # 应用主题（主题切换时会自动重新调用）
+        theme.register(self.apply_theme)
+
+    def apply_theme(self):
+        """按当前主题刷新本面板的所有样式"""
+        t = theme.colors
+        self.setStyleSheet(f"""
+            QGroupBox {{
                 font-size: 13px;
                 font-weight: bold;
-                border: 2px solid #e0e0e0;
+                border: 2px solid {t['border']};
                 border-radius: 8px;
                 margin-top: 10px;
                 padding-top: 10px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 10px 0 10px;
-            }
+            }}
         """)
+        self._apply_coord_theme()
+        self._apply_log_theme()
+        self._apply_adb_theme()
+
+    def _apply_coord_theme(self):
+        """坐标显示区域配色"""
+        t = theme.colors
+        self.screen_coord_label.setStyleSheet(f"""
+            QLabel {{
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 18px;
+                color: {t['text']};
+                padding: 5px;
+            }}
+        """)
+        self.device_coord_label.setStyleSheet(f"""
+            QLabel {{
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 20px;
+                font-weight: bold;
+                color: {t['text_strong']};
+                padding: 5px;
+            }}
+        """)
+        self.window_status_label.setStyleSheet(f"""
+            QLabel {{
+                font-size: 14px;
+                color: {t['text_secondary']};
+                padding: 5px;
+            }}
+        """)
+
+    def _apply_log_theme(self):
+        """日志控制台配色（两种主题都保持深色终端风格）"""
+        t = theme.colors
+        self.log_text.setStyleSheet(f"""
+            QTextEdit {{
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 12px;
+                background-color: {t['log_bg']};
+                color: {t['log_text']};
+                border: 1px solid {t['log_border']};
+                border-radius: 6px;
+                padding: 10px;
+            }}
+        """)
+
+    def _apply_adb_theme(self):
+        """ADB 命令输入区域配色（Root 模式下使用警告色描边）"""
+        t = theme.colors
+        root_mode = self.root_check.isChecked()
+        self.root_check.setStyleSheet(f"""
+            QCheckBox {{
+                font-size: 13px;
+                font-weight: bold;
+                color: {t['warning_text']};
+                padding: 4px;
+            }}
+            QCheckBox:checked {{
+                color: {t['warning_text']};
+            }}
+        """)
+        if root_mode:
+            self.adb_input.setStyleSheet(f"""
+                QLineEdit {{
+                    font-size: 14px;
+                    padding: 10px;
+                    border: 2px solid {t['warning']};
+                    border-radius: 6px;
+                    background-color: {t['warning_soft_bg']};
+                    color: {t['text']};
+                }}
+                QLineEdit:focus {{
+                    border-color: {t['warning_text']};
+                    background-color: {t['warning_soft_bg_alt']};
+                }}
+            """)
+        else:
+            self.adb_input.setStyleSheet(f"""
+                QLineEdit {{
+                    font-size: 14px;
+                    padding: 10px;
+                    border: 2px solid {t['border_strong']};
+                    border-radius: 6px;
+                    background-color: {t['input_bg']};
+                    color: {t['text']};
+                }}
+                QLineEdit:focus {{
+                    border-color: {t['border_focus']};
+                    background-color: {t['input_bg_focus']};
+                }}
+            """)
+        self.update_root_status()
         
     def create_coord_widget(self):
         """创建坐标显示区域"""
@@ -63,36 +162,12 @@ class RightPanel(QWidget):
         
         # 屏幕坐标
         self.screen_coord_label = QLabel("屏幕: (0, 0)")
-        self.screen_coord_label.setStyleSheet("""
-            QLabel {
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 18px;
-                color: #333;
-                padding: 5px;
-            }
-        """)
         
         # 设备坐标
         self.device_coord_label = QLabel("设备: (0, 0)")
-        self.device_coord_label.setStyleSheet("""
-            QLabel {
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 20px;
-                font-weight: bold;
-                color: #424242;
-                padding: 5px;
-            }
-        """)
         
         # 窗口状态
         self.window_status_label = QLabel("Scrcpy窗口: 未检测")
-        self.window_status_label.setStyleSheet("""
-            QLabel {
-                font-size: 14px;
-                color: #666;
-                padding: 5px;
-            }
-        """)
         
         # 复制坐标按钮
         self.copy_btn = QPushButton("📋 复制设备坐标")
@@ -154,17 +229,6 @@ class RightPanel(QWidget):
         # 日志文本框
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
-        self.log_text.setStyleSheet("""
-            QTextEdit {
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 12px;
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                border: 1px solid #3c3c3c;
-                border-radius: 6px;
-                padding: 10px;
-            }
-        """)
         
         # 设置高亮样式
         self.setup_log_highlighting()
@@ -196,22 +260,11 @@ class RightPanel(QWidget):
             "启用后，ADB 命令将以 su 权限执行\n"
             "需要设备已 Root 并在 Root 管理器中授权"
         )
-        self.root_check.setStyleSheet("""
-            QCheckBox {
-                font-size: 13px;
-                font-weight: bold;
-                color: #FF9800;
-                padding: 4px;
-            }
-            QCheckBox:checked {
-                color: #E65100;
-            }
-        """)
         self.root_check.toggled.connect(self._on_root_check_toggled)
         
         # Root 状态指示
         self.root_status_label = QLabel("")
-        self.root_status_label.setStyleSheet("font-size: 11px; color: #999;")
+        self._root_status_success = None  # None=无状态 True=成功 False=失败
         
         root_layout.addWidget(self.root_check)
         root_layout.addWidget(self.root_status_label)
@@ -223,19 +276,6 @@ class RightPanel(QWidget):
         self.adb_input = QLineEdit()
         self.adb_input.setPlaceholderText("输入ADB Shell命令... (按Enter执行)")
         self.adb_input.setMinimumHeight(45)
-        self.adb_input.setStyleSheet("""
-            QLineEdit {
-                font-size: 14px;
-                padding: 10px;
-                border: 2px solid #9E9E9E;
-                border-radius: 6px;
-                background-color: white;
-            }
-            QLineEdit:focus {
-                border-color: #757575;
-                background-color: #f8f8f8;
-            }
-        """)
         self.adb_input.returnPressed.connect(self.on_adb_command_entered)
         
         # 执行按钮
@@ -271,35 +311,11 @@ class RightPanel(QWidget):
         """Root 复选框切换"""
         if checked:
             self.adb_input.setPlaceholderText("输入ADB Root Shell命令... (以su权限执行)")
-            self.adb_input.setStyleSheet("""
-                QLineEdit {
-                    font-size: 14px;
-                    padding: 10px;
-                    border: 2px solid #FF9800;
-                    border-radius: 6px;
-                    background-color: #FFF8E1;
-                }
-                QLineEdit:focus {
-                    border-color: #E65100;
-                    background-color: #FFF3E0;
-                }
-            """)
+            self._apply_adb_theme()
             self.execute_btn.setText("🔓 执行")
         else:
             self.adb_input.setPlaceholderText("输入ADB Shell命令... (按Enter执行)")
-            self.adb_input.setStyleSheet("""
-                QLineEdit {
-                    font-size: 14px;
-                    padding: 10px;
-                    border: 2px solid #9E9E9E;
-                    border-radius: 6px;
-                    background-color: white;
-                }
-                QLineEdit:focus {
-                    border-color: #757575;
-                    background-color: #f8f8f8;
-                }
-            """)
+            self._apply_adb_theme()
             self.execute_btn.setText("▶ 执行")
         self.root_mode_toggled.emit(checked)
     
@@ -310,46 +326,30 @@ class RightPanel(QWidget):
         # 手动更新 UI 样式
         if enabled:
             self.adb_input.setPlaceholderText("输入ADB Root Shell命令... (以su权限执行)")
-            self.adb_input.setStyleSheet("""
-                QLineEdit {
-                    font-size: 14px;
-                    padding: 10px;
-                    border: 2px solid #FF9800;
-                    border-radius: 6px;
-                    background-color: #FFF8E1;
-                }
-                QLineEdit:focus {
-                    border-color: #E65100;
-                    background-color: #FFF3E0;
-                }
-            """)
+            self._apply_adb_theme()
             self.execute_btn.setText("🔓 执行")
         else:
             self.adb_input.setPlaceholderText("输入ADB Shell命令... (按Enter执行)")
-            self.adb_input.setStyleSheet("""
-                QLineEdit {
-                    font-size: 14px;
-                    padding: 10px;
-                    border: 2px solid #9E9E9E;
-                    border-radius: 6px;
-                    background-color: white;
-                }
-                QLineEdit:focus {
-                    border-color: #757575;
-                    background-color: #f8f8f8;
-                }
-            """)
+            self._apply_adb_theme()
             self.execute_btn.setText("▶ 执行")
         self.root_check.blockSignals(False)
     
-    def update_root_status(self, text, success=True):
-        """更新 Root 状态显示"""
-        if success:
-            self.root_status_label.setText(f"✓ {text}")
-            self.root_status_label.setStyleSheet("font-size: 11px; color: #4CAF50;")
+    def update_root_status(self, text=None, success=True):
+        """更新 Root 状态显示（text 为 None 时只刷新配色）"""
+        if text is not None:
+            self._root_status_success = success
+            prefix = "✓" if success else "✗"
+            self.root_status_label.setText(f"{prefix} {text}")
+
+        t = theme.colors
+        state = self._root_status_success
+        if state is None:
+            color = t['text_muted']
+        elif state:
+            color = t['success_text']
         else:
-            self.root_status_label.setText(f"✗ {text}")
-            self.root_status_label.setStyleSheet("font-size: 11px; color: #f44336;")
+            color = t['error_text']
+        self.root_status_label.setStyleSheet(f"font-size: 11px; color: {color};")
         
     def on_adb_command_entered(self):
         """处理ADB命令输入"""
@@ -369,17 +369,18 @@ class RightPanel(QWidget):
         timestamp = datetime.now().strftime("%H:%M:%S")
         
         # 根据级别设置颜色
+        t = theme.colors
         color_map = {
-            "info": "#d4d4d4",
-            "success": "#4ec9b0",
-            "warning": "#ce9178",
-            "error": "#f48771"
+            "info": t['log_text'],
+            "success": t['log_success'],
+            "warning": t['log_warning'],
+            "error": t['log_error']
         }
         
-        color = color_map.get(level, "#d4d4d4")
+        color = color_map.get(level, t['log_text'])
         
         # 添加HTML格式的日志
-        html = f'<span style="color: #808080">[{timestamp}]</span> '
+        html = f'<span style="color: {t["log_time"]}">[{timestamp}]</span> '
         html += f'<span style="color: {color}">{message}</span>'
         
         cursor = self.log_text.textCursor()

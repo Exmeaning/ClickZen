@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
+from utils.theme import theme
 import json
 import os
 
@@ -71,7 +72,7 @@ class SimulatorConfigDialog(QDialog):
         
         # 提示
         tips = QLabel("说明: 此分辨率即为程序认为的'真实设备大小'。\n如果模拟器画面有黑边或者并未1:1显示，请在此处修正为实际游戏/应用的分辨率。")
-        tips.setStyleSheet("color: gray; font-size: 11px;")
+        tips.setStyleSheet(f"color: {theme.color('text_secondary')}; font-size: 11px;")
         tips.setWordWrap(True)
         res_layout.addRow(tips)
         

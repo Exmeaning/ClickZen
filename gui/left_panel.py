@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from utils.config import VERSION
+from utils.theme import theme
 
 
 class LeftPanel(QWidget):
@@ -78,23 +79,33 @@ class LeftPanel(QWidget):
 
         scroll_area.setWidget(scroll_content)
         outer_layout.addWidget(scroll_area)
-        
-        # 设置样式
-        self.setStyleSheet("""
-            QGroupBox {
+
+        # 应用主题（主题切换时会自动重新调用）
+        theme.register(self.apply_theme)
+
+    def apply_theme(self):
+        """按当前主题刷新本面板的所有样式"""
+        t = theme.colors
+        self.setStyleSheet(f"""
+            QGroupBox {{
                 font-size: 12px;
                 font-weight: bold;
-                border: 1px solid #e0e0e0;
+                border: 1px solid {t['border']};
                 border-radius: 6px;
                 margin-top: 8px;
                 padding-top: 8px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 8px;
                 padding: 0 6px 0 6px;
-            }
+            }}
         """)
+        self._apply_title_theme()
+        self._apply_combo_theme()
+        self._apply_tip_theme()
+        self._apply_scrcpy_button_theme()
+        self._apply_simulator_status_theme()
         
     def create_title_widget(self):
         """创建标题区域"""
@@ -104,16 +115,8 @@ class LeftPanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         
         # ClickZen大标题
-        title_label = QLabel("ClickZen")
-        title_label.setStyleSheet("""
-            QLabel {
-                font-size: 26px;
-                font-weight: bold;
-                color: #424242;
-                padding: 4px 0;
-            }
-        """)
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label = QLabel("ClickZen")
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # 版本信息 - 合并为一行
         version_widget = QWidget()
@@ -123,25 +126,19 @@ class LeftPanel(QWidget):
         
         # Scrcpy版本
         self.scrcpy_version_label = QLabel(f"Scrcpy v3.3.3")
-        self.scrcpy_version_label.setStyleSheet("color: #666; font-size: 11px;")
         self.scrcpy_version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # ClickZen版本
         self.clickzen_version_label = QLabel(f"ClickZen v{VERSION}")
-        self.clickzen_version_label.setStyleSheet("color: #666; font-size: 11px;")
         self.clickzen_version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # GitHub链接
-        self.github_label = QLabel(
-            '<a href="https://github.com/Exmeaning/ClickZen" style="color: #757575;">🔗 GitHub</a>'
-        )
+        self.github_label = QLabel()
         self.github_label.setOpenExternalLinks(True)
         self.github_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.github_label.setStyleSheet("font-size: 11px;")
         
         # 版本检测标签
         self.version_check_label = QLabel("检查更新中...")
-        self.version_check_label.setStyleSheet("color: #FF9800; font-size: 10px;")
         self.version_check_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         version_layout.addWidget(self.scrcpy_version_label)
@@ -149,17 +146,39 @@ class LeftPanel(QWidget):
         version_layout.addWidget(self.github_label)
         version_layout.addWidget(self.version_check_label)
         
-        layout.addWidget(title_label)
+        layout.addWidget(self.title_label)
         layout.addWidget(version_widget)
         
         # 分隔线
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setFixedHeight(1)
-        line.setStyleSheet("background-color: #e0e0e0;")
-        layout.addWidget(line)
+        self.title_separator = QFrame()
+        self.title_separator.setFrameShape(QFrame.Shape.HLine)
+        self.title_separator.setFixedHeight(1)
+        layout.addWidget(self.title_separator)
         
         return widget
+
+    def _apply_title_theme(self):
+        """标题区域配色"""
+        t = theme.colors
+        self.title_label.setStyleSheet(f"""
+            QLabel {{
+                font-size: 26px;
+                font-weight: bold;
+                color: {t['text_strong']};
+                padding: 4px 0;
+            }}
+        """)
+        for label in (self.scrcpy_version_label, self.clickzen_version_label):
+            label.setStyleSheet(f"color: {t['text_secondary']}; font-size: 11px;")
+        self.github_label.setText(
+            f'<a href="https://github.com/Exmeaning/ClickZen" '
+            f'style="color: {t["link"]};">🔗 GitHub</a>'
+        )
+        self.github_label.setStyleSheet("font-size: 11px;")
+        self.version_check_label.setStyleSheet(
+            f"color: {t['warning_text']}; font-size: 10px;"
+        )
+        self.title_separator.setStyleSheet(f"background-color: {t['border']};")
         
     def create_device_widget(self):
         """创建设备管理区域"""
@@ -171,17 +190,6 @@ class LeftPanel(QWidget):
         # 设备选择下拉框
         self.device_combo = QComboBox()
         self.device_combo.setMinimumHeight(30)
-        self.device_combo.setStyleSheet("""
-            QComboBox {
-                font-size: 12px;
-                padding: 4px 6px;
-                border: 1px solid #9E9E9E;
-                border-radius: 4px;
-            }
-            QComboBox:hover {
-                border-color: #757575;
-            }
-        """)
         
         # 刷新按钮
         self.refresh_btn = QPushButton("🔄 刷新设备列表")
@@ -189,19 +197,47 @@ class LeftPanel(QWidget):
         self.refresh_btn.clicked.connect(self.refresh_devices_clicked.emit)
         
         # USB提示
-        tip_label = QLabel("💡 USB连接更稳定，推荐优先使用")
-        tip_label.setStyleSheet("color: #666; font-size: 10px; padding: 2px;")
-        tip_label.setWordWrap(True)
+        self.device_tip_label = QLabel("💡 USB连接更稳定，推荐优先使用")
+        self.device_tip_label.setWordWrap(True)
         
         label = QLabel("选择设备:")
         label.setStyleSheet("font-size: 12px;")
         layout.addWidget(label)
         layout.addWidget(self.device_combo)
         layout.addWidget(self.refresh_btn)
-        layout.addWidget(tip_label)
+        layout.addWidget(self.device_tip_label)
         
         group.setLayout(layout)
         return group
+
+    def _apply_combo_theme(self):
+        """下拉框配色（设备选择 / 操作模式）"""
+        t = theme.colors
+        combo_style = f"""
+            QComboBox {{
+                font-size: 12px;
+                padding: 4px 6px;
+                border: 1px solid {t['border_strong']};
+                border-radius: 4px;
+                background-color: {t['input_bg']};
+                color: {t['text']};
+            }}
+            QComboBox:hover {{
+                border-color: {t['border_focus']};
+            }}
+        """
+        self.device_combo.setStyleSheet(combo_style)
+        self.mode_combo.setStyleSheet(combo_style)
+
+    def _apply_tip_theme(self):
+        """提示文字配色"""
+        t = theme.colors
+        self.device_tip_label.setStyleSheet(
+            f"color: {t['text_secondary']}; font-size: 10px; padding: 2px;"
+        )
+        self.mode_tip_label.setStyleSheet(
+            f"color: {t['text_secondary']}; font-size: 10px;"
+        )
         
     def create_wireless_widget(self):
         """创建无线连接区域"""
@@ -292,30 +328,44 @@ class LeftPanel(QWidget):
         btn = QPushButton("🚀 启动 Scrcpy")
         btn.setMinimumHeight(55)
         btn.setCheckable(True)
-        btn.setStyleSheet("""
-            QPushButton {
-                font-size: 20px;
-                font-weight: bold;
-                color: white;
-                background-color: #4CAF50;
-                border: none;
-                border-radius: 8px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:checked {
-                background-color: #f44336;
-            }
-            QPushButton:checked:hover {
-                background-color: #da190b;
-            }
-        """)
         
         # 连接信号
         btn.toggled.connect(self.on_scrcpy_toggled)
         
         return btn
+
+    def _apply_scrcpy_button_theme(self):
+        """按当前操作模式给大按钮上色（深色主题下使用更深的底色保证对比度）"""
+        t = theme.colors
+        if self.current_mode == 'simulator':
+            bg, bg_hover = t['accent'], t['accent_hover']
+            checked_bg, checked_hover = t['error'], t['error_hover']
+        elif self.current_mode == 'root_device':
+            bg, bg_hover = t['warning'], t['warning_hover']
+            checked_bg, checked_hover = t['error'], t['error_hover']
+        else:
+            bg, bg_hover = t['success'], t['success_hover']
+            checked_bg, checked_hover = t['error'], t['error_hover']
+
+        self.scrcpy_btn.setStyleSheet(f"""
+            QPushButton {{
+                font-size: 20px;
+                font-weight: bold;
+                color: {t['accent_text']};
+                background-color: {bg};
+                border: none;
+                border-radius: 8px;
+            }}
+            QPushButton:hover {{
+                background-color: {bg_hover};
+            }}
+            QPushButton:checked {{
+                background-color: {checked_bg};
+            }}
+            QPushButton:checked:hover {{
+                background-color: {checked_hover};
+            }}
+        """)
         
     def create_auto_restart_widget(self):
         """创建自动重启选项"""
@@ -366,25 +416,13 @@ class LeftPanel(QWidget):
         self.mode_combo.addItem("📱 设备模式 (Scrcpy)", "device")
         self.mode_combo.addItem("🔓 Root 设备模式", "root_device")
         self.mode_combo.addItem("🖥️ 模拟器模式", "simulator")
-        self.mode_combo.setStyleSheet("""
-            QComboBox {
-                font-size: 12px;
-                padding: 4px 6px;
-                border: 1px solid #9E9E9E;
-                border-radius: 4px;
-            }
-            QComboBox:hover {
-                border-color: #757575;
-            }
-        """)
         self.mode_combo.currentIndexChanged.connect(self.on_mode_changed)
         
-        tip_label = QLabel("💡 模拟器模式可捕获任意窗口")
-        tip_label.setStyleSheet("color: #666; font-size: 10px;")
-        tip_label.setWordWrap(True)
+        self.mode_tip_label = QLabel("💡 模拟器模式可捕获任意窗口")
+        self.mode_tip_label.setWordWrap(True)
         
         layout.addWidget(self.mode_combo)
-        layout.addWidget(tip_label)
+        layout.addWidget(self.mode_tip_label)
         group.setLayout(layout)
         return group
     
@@ -396,16 +434,9 @@ class LeftPanel(QWidget):
         layout.setSpacing(4)
         
         self.simulator_status_label = QLabel("未选择窗口")
-        self.simulator_status_label.setStyleSheet("""
-            QLabel {
-                color: #666;
-                font-size: 11px;
-                padding: 6px;
-                background-color: #f0f0f0;
-                border-radius: 4px;
-            }
-        """)
         self.simulator_status_label.setWordWrap(True)
+        # 是否已成功选择窗口（决定状态标签用普通色还是成功色）
+        self.simulator_status_ok = False
         
         # 重新设置按钮
         reset_btn = QPushButton("🔄 重新选择窗口")
@@ -416,6 +447,31 @@ class LeftPanel(QWidget):
         layout.addWidget(reset_btn)
         
         return widget
+
+    def _apply_simulator_status_theme(self):
+        """模拟器状态标签配色"""
+        t = theme.colors
+        if self.simulator_status_ok:
+            self.simulator_status_label.setStyleSheet(f"""
+                QLabel {{
+                    color: {t['success_text']};
+                    font-size: 12px;
+                    padding: 8px;
+                    background-color: {t['success_soft_bg']};
+                    border: 1px solid {t['success']};
+                    border-radius: 4px;
+                }}
+            """)
+        else:
+            self.simulator_status_label.setStyleSheet(f"""
+                QLabel {{
+                    color: {t['text_secondary']};
+                    font-size: 11px;
+                    padding: 6px;
+                    background-color: {t['surface_muted']};
+                    border-radius: 4px;
+                }}
+            """)
     
     def on_mode_changed(self, index):
         """模式切换"""
@@ -426,19 +482,7 @@ class LeftPanel(QWidget):
             # 模拟器模式
             self.scrcpy_btn.setText("🖥️ 选择窗口")
             self.scrcpy_btn.setChecked(False)
-            self.scrcpy_btn.setStyleSheet("""
-                QPushButton {
-                    font-size: 20px;
-                    font-weight: bold;
-                    color: white;
-                    background-color: #2196F3;
-                    border: none;
-                    border-radius: 8px;
-                }
-                QPushButton:hover {
-                    background-color: #1976D2;
-                }
-            """)
+            self._apply_scrcpy_button_theme()
             self.simulator_status_widget.setVisible(True)
             self.auto_restart_check.setVisible(False)
             
@@ -453,25 +497,7 @@ class LeftPanel(QWidget):
             # Root 设备模式
             self.scrcpy_btn.setText("🔓 启动 Scrcpy (Root)")
             self.scrcpy_btn.setChecked(False)
-            self.scrcpy_btn.setStyleSheet("""
-                QPushButton {
-                    font-size: 20px;
-                    font-weight: bold;
-                    color: white;
-                    background-color: #FF9800;
-                    border: none;
-                    border-radius: 8px;
-                }
-                QPushButton:hover {
-                    background-color: #F57C00;
-                }
-                QPushButton:checked {
-                    background-color: #f44336;
-                }
-                QPushButton:checked:hover {
-                    background-color: #da190b;
-                }
-            """)
+            self._apply_scrcpy_button_theme()
             self.simulator_status_widget.setVisible(False)
             self.auto_restart_check.setVisible(True)
             
@@ -488,25 +514,7 @@ class LeftPanel(QWidget):
             # 设备模式
             self.scrcpy_btn.setText("🚀 启动 Scrcpy")
             self.scrcpy_btn.setChecked(False)
-            self.scrcpy_btn.setStyleSheet("""
-                QPushButton {
-                    font-size: 20px;
-                    font-weight: bold;
-                    color: white;
-                    background-color: #4CAF50;
-                    border: none;
-                    border-radius: 8px;
-                }
-                QPushButton:hover {
-                    background-color: #45a049;
-                }
-                QPushButton:checked {
-                    background-color: #f44336;
-                }
-                QPushButton:checked:hover {
-                    background-color: #da190b;
-                }
-            """)
+            self._apply_scrcpy_button_theme()
             self.simulator_status_widget.setVisible(False)
             self.auto_restart_check.setVisible(True)
             
@@ -544,16 +552,8 @@ class LeftPanel(QWidget):
                             f"✓ 窗口: {title[:30]}...\n"
                             f"裁剪区域: ({x}, {y}) {w}x{h}"
                         )
-                        self.simulator_status_label.setStyleSheet("""
-                            QLabel {
-                                color: #2E7D32;
-                                font-size: 12px;
-                                padding: 8px;
-                                background-color: #E8F5E9;
-                                border: 1px solid #4CAF50;
-                                border-radius: 4px;
-                            }
-                        """)
+                        self.simulator_status_ok = True
+                        self._apply_simulator_status_theme()
                         
                         # 发射信号
                         self.simulator_window_selected.emit(hwnd, crop_rect, title)

@@ -1,5 +1,6 @@
 """设备管理相关功能模块"""
 from PyQt6.QtWidgets import *
+from utils.theme import theme
 from PyQt6.QtCore import *
 import json
 
@@ -108,7 +109,7 @@ class DeviceManager:
             status_label = self.parent.findChild(QLabel, "wireless_status")
             if status_label:
                 status_label.setText("连接中...")
-                status_label.setStyleSheet("font-size: 10px; color: #FFA500;")
+                status_label.setStyleSheet(f"font-size: 10px; color: {theme.color('warning_text')};")
                 
             success, msg = self.adb.connect_wireless_device(manual_ip)
             if success:
@@ -116,7 +117,7 @@ class DeviceManager:
                 # 更新状态
                 if status_label:
                     status_label.setText(f"已连接: {manual_ip}")
-                    status_label.setStyleSheet("font-size: 10px; color: #4CAF50;")
+                    status_label.setStyleSheet(f"font-size: 10px; color: {theme.color('success_text')};")
                 # 刷新设备列表
                 self.refresh_devices()
                 
@@ -153,7 +154,7 @@ class DeviceManager:
                 self.parent.log(f"✗ 无线连接失败: {msg}")
                 if status_label:
                     status_label.setText("连接失败")
-                    status_label.setStyleSheet("font-size: 10px; color: #f44336;")
+                    status_label.setStyleSheet(f"font-size: 10px; color: {theme.color('error_text')};")
                 QMessageBox.warning(self.parent, "连接失败", msg)
             return
 
@@ -169,7 +170,7 @@ class DeviceManager:
         status_label = self.parent.findChild(QLabel, "wireless_status")
         if status_label:
             status_label.setText("连接中...")
-            status_label.setStyleSheet("font-size: 10px; color: #FFA500;")
+            status_label.setStyleSheet(f"font-size: 10px; color: {theme.color('warning_text')};")
         
         success, msg = self.adb.connect_wireless_device(ip_port)
         if success:
@@ -177,7 +178,7 @@ class DeviceManager:
             # 更新状态
             if status_label:
                 status_label.setText(f"已连接: {ip_port}")
-                status_label.setStyleSheet("font-size: 10px; color: #4CAF50;")
+                status_label.setStyleSheet(f"font-size: 10px; color: {theme.color('success_text')};")
             # 刷新设备列表
             self.refresh_devices()
         else:
@@ -185,7 +186,7 @@ class DeviceManager:
             # 更新状态
             if status_label:
                 status_label.setText("连接失败")
-                status_label.setStyleSheet("font-size: 10px; color: #f44336;")
+                status_label.setStyleSheet(f"font-size: 10px; color: {theme.color('error_text')};")
             QMessageBox.warning(self.parent, "连接失败", msg)
     
     def manual_connect_wireless(self):
@@ -248,7 +249,7 @@ class DeviceManager:
             status_label = self.parent.findChild(QLabel, "wireless_status")
             if status_label:
                 status_label.setText("未连接")
-                status_label.setStyleSheet("font-size: 10px; color: #999;")
+                status_label.setStyleSheet(f"font-size: 10px; color: {theme.color('text_muted')};")
             self.refresh_devices()
         else:
             self.parent.log(f"断开失败: {msg}")

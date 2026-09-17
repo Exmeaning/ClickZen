@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from core.window_capture import WindowCapture
+from utils.theme import theme
 
 
 class WindowSelectorDialog(QDialog):
@@ -38,23 +39,26 @@ class WindowSelectorDialog(QDialog):
         self.window_list.setMinimumHeight(300)
         self.window_list.itemDoubleClicked.connect(self.on_item_double_clicked)
         self.window_list.currentItemChanged.connect(self.on_selection_changed)
-        self.window_list.setStyleSheet("""
-            QListWidget {
+        t = theme.colors
+        self.window_list.setStyleSheet(f"""
+            QListWidget {{
                 font-size: 13px;
-                border: 2px solid #e0e0e0;
+                border: 2px solid {t['border']};
                 border-radius: 6px;
-            }
-            QListWidget::item {
+                background-color: {t['input_bg']};
+                color: {t['text']};
+            }}
+            QListWidget::item {{
                 padding: 8px;
-                border-bottom: 1px solid #f0f0f0;
-            }
-            QListWidget::item:selected {
-                background-color: #4CAF50;
-                color: white;
-            }
-            QListWidget::item:hover {
-                background-color: #e8f5e9;
-            }
+                border-bottom: 1px solid {t['border_subtle']};
+            }}
+            QListWidget::item:selected {{
+                background-color: {t['selection_bg']};
+                color: {t['selection_text']};
+            }}
+            QListWidget::item:hover {{
+                background-color: {t['hover_bg']};
+            }}
         """)
         layout.addWidget(self.window_list)
         
@@ -65,12 +69,13 @@ class WindowSelectorDialog(QDialog):
         self.preview_label = QLabel("选择窗口查看预览")
         self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_label.setMinimumHeight(150)
-        self.preview_label.setStyleSheet("""
-            QLabel {
-                background-color: #f5f5f5;
-                border: 1px dashed #ccc;
+        self.preview_label.setStyleSheet(f"""
+            QLabel {{
+                background-color: {t['surface_muted']};
+                color: {t['text_secondary']};
+                border: 1px dashed {t['border']};
                 border-radius: 4px;
-            }
+            }}
         """)
         preview_layout.addWidget(self.preview_label)
         preview_group.setLayout(preview_layout)
@@ -78,7 +83,7 @@ class WindowSelectorDialog(QDialog):
         
         # 警告提示
         warning_label = QLabel("⚠️ 提示：选择窗口后将进入裁剪设置，请不要改变窗口大小")
-        warning_label.setStyleSheet("color: #FF9800; font-size: 12px;")
+        warning_label.setStyleSheet(f"color: {theme.color('warning_text')}; font-size: 12px;")
         warning_label.setWordWrap(True)
         layout.addWidget(warning_label)
         
@@ -88,21 +93,22 @@ class WindowSelectorDialog(QDialog):
         self.select_btn = QPushButton("选择并裁剪")
         self.select_btn.setMinimumHeight(40)
         self.select_btn.setEnabled(False)
-        self.select_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
+        self.select_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {t['success']};
+                color: {t['accent_text']};
                 font-size: 14px;
                 font-weight: bold;
                 border: none;
                 border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:disabled {
-                background-color: #ccc;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {t['success_hover']};
+            }}
+            QPushButton:disabled {{
+                background-color: {t['disabled_bg']};
+                color: {t['text_disabled']};
+            }}
         """)
         self.select_btn.clicked.connect(self.accept)
         

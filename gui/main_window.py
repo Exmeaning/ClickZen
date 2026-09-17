@@ -10,6 +10,7 @@ from core.auto_monitor import AutoMonitor
 from gui.monitor_dialog import MonitorTaskDialog
 from gui.settings_dialog import SettingsDialog
 from utils.config import VERSION
+from utils.theme import theme
 from gui.device_manager import DeviceManager
 from gui.left_panel import LeftPanel
 from gui.center_panel import CenterPanel
@@ -245,28 +246,13 @@ class MainWindow(QMainWindow):
         # 设置窗口图标（可选）
         self.setWindowIcon(QIcon())
         
-        # 设置现代化样式
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #f5f5f5;
-            }
-            QStatusBar {
-                background-color: #37474F;
-                color: white;
-                font-size: 13px;
-            }
-            QStatusBar::item {
-                border: none;
-            }
-        """)
-        
         # 创建菜单栏
         self.create_menu_bar()
 
         # 创建中心部件
-        central_widget = QWidget()
-        central_widget.setStyleSheet("background-color: #f5f5f5;")
-        self.setCentralWidget(central_widget)
+        self.central_container = QWidget()
+        self.setCentralWidget(self.central_container)
+        central_widget = self.central_container
 
         # 主布局 - 三栏设计
         main_layout = QHBoxLayout(central_widget)
@@ -325,9 +311,30 @@ class MainWindow(QMainWindow):
         
         # 加载并应用设置
         self.load_and_apply_settings()
-        
+
+        # 应用主题（并在主题切换时自动刷新）
+        theme.register(self.apply_theme)
+
         # 检查版本
         QTimer.singleShot(1000, self.check_latest_version)
+
+    def apply_theme(self):
+        """应用当前主题的窗口级样式（深色/浅色切换时会自动重新调用）"""
+        t = theme.colors
+        self.setStyleSheet(f"""
+            QMainWindow {{
+                background-color: {t['window_bg']};
+            }}
+            QStatusBar {{
+                background-color: {t['statusbar_bg']};
+                color: {t['statusbar_text']};
+                font-size: 13px;
+            }}
+            QStatusBar::item {{
+                border: none;
+            }}
+        """)
+        self.central_container.setStyleSheet(f"background-color: {t['window_bg']};")
 
     def create_menu_bar(self):
         """创建菜单栏"""
@@ -450,10 +457,13 @@ class MainWindow(QMainWindow):
     def update_version_label(self, version):
         """更新版本标签（槽函数，自动在主线程执行）"""
         if version:
-            text = f'<a href="https://github.com/Exmeaning/ClickZen/releases/latest" style="color: #2196F3;">最新版本: v{version}</a>'
+            text = (
+                f'<a href="https://github.com/Exmeaning/ClickZen/releases/latest" '
+                f'style="color: {theme.color("link_accent")};">最新版本: v{version}</a>'
+            )
             self.log(f"GitHub最新版本: v{version}", "info")
         else:
-            text = f'<span style="color: #999;">版本检测失败</span>'
+            text = f'<span style="color: {theme.color("text_muted")};">版本检测失败</span>'
             self.log("版本检测失败", "warning")
             
         self.left_panel.version_check_label.setText(text)
@@ -714,16 +724,14 @@ class MainWindow(QMainWindow):
         if checked:
             if self.auto_monitor.start_monitoring():
                 self.log("开始自动监控", "success")
-                self.center_panel.monitor_status_label.setText("状态: 监控中...")
-                self.center_panel.monitor_status_label.setStyleSheet("color: #4CAF50;")
+                self.center_panel.set_monitor_status("状态: 监控中...", "running")
             else:
                 self.center_panel.monitor_btn.setChecked(False)
                 QMessageBox.warning(self, "警告", "无法启动监控，请检查是否有配置任务")
         else:
             self.auto_monitor.stop_monitoring()
             self.log("停止自动监控", "info")
-            self.center_panel.monitor_status_label.setText("状态: 已停止")
-            self.center_panel.monitor_status_label.setStyleSheet("color: #666;")
+            self.center_panel.set_monitor_status("状态: 已停止", "idle")
 
     def on_interval_changed(self, value):
         """检查间隔改变"""

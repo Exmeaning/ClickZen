@@ -2,6 +2,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
+from utils.theme import theme
 
 
 class CenterPanel(QWidget):
@@ -31,22 +32,162 @@ class CenterPanel(QWidget):
         monitor_widget = self.create_monitor_widget()
         layout.addWidget(monitor_widget, 1)  # 让监控区域占据主要空间
         
-        # 设置样式
-        self.setStyleSheet("""
-            QGroupBox {
+        # 应用主题（主题切换时会自动重新调用）
+        theme.register(self.apply_theme)
+
+    def apply_theme(self):
+        """按当前主题刷新本面板的所有样式"""
+        t = theme.colors
+        self.setStyleSheet(f"""
+            QGroupBox {{
                 font-size: 13px;
                 font-weight: bold;
-                border: 2px solid #e0e0e0;
+                border: 2px solid {t['border']};
                 border-radius: 8px;
                 margin-top: 10px;
                 padding-top: 10px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 10px 0 10px;
-            }
+            }}
         """)
+        self._apply_record_theme()
+        self._apply_monitor_theme()
+
+    def set_monitor_status(self, text=None, tone="idle"):
+        """更新监控状态文字
+
+        Args:
+            text: 新的状态文字，None 表示不改变
+            tone: idle（普通灰）/ running（成功绿）
+        """
+        if text is not None:
+            self.monitor_status_label.setText(text)
+        self._monitor_tone = tone
+        t = theme.colors
+        color = t['success_text'] if tone == "running" else t['text_secondary']
+        self.monitor_status_label.setStyleSheet(
+            f"font-size: 12px; color: {color}; padding: 4px;"
+        )
+
+    def _apply_record_theme(self):
+        """操作录制区域配色"""
+        t = theme.colors
+        self.record_info_label.setStyleSheet(
+            f"font-size: 12px; color: {t['text_secondary']}; padding: 4px;"
+        )
+        self.action_list.setStyleSheet(f"""
+            QListWidget {{
+                font-size: 11px;
+                border: 1px solid {t['border']};
+                border-radius: 4px;
+                background-color: {t['surface_alt']};
+                color: {t['text']};
+            }}
+            QListWidget::item {{
+                padding: 3px;
+                border-bottom: 1px solid {t['border_subtle']};
+            }}
+            QListWidget::item:selected {{
+                background-color: {t['selection_bg']};
+                color: {t['selection_text']};
+            }}
+        """)
+        self.record_mode_combo.setStyleSheet(f"""
+            QComboBox {{
+                font-size: 12px;
+                padding: 4px;
+                border: 1px solid {t['accent']};
+                border-radius: 4px;
+                background-color: {t['input_bg']};
+                color: {t['text']};
+            }}
+        """)
+        self.record_btn.setStyleSheet(f"""
+            QPushButton {{
+                font-size: 13px;
+                font-weight: bold;
+                color: {t['accent_text']};
+                background-color: {t['neutral']};
+                border: none;
+                border-radius: 5px;
+            }}
+            QPushButton:hover {{
+                background-color: {t['neutral_hover']};
+            }}
+            QPushButton:checked {{
+                background-color: {t['neutral_checked']};
+            }}
+        """)
+
+    def _apply_monitor_theme(self):
+        """智能监控区域配色"""
+        t = theme.colors
+        self.monitor_btn.setStyleSheet(f"""
+            QPushButton {{
+                font-size: 14px;
+                font-weight: bold;
+                color: {t['accent_text']};
+                background-color: {t['neutral']};
+                border: none;
+                border-radius: 6px;
+            }}
+            QPushButton:hover {{
+                background-color: {t['neutral_hover']};
+            }}
+            QPushButton:checked {{
+                background-color: {t['neutral_checked']};
+            }}
+        """)
+        self.interval_spin.setStyleSheet(f"""
+            QDoubleSpinBox {{
+                font-size: 12px;
+                padding: 4px;
+                border: 1px solid {t['border_strong']};
+                border-radius: 4px;
+                background-color: {t['input_bg']};
+                color: {t['text']};
+            }}
+        """)
+        self.task_list_label.setStyleSheet(
+            f"font-size: 12px; color: {t['text_secondary']}; padding: 4px;"
+        )
+        self.task_label.setStyleSheet(
+            f"font-size: 12px; font-weight: bold; color: {t['text_secondary']}; margin-top: 8px;"
+        )
+        self.scheme_label.setStyleSheet(
+            f"font-size: 12px; font-weight: bold; color: {t['text_secondary']}; margin-top: 8px;"
+        )
+        self.monitor_task_list.setStyleSheet(f"""
+            QListWidget {{
+                font-size: 12px;
+                border: 1px solid {t['border']};
+                border-radius: 4px;
+                padding: 5px;
+                background-color: {t['surface_alt']};
+            }}
+            QListWidget::item {{
+                padding: 8px;
+                border-bottom: 1px solid {t['border_subtle']};
+                background-color: {t['surface_bg']};
+                color: {t['text']};
+                margin: 2px;
+                border-radius: 4px;
+            }}
+            QListWidget::item:selected {{
+                background-color: {t['selection_bg']};
+                color: {t['selection_text']};
+                border: 1px solid {t['selection_bg']};
+            }}
+            QListWidget::item:hover {{
+                background-color: {t['hover_bg']};
+                color: {t['text']};
+            }}
+        """)
+        # 状态文字保持当前色调
+        self.set_monitor_status(None, getattr(self, "_monitor_tone", "idle"))
         
     def create_record_widget(self):
         """创建操作录制区域（两栏布局）"""
@@ -62,22 +203,9 @@ class CenterPanel(QWidget):
         
         # 录制信息
         self.record_info_label = QLabel("未录制")
-        self.record_info_label.setStyleSheet("font-size: 12px; color: #666; padding: 4px;")
         
         # 操作列表
         self.action_list = QListWidget()
-        self.action_list.setStyleSheet("""
-            QListWidget {
-                font-size: 11px;
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-                background-color: #fafafa;
-            }
-            QListWidget::item {
-                padding: 3px;
-                border-bottom: 1px solid #f0f0f0;
-            }
-        """)
         
         left_layout.addWidget(self.record_info_label)
         left_layout.addWidget(self.action_list)
@@ -94,14 +222,6 @@ class CenterPanel(QWidget):
         self.record_mode_combo = QComboBox()
         self.record_mode_combo.addItems(["窗口录制", "设备录制"])
         self.record_mode_combo.setMinimumHeight(28)
-        self.record_mode_combo.setStyleSheet("""
-            QComboBox {
-                font-size: 12px;
-                padding: 4px;
-                border: 1px solid #2196F3;
-                border-radius: 4px;
-            }
-        """)
         mode_layout.addWidget(mode_label)
         mode_layout.addWidget(self.record_mode_combo)
         
@@ -194,21 +314,6 @@ class CenterPanel(QWidget):
         self.record_btn = QPushButton("⏺ 开始录制")
         self.record_btn.setMinimumHeight(32)
         self.record_btn.setCheckable(True)
-        self.record_btn.setStyleSheet("""
-            QPushButton {
-                font-size: 13px;
-                font-weight: bold;
-                color: white;
-                background-color: #757575;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #616161;
-            }
-            QPushButton:checked {
-                background-color: #424242;
-            }
-        """)
         self.record_btn.toggled.connect(self.on_record_toggled)
         right_layout.addWidget(self.record_btn)
         
@@ -242,22 +347,6 @@ class CenterPanel(QWidget):
         self.monitor_btn = QPushButton("▶ 开始监控")
         self.monitor_btn.setMinimumHeight(40)
         self.monitor_btn.setCheckable(True)
-        self.monitor_btn.setStyleSheet("""
-            QPushButton {
-                font-size: 14px;
-                font-weight: bold;
-                color: white;
-                background-color: #757575;
-                border: none;
-                border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #616161;
-            }
-            QPushButton:checked {
-                background-color: #424242;
-            }
-        """)
         self.monitor_btn.toggled.connect(self.on_monitor_toggled)
         
         # 检查间隔
@@ -270,21 +359,12 @@ class CenterPanel(QWidget):
         self.interval_spin.setSuffix(" 秒")
         self.interval_spin.setMinimumHeight(28)
         self.interval_spin.setMaximumWidth(80)
-        self.interval_spin.setStyleSheet("""
-            QDoubleSpinBox {
-                font-size: 12px;
-                padding: 4px;
-                border: 1px solid #9E9E9E;
-                border-radius: 4px;
-            }
-        """)
         interval_layout.addWidget(interval_label)
         interval_layout.addWidget(self.interval_spin)
         interval_layout.addStretch()
         
         # 监控状态
         self.monitor_status_label = QLabel("状态: 已停止")
-        self.monitor_status_label.setStyleSheet("font-size: 12px; color: #666; padding: 4px;")
         
         # 分隔线
         separator1 = QFrame()
@@ -292,39 +372,12 @@ class CenterPanel(QWidget):
         separator1.setFrameShadow(QFrame.Shadow.Sunken)
         
         # 任务列表标题
-        list_label = QLabel("监控任务列表:")
-        list_label.setStyleSheet("font-size: 12px; color: #666; padding: 4px;")
+        self.task_list_label = QLabel("监控任务列表:")
         
         # 监控任务列表
         self.monitor_task_list = QListWidget()
-        self.monitor_task_list.setStyleSheet("""
-            QListWidget {
-                font-size: 12px;
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-                padding: 5px;
-                background-color: #fafafa;
-            }
-            QListWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #f0f0f0;
-                background-color: white;
-                color: #333333;
-                margin: 2px;
-                border-radius: 4px;
-            }
-            QListWidget::item:selected {
-                background-color: #4A90E2;
-                color: white;
-                border: 1px solid #3A7BC8;
-            }
-            QListWidget::item:hover {
-                background-color: #F5F5F5;
-                color: #333333;
-            }
-        """)
         
-        left_layout.addWidget(list_label)
+        left_layout.addWidget(self.task_list_label)
         left_layout.addWidget(self.monitor_task_list)
         
         # 右侧：监控控制
@@ -343,21 +396,12 @@ class CenterPanel(QWidget):
         self.interval_spin.setSuffix(" 秒")
         self.interval_spin.setMinimumHeight(28)
         self.interval_spin.setMaximumWidth(80)
-        self.interval_spin.setStyleSheet("""
-            QDoubleSpinBox {
-                font-size: 12px;
-                padding: 4px;
-                border: 1px solid #9E9E9E;
-                border-radius: 4px;
-            }
-        """)
         interval_layout.addWidget(interval_label)
         interval_layout.addWidget(self.interval_spin)
         interval_layout.addStretch()
         
         # 监控状态
         self.monitor_status_label = QLabel("状态: 已停止")
-        self.monitor_status_label.setStyleSheet("font-size: 12px; color: #666; padding: 4px;")
         
         # 分隔线
         separator1 = QFrame()
@@ -365,8 +409,7 @@ class CenterPanel(QWidget):
         separator1.setFrameShadow(QFrame.Shadow.Sunken)
         
         # 任务管理按钮
-        task_label = QLabel("任务管理:")
-        task_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #555; margin-top: 8px;")
+        self.task_label = QLabel("任务管理:")
         
         task_btn_layout = QVBoxLayout()
         task_btn_layout.setSpacing(4)
@@ -390,8 +433,7 @@ class CenterPanel(QWidget):
         separator2.setFrameShadow(QFrame.Shadow.Sunken)
         
         # 方案管理
-        scheme_label = QLabel("方案管理:")
-        scheme_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #555; margin-top: 8px;")
+        self.scheme_label = QLabel("方案管理:")
         
         scheme_btn_layout = QVBoxLayout()
         scheme_btn_layout.setSpacing(4)
@@ -409,10 +451,10 @@ class CenterPanel(QWidget):
         right_layout.addLayout(interval_layout)
         right_layout.addWidget(self.monitor_status_label)
         right_layout.addWidget(separator1)
-        right_layout.addWidget(task_label)
+        right_layout.addWidget(self.task_label)
         right_layout.addLayout(task_btn_layout)
         right_layout.addWidget(separator2)
-        right_layout.addWidget(scheme_label)
+        right_layout.addWidget(self.scheme_label)
         right_layout.addLayout(scheme_btn_layout)
         right_layout.addStretch()
         

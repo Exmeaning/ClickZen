@@ -4,6 +4,7 @@
 """
 
 from PyQt6.QtWidgets import *
+from utils.theme import theme
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 import json
@@ -53,9 +54,10 @@ class AdvancedMonitorDialog(QDialog):
             "• 变量更新时自动广播给所有客户端"
         )
         mode_info.setWordWrap(True)
-        mode_info.setStyleSheet("""
+        mode_info.setStyleSheet(f"""
             padding: 10px;
-            background-color: #f5f5f5;
+            background-color: {theme.color('surface_muted')};
+            color: {theme.color('text_secondary')};
             border-radius: 4px;
             font-size: 11px;
         """)
@@ -99,7 +101,7 @@ class AdvancedMonitorDialog(QDialog):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         info_label = QLabel(f"本机IP: {local_ip}")
-        info_label.setStyleSheet("color: #666; font-size: 11px;")
+        info_label.setStyleSheet(f"color: {theme.color('text_secondary')}; font-size: 11px;")
         server_layout.addRow("", info_label)
         
         server_group.setLayout(server_layout)
@@ -114,7 +116,7 @@ class AdvancedMonitorDialog(QDialog):
             "• 接收客户端的变量更新\n"
             "• 主动推送变量给所有客户端"
         )
-        sync_info.setStyleSheet("font-size: 11px; color: #666; margin-bottom: 10px;")
+        sync_info.setStyleSheet(f"font-size: 11px; color: {theme.color('text_secondary')}; margin-bottom: 10px;")
         sync_layout.addWidget(sync_info)
         
         # 变量列表
@@ -231,7 +233,7 @@ class AdvancedMonitorDialog(QDialog):
         self.status_label = QLabel("⏹ 未启动")
         self.status_label.setStyleSheet("font-weight: bold;")
         self.save_status = QLabel("")
-        self.save_status.setStyleSheet("color: green; font-size: 11px;")
+        self.save_status.setStyleSheet(f"color: {theme.color('success_text')}; font-size: 11px;")
         
         status_layout.addWidget(self.status_label)
         status_layout.addStretch()
@@ -679,7 +681,7 @@ class VariableConfigDialog(QDialog):
             "• 仅发送：只广播给客户端，不接收客户端更新\n"
             "• 仅接收：只接收客户端更新，不广播"
         )
-        info.setStyleSheet("color: #666; font-size: 10px;")
+        info.setStyleSheet(f"color: {theme.color('text_secondary')}; font-size: 10px;")
         layout.addRow("", info)
         
         # 按钮
@@ -990,7 +992,7 @@ class DocumentationDialog(QDialog):
             self.enable_receive_check.isChecked()
         ):
             self.server_status_label.setText("服务器状态: ✅ 运行中")
-            self.server_status_label.setStyleSheet("color: green; font-weight: bold; padding: 5px;")
+            self.server_status_label.setStyleSheet(f"color: {theme.color('success_text')}; font-weight: bold; padding: 5px;")
             self.start_server_btn.setEnabled(False)
             self.stop_server_btn.setEnabled(True)
             
@@ -1007,7 +1009,7 @@ class DocumentationDialog(QDialog):
         if self.variable_server:
             self.variable_server.stop()
             self.server_status_label.setText("服务器状态: ⏹ 已停止")
-            self.server_status_label.setStyleSheet("color: gray; font-weight: bold; padding: 5px;")
+            self.server_status_label.setStyleSheet(f"color: {theme.color('text_secondary')}; font-weight: bold; padding: 5px;")
             self.start_server_btn.setEnabled(True)
             self.stop_server_btn.setEnabled(False)
             self.connection_info.append("服务器已停止")
@@ -1213,7 +1215,7 @@ class TestConnectionDialog(QDialog):
             "📥 <b>测试模式：TCP客户端</b>\n"
             "此测试将作为客户端连接到指定的TCP服务器。"
         )
-        info_label.setStyleSheet("padding: 10px; background-color: #f5f5f5; margin-bottom: 10px;")
+        info_label.setStyleSheet(f"padding: 10px; background-color: {theme.color('surface_muted')}; margin-bottom: 10px;")
         layout.addWidget(info_label)
         
         # 表单
@@ -1266,7 +1268,7 @@ class BroadcastConfigDialog(QDialog):
             "📡 配置要广播的变量\n"
             "当变量值改变时，将自动推送给所有连接的客户端"
         )
-        info.setStyleSheet("padding: 8px; background-color: #e8f5e9;")
+        info.setStyleSheet(f"padding: 8px; background-color: {theme.color('success_soft_bg')}; color: {theme.color('success_text')};")
         layout.addWidget(info)
         
         form_layout = QFormLayout()
@@ -1315,7 +1317,7 @@ class FetchConfigDialog(QDialog):
             "📥 配置从远程服务器获取的变量\n"
             "将作为TCP客户端连接到指定服务器"
         )
-        info.setStyleSheet("padding: 8px; background-color: #e3f2fd;")
+        info.setStyleSheet(f"padding: 8px; background-color: {theme.color('accent_soft_bg')}; color: {theme.color('accent_soft_text')};")
         layout.addWidget(info)
         
         form_layout = QFormLayout()

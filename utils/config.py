@@ -26,7 +26,9 @@ class Config:
             "always_on_top": True,
             "window_x": 100,
             "window_y": 100,
-            "auto_update_scrcpy": True  # 自动检查更新
+            "auto_update_scrcpy": True,  # 自动检查更新
+            # 界面主题：auto(跟随系统) / light(浅色) / dark(深色)
+            "theme_mode": "auto"
         }
 
         self.load()

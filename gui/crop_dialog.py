@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from core.window_capture import WindowCapture
+from utils.theme import theme
 
 
 class CropDialog(QDialog):
@@ -46,14 +47,15 @@ class CropDialog(QDialog):
         
         # 警告
         warning_label = QLabel("⚠️ 注意：设置裁剪区域后，请尽量不要改变窗口大小，否则需要重新设置裁剪区域！")
-        warning_label.setStyleSheet("""
-            QLabel {
-                color: white;
-                background-color: #FF9800;
+        t = theme.colors
+        warning_label.setStyleSheet(f"""
+            QLabel {{
+                color: {t['accent_text']};
+                background-color: {t['warning']};
                 padding: 8px;
                 border-radius: 4px;
                 font-weight: bold;
-            }
+            }}
         """)
         warning_label.setWordWrap(True)
         layout.addWidget(warning_label)
@@ -88,12 +90,12 @@ class CropDialog(QDialog):
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.scroll_area.setStyleSheet("""
-            QScrollArea {
-                border: 2px solid #e0e0e0;
+        self.scroll_area.setStyleSheet(f"""
+            QScrollArea {{
+                border: 2px solid {t['border']};
                 border-radius: 6px;
-                background-color: #333;
-            }
+                background-color: {t['canvas_bg']};
+            }}
         """)
         
         self.crop_widget = CropWidget()
@@ -104,7 +106,7 @@ class CropDialog(QDialog):
         
         # 裁剪信息
         self.crop_info_label = QLabel("请绘制裁剪区域...")
-        self.crop_info_label.setStyleSheet("font-size: 13px; color: #666;")
+        self.crop_info_label.setStyleSheet(f"font-size: 13px; color: {t['text_secondary']};")
         layout.addWidget(self.crop_info_label)
         
         # 按钮
@@ -113,21 +115,22 @@ class CropDialog(QDialog):
         self.confirm_btn = QPushButton("✓ 确认裁剪区域")
         self.confirm_btn.setMinimumHeight(45)
         self.confirm_btn.setEnabled(False)
-        self.confirm_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
+        self.confirm_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {t['success']};
+                color: {t['accent_text']};
                 font-size: 14px;
                 font-weight: bold;
                 border: none;
                 border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:disabled {
-                background-color: #ccc;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {t['success_hover']};
+            }}
+            QPushButton:disabled {{
+                background-color: {t['disabled_bg']};
+                color: {t['text_disabled']};
+            }}
         """)
         self.confirm_btn.clicked.connect(self.accept)
         
@@ -540,6 +543,7 @@ class CropWidget(QWidget):
                 painter.fillRect(rect.right(), rect.top(), img_w - rect.right(), rect.height(), overlay)
                 
                 # 绘制选区边框
+                # 选区描边/手柄画在截图之上，使用固定的高亮色，不随界面主题变化
                 pen = QPen(QColor("#4CAF50"), 2 / self.scale_factor)
                 painter.setPen(pen)
                 painter.drawRect(rect)
@@ -586,5 +590,5 @@ class CropWidget(QWidget):
                 painter.drawText(text_bg, Qt.AlignmentFlag.AlignCenter, size_text)
         else:
             # 没有图片时显示提示
-            painter.setPen(QColor("#999"))
+            painter.setPen(theme.qcolor("text_muted"))
             painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "等待截图...")

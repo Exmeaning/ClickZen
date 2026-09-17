@@ -43,6 +43,7 @@ ClickZen 是一个基于 Python 开发的 Android 设备自动化控制工具，
 - 🎲 **防检测机制**：随机化操作模拟人工行为
 - 📊 **变量系统**：支持条件判断和动态变量
 - 🔧 **易用的GUI**：直观的图形界面操作，新增精准截图与坐标拾取工具
+- 🌓 **深色/浅色主题**：自动跟随系统深浅色（解决系统深色模式下"白底白字"问题，见 [#1](https://github.com/Exmeaning/ClickZen/issues/1)），也可在 *设置 → 外观* 手动切换
 
 ---
 
@@ -150,6 +151,22 @@ ClickZen 是一个基于 Python 开发的 Android 设备自动化控制工具，
     python main.py
     ```
     首次运行时会自动下载 ADB 和 Scrcpy 工具。
+
+### 🌓 主题系统（深色 / 浅色）
+
+-   主题由 [`utils/theme.py`](utils/theme.py) 统一管理，提供一套语义化颜色令牌（`window_bg`、`text`、`success`、`warning` 等），浅色 / 深色各一份。
+-   模式支持 **跟随系统 / 浅色 / 深色**，保存在 `config.json` 的 `theme_mode` 字段，可在 *设置 → 外观* 切换。
+-   **新增/修改界面样式时，请不要写死十六进制颜色**，改用 `theme.color('xxx')`（或 `t = theme.colors`）取当前主题的颜色；需要随主题刷新样式的长生命周期面板，请在初始化时调用 `theme.register(self.apply_theme)`。
+-   所有颜色令牌都需满足 WCAG 对比度要求，相关回归测试见 [`tests/test_theme.py`](tests/test_theme.py)。
+
+### 🧪 运行测试
+
+```bash
+# 依赖 PyQt6（Linux/macOS 下离屏运行）
+QT_QPA_PLATFORM=offscreen python -m unittest tests.test_theme -v
+```
+
+测试会真实构建主窗口，检查深色主题下不再出现写死的浅色、所有文字/背景组合的对比度，以及运行时切换主题能正确刷新。
 
 ---
 

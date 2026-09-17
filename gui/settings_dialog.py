@@ -3,6 +3,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
+from utils.theme import MODES, MODE_LABELS, theme
 import json
 import os
 
@@ -32,6 +33,10 @@ class SettingsDialog(QDialog):
         
         # 创建选项卡
         tab_widget = QTabWidget()
+        
+        # 外观（主题）选项卡
+        appearance_tab = self.create_appearance_tab()
+        tab_widget.addTab(appearance_tab, "外观")
         
         # 捕获设置选项卡
         capture_tab = self.create_capture_tab()
@@ -74,6 +79,54 @@ class SettingsDialog(QDialog):
         
         layout.addLayout(button_layout)
         
+    def create_appearance_tab(self):
+        """创建外观设置选项卡（深色 / 浅色主题）"""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        
+        theme_group = QGroupBox("界面主题")
+        theme_layout = QVBoxLayout()
+        
+        selector_layout = QHBoxLayout()
+        selector_layout.addWidget(QLabel("主题:"))
+        
+        self.theme_combo = QComboBox()
+        for mode in MODES:
+            self.theme_combo.addItem(MODE_LABELS[mode], mode)
+        
+        # 选中当前模式（先设置再连接信号，避免初始化时重复应用）
+        index = self.theme_combo.findData(theme.mode)
+        self.theme_combo.setCurrentIndex(index if index >= 0 else 0)
+        self.theme_combo.currentIndexChanged.connect(self.on_theme_mode_changed)
+        selector_layout.addWidget(self.theme_combo)
+        selector_layout.addStretch()
+        
+        theme_layout.addLayout(selector_layout)
+        
+        t = theme.colors
+        theme_info = QLabel(
+            "跟随系统：自动使用 Windows / 桌面环境的深浅色设置，并在系统切换时实时更新。\n"
+            "深色主题可解决系统深色模式下文字看不清的问题。"
+        )
+        theme_info.setStyleSheet(
+            f"color: {t['text_secondary']}; font-size: 10px; margin: 10px;"
+        )
+        theme_info.setWordWrap(True)
+        theme_layout.addWidget(theme_info)
+        
+        theme_group.setLayout(theme_layout)
+        layout.addWidget(theme_group)
+        layout.addStretch()
+        
+        return widget
+    
+    def on_theme_mode_changed(self, _index):
+        """主题选择改变 - 立即生效并保存"""
+        mode = self.theme_combo.currentData()
+        if not mode:
+            return
+        theme.set_mode(mode)
+    
     def create_capture_tab(self):
         """创建捕获设置选项卡"""
         widget = QWidget()
@@ -241,7 +294,7 @@ class SettingsDialog(QDialog):
             "1. Android 11+: 开发者选项 → 无线调试\n"
             "2. Android 10-: 先USB连接，执行'adb tcpip 5555'"
         )
-        wireless_info.setStyleSheet("color: gray; font-size: 10px; margin: 10px;")
+        wireless_info.setStyleSheet(f"color: {theme.color('text_secondary')}; font-size: 10px; margin: 10px;")
         
         wireless_layout.addLayout(device_list_layout)
         wireless_layout.addLayout(device_input_layout)
@@ -307,7 +360,7 @@ class SettingsDialog(QDialog):
             "2. 在 Root 管理器中允许 Shell 的超级用户权限\n"
             "3. 首次使用时手机上可能弹出授权请求，请点击\"允许\""
         )
-        root_info.setStyleSheet("color: #FF9800; font-size: 10px; margin: 10px;")
+        root_info.setStyleSheet(f"color: {theme.color('warning_text')}; font-size: 10px; margin: 10px;")
         root_info.setWordWrap(True)
         
         root_layout.addWidget(self.root_enabled_check)
@@ -347,7 +400,7 @@ class SettingsDialog(QDialog):
             "⚠️ 开启调试会产生大量日志，可能影响性能\n"
             "建议仅在排查问题时开启"
         )
-        debug_info.setStyleSheet("color: orange; font-size: 10px; margin: 10px;")
+        debug_info.setStyleSheet(f"color: {theme.color('warning_text')}; font-size: 10px; margin: 10px;")
         
         debug_layout.addWidget(self.debug_device_events_check)
         debug_layout.addWidget(self.debug_adb_commands_check)

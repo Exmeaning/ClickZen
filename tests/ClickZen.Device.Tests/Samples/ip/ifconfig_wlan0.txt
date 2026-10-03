@@ -1,0 +1,4 @@
+wlan0     Link encap:Ethernet  HWaddr 4a:2f:9c:11:22:33  Driver cnss_pci
+          inet addr:10.0.0.57  Bcast:10.0.0.255  Mask:255.255.255.0
+          inet6 addr: fe80::482f:9cff:fe11:2233/64 Scope: Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1

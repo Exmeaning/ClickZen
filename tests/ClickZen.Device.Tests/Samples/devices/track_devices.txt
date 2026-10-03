@@ -1,0 +1,3 @@
+R5CT1234ABC	device
+emulator-5554	offline
+127.0.0.1:7555	authorizing

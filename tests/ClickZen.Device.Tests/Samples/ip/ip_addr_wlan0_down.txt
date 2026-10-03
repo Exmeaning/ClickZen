@@ -1,0 +1,2 @@
+30: wlan0: <BROADCAST,MULTICAST> mtu 1500 qdisc mq state DOWN group default qlen 3000
+    link/ether 4a:2f:9c:11:22:33 brd ff:ff:ff:ff:ff:ff

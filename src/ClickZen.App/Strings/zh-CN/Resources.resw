@@ -542,4 +542,61 @@
   <data name="Editor_Sum_StopTask" xml:space="preserve"><value>停用本任务</value></data>
   <data name="Editor_Sum_StopScheme" xml:space="preserve"><value>停止方案</value></data>
   <data name="Editor_Sum_Delay" xml:space="preserve"><value>之后等待 {0} ms</value></data>
+  <data name="Vars_SchemeLabel.Text" xml:space="preserve"><value>方案：</value></data>
+  <data name="Vars_ViewPicker.Header" xml:space="preserve"><value>显示数值来自</value></data>
+  <data name="Vars_ViewGlobal" xml:space="preserve"><value>全局变量</value></data>
+  <data name="Vars_ViewDevice" xml:space="preserve"><value>{0}（方案变量）</value></data>
+  <data name="Vars_Add.ToolTipService.ToolTip" xml:space="preserve"><value>在方案中声明一个新变量</value></data>
+  <data name="Vars_AddText.Text" xml:space="preserve"><value>新建变量</value></data>
+  <data name="Vars_ColName.Text" xml:space="preserve"><value>名称</value></data>
+  <data name="Vars_ColType.Text" xml:space="preserve"><value>类型</value></data>
+  <data name="Vars_ColScope.Text" xml:space="preserve"><value>作用域</value></data>
+  <data name="Vars_ColSync.Text" xml:space="preserve"><value>网络同步</value></data>
+  <data name="Vars_ColInitial.Text" xml:space="preserve"><value>初值</value></data>
+  <data name="Vars_ColValue.Text" xml:space="preserve"><value>当前值（可修改）</value></data>
+  <data name="Vars_TypeInt.Content" xml:space="preserve"><value>整数</value></data>
+  <data name="Vars_TypeDouble.Content" xml:space="preserve"><value>小数</value></data>
+  <data name="Vars_TypeBool.Content" xml:space="preserve"><value>布尔</value></data>
+  <data name="Vars_TypeString.Content" xml:space="preserve"><value>字符串</value></data>
+  <data name="Vars_ScopeScheme.Content" xml:space="preserve"><value>方案</value></data>
+  <data name="Vars_ScopeGlobal.Content" xml:space="preserve"><value>全局</value></data>
+  <data name="Vars_SyncNone.Content" xml:space="preserve"><value>不同步</value></data>
+  <data name="Vars_SyncSend.Content" xml:space="preserve"><value>发送</value></data>
+  <data name="Vars_SyncReceive.Content" xml:space="preserve"><value>接收</value></data>
+  <data name="Vars_SyncBoth.Content" xml:space="preserve"><value>双向</value></data>
+  <data name="Vars_ValueBox.ToolTipService.ToolTip" xml:space="preserve"><value>输入新值后按回车，立即写入正在运行的方案（调试用）</value></data>
+  <data name="Vars_RowMore.ToolTipService.ToolTip" xml:space="preserve"><value>更多</value></data>
+  <data name="Vars_Empty.Text" xml:space="preserve"><value>方案中还没有声明变量。点击“新建变量”添加，或者运行方案后在这里查看运行时产生的变量。</value></data>
+  <data name="Vars_TableHint.Text" xml:space="preserve"><value>方案变量每台设备各有一份；全局变量由所有设备共享。设置了网络同步的变量可通过同步服务被其他程序读写。修改声明后记得在自动化页保存方案。</value></data>
+  <data name="Vars_NameEmpty" xml:space="preserve"><value>名称不能为空</value></data>
+  <data name="Vars_NameInvalid" xml:space="preserve"><value>只能包含字母、数字、下划线和点，且不能以数字开头</value></data>
+  <data name="Vars_NameDuplicate" xml:space="preserve"><value>已有同名变量</value></data>
+  <data name="Vars_Remove" xml:space="preserve"><value>删除声明</value></data>
+  <data name="Vars_Declare" xml:space="preserve"><value>声明到方案</value></data>
+  <data name="Vars_CopyName" xml:space="preserve"><value>复制名称</value></data>
+  <data name="Vars_SyncCard.Header" xml:space="preserve"><value>变量同步服务</value></data>
+  <data name="Vars_SyncCard.Description" xml:space="preserve"><value>允许其他程序通过 TCP 读取、修改和订阅变量</value></data>
+  <data name="Vars_SyncRunning" xml:space="preserve"><value>正在监听端口 {0}，已连接 {1} 个客户端</value></data>
+  <data name="Vars_SyncStopped" xml:space="preserve"><value>服务未运行</value></data>
+  <data name="Vars_SyncFailed" xml:space="preserve"><value>启动失败：{0}</value></data>
+  <data name="Vars_PortCard.Header" xml:space="preserve"><value>端口</value></data>
+  <data name="Vars_PortCard.Description" xml:space="preserve"><value>修改后点击下方“应用端口与令牌”</value></data>
+  <data name="Vars_TokenCard.Header" xml:space="preserve"><value>访问令牌</value></data>
+  <data name="Vars_TokenCard.Description" xml:space="preserve"><value>客户端连接时必须提供；留空表示不验证（不建议在局域网中使用）</value></data>
+  <data name="Vars_TokenBox.PlaceholderText" xml:space="preserve"><value>未设置令牌</value></data>
+  <data name="Vars_TokenShow.ToolTipService.ToolTip" xml:space="preserve"><value>显示/隐藏令牌</value></data>
+  <data name="Vars_TokenRegenerate.ToolTipService.ToolTip" xml:space="preserve"><value>生成新的随机令牌并立即应用</value></data>
+  <data name="Vars_TokenRegenerateText.Text" xml:space="preserve"><value>重新生成</value></data>
+  <data name="Vars_TokenCopy.ToolTipService.ToolTip" xml:space="preserve"><value>复制令牌</value></data>
+  <data name="Vars_TokenCopied" xml:space="preserve"><value>令牌已复制到剪贴板。</value></data>
+  <data name="Vars_Apply.Content" xml:space="preserve"><value>应用端口与令牌</value></data>
+  <data name="Vars_AddressCard.Header" xml:space="preserve"><value>本机地址</value></data>
+  <data name="Vars_NoAddresses" xml:space="preserve"><value>没有可用的网络地址</value></data>
+  <data name="Vars_ClientsCard.Header" xml:space="preserve"><value>已连接的客户端</value></data>
+  <data name="Vars_ClientsCard.Description" xml:space="preserve"><value>名称、地址、连接时间与订阅的变量</value></data>
+  <data name="Vars_NoClients.Text" xml:space="preserve"><value>暂无客户端连接</value></data>
+  <data name="Vars_ClientLine" xml:space="preserve"><value>{0}  ·  {1}  ·  {2} 起  ·  订阅：{3}</value></data>
+  <data name="Vars_ProtocolLink.Content" xml:space="preserve"><value>查看协议文档（含 Python / C# 示例）</value></data>
+  <data name="Status_SyncRunning" xml:space="preserve"><value>同步服务：端口 {0}，{1} 个客户端</value></data>
+  <data name="Status_SyncFailed" xml:space="preserve"><value>同步服务：启动失败</value></data>
 </root>

@@ -542,4 +542,61 @@
   <data name="Editor_Sum_StopTask" xml:space="preserve"><value>disable this task</value></data>
   <data name="Editor_Sum_StopScheme" xml:space="preserve"><value>stop the scheme</value></data>
   <data name="Editor_Sum_Delay" xml:space="preserve"><value>then wait {0} ms</value></data>
+  <data name="Vars_SchemeLabel.Text" xml:space="preserve"><value>Scheme: </value></data>
+  <data name="Vars_ViewPicker.Header" xml:space="preserve"><value>Show values from</value></data>
+  <data name="Vars_ViewGlobal" xml:space="preserve"><value>Global variables</value></data>
+  <data name="Vars_ViewDevice" xml:space="preserve"><value>{0} (scheme variables)</value></data>
+  <data name="Vars_Add.ToolTipService.ToolTip" xml:space="preserve"><value>Declare a new variable in the scheme</value></data>
+  <data name="Vars_AddText.Text" xml:space="preserve"><value>New variable</value></data>
+  <data name="Vars_ColName.Text" xml:space="preserve"><value>Name</value></data>
+  <data name="Vars_ColType.Text" xml:space="preserve"><value>Type</value></data>
+  <data name="Vars_ColScope.Text" xml:space="preserve"><value>Scope</value></data>
+  <data name="Vars_ColSync.Text" xml:space="preserve"><value>Network sync</value></data>
+  <data name="Vars_ColInitial.Text" xml:space="preserve"><value>Initial value</value></data>
+  <data name="Vars_ColValue.Text" xml:space="preserve"><value>Current value (editable)</value></data>
+  <data name="Vars_TypeInt.Content" xml:space="preserve"><value>Integer</value></data>
+  <data name="Vars_TypeDouble.Content" xml:space="preserve"><value>Decimal</value></data>
+  <data name="Vars_TypeBool.Content" xml:space="preserve"><value>Boolean</value></data>
+  <data name="Vars_TypeString.Content" xml:space="preserve"><value>String</value></data>
+  <data name="Vars_ScopeScheme.Content" xml:space="preserve"><value>Scheme</value></data>
+  <data name="Vars_ScopeGlobal.Content" xml:space="preserve"><value>Global</value></data>
+  <data name="Vars_SyncNone.Content" xml:space="preserve"><value>Off</value></data>
+  <data name="Vars_SyncSend.Content" xml:space="preserve"><value>Send</value></data>
+  <data name="Vars_SyncReceive.Content" xml:space="preserve"><value>Receive</value></data>
+  <data name="Vars_SyncBoth.Content" xml:space="preserve"><value>Both</value></data>
+  <data name="Vars_ValueBox.ToolTipService.ToolTip" xml:space="preserve"><value>Type a new value and press Enter to write it into the running scheme (for debugging)</value></data>
+  <data name="Vars_RowMore.ToolTipService.ToolTip" xml:space="preserve"><value>More</value></data>
+  <data name="Vars_Empty.Text" xml:space="preserve"><value>No variables are declared in this scheme yet. Click "New variable", or run the scheme to see variables created at run time.</value></data>
+  <data name="Vars_TableHint.Text" xml:space="preserve"><value>Scheme variables have one copy per device; global variables are shared by all devices. Variables with network sync can be read or written by other programs through the sync service. Save the scheme on the Automation page after changing declarations.</value></data>
+  <data name="Vars_NameEmpty" xml:space="preserve"><value>Name is required</value></data>
+  <data name="Vars_NameInvalid" xml:space="preserve"><value>Use letters, digits, underscores and dots; do not start with a digit</value></data>
+  <data name="Vars_NameDuplicate" xml:space="preserve"><value>A variable with this name already exists</value></data>
+  <data name="Vars_Remove" xml:space="preserve"><value>Remove declaration</value></data>
+  <data name="Vars_Declare" xml:space="preserve"><value>Declare in scheme</value></data>
+  <data name="Vars_CopyName" xml:space="preserve"><value>Copy name</value></data>
+  <data name="Vars_SyncCard.Header" xml:space="preserve"><value>Variable sync service</value></data>
+  <data name="Vars_SyncCard.Description" xml:space="preserve"><value>Let other programs read, write and subscribe to variables over TCP</value></data>
+  <data name="Vars_SyncRunning" xml:space="preserve"><value>Listening on port {0}, {1} client(s) connected</value></data>
+  <data name="Vars_SyncStopped" xml:space="preserve"><value>The service is not running</value></data>
+  <data name="Vars_SyncFailed" xml:space="preserve"><value>Could not start: {0}</value></data>
+  <data name="Vars_PortCard.Header" xml:space="preserve"><value>Port</value></data>
+  <data name="Vars_PortCard.Description" xml:space="preserve"><value>Click "Apply port and token" below after changing</value></data>
+  <data name="Vars_TokenCard.Header" xml:space="preserve"><value>Access token</value></data>
+  <data name="Vars_TokenCard.Description" xml:space="preserve"><value>Clients must send it when connecting; empty means no authentication (not recommended on a network)</value></data>
+  <data name="Vars_TokenBox.PlaceholderText" xml:space="preserve"><value>No token</value></data>
+  <data name="Vars_TokenShow.ToolTipService.ToolTip" xml:space="preserve"><value>Show or hide the token</value></data>
+  <data name="Vars_TokenRegenerate.ToolTipService.ToolTip" xml:space="preserve"><value>Generate a new random token and apply it</value></data>
+  <data name="Vars_TokenRegenerateText.Text" xml:space="preserve"><value>Regenerate</value></data>
+  <data name="Vars_TokenCopy.ToolTipService.ToolTip" xml:space="preserve"><value>Copy the token</value></data>
+  <data name="Vars_TokenCopied" xml:space="preserve"><value>Token copied to the clipboard.</value></data>
+  <data name="Vars_Apply.Content" xml:space="preserve"><value>Apply port and token</value></data>
+  <data name="Vars_AddressCard.Header" xml:space="preserve"><value>Addresses of this PC</value></data>
+  <data name="Vars_NoAddresses" xml:space="preserve"><value>No network address available</value></data>
+  <data name="Vars_ClientsCard.Header" xml:space="preserve"><value>Connected clients</value></data>
+  <data name="Vars_ClientsCard.Description" xml:space="preserve"><value>Name, address, connection time and subscriptions</value></data>
+  <data name="Vars_NoClients.Text" xml:space="preserve"><value>No clients connected</value></data>
+  <data name="Vars_ClientLine" xml:space="preserve"><value>{0}  ·  {1}  ·  since {2}  ·  subscribed: {3}</value></data>
+  <data name="Vars_ProtocolLink.Content" xml:space="preserve"><value>Protocol documentation (with Python / C# examples)</value></data>
+  <data name="Status_SyncRunning" xml:space="preserve"><value>Sync service: port {0}, {1} client(s)</value></data>
+  <data name="Status_SyncFailed" xml:space="preserve"><value>Sync service: failed to start</value></data>
 </root>

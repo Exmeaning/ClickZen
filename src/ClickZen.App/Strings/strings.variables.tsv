@@ -1,0 +1,60 @@
+# key	zh-CN	en-US
+# ---- Variables page ----
+Vars_SchemeLabel.Text	方案：	Scheme: 
+Vars_ViewPicker.Header	显示数值来自	Show values from
+Vars_ViewGlobal	全局变量	Global variables
+Vars_ViewDevice	{0}（方案变量）	{0} (scheme variables)
+Vars_Add.ToolTipService.ToolTip	在方案中声明一个新变量	Declare a new variable in the scheme
+Vars_AddText.Text	新建变量	New variable
+Vars_ColName.Text	名称	Name
+Vars_ColType.Text	类型	Type
+Vars_ColScope.Text	作用域	Scope
+Vars_ColSync.Text	网络同步	Network sync
+Vars_ColInitial.Text	初值	Initial value
+Vars_ColValue.Text	当前值（可修改）	Current value (editable)
+Vars_TypeInt.Content	整数	Integer
+Vars_TypeDouble.Content	小数	Decimal
+Vars_TypeBool.Content	布尔	Boolean
+Vars_TypeString.Content	字符串	String
+Vars_ScopeScheme.Content	方案	Scheme
+Vars_ScopeGlobal.Content	全局	Global
+Vars_SyncNone.Content	不同步	Off
+Vars_SyncSend.Content	发送	Send
+Vars_SyncReceive.Content	接收	Receive
+Vars_SyncBoth.Content	双向	Both
+Vars_ValueBox.ToolTipService.ToolTip	输入新值后按回车，立即写入正在运行的方案（调试用）	Type a new value and press Enter to write it into the running scheme (for debugging)
+Vars_RowMore.ToolTipService.ToolTip	更多	More
+Vars_Empty.Text	方案中还没有声明变量。点击“新建变量”添加，或者运行方案后在这里查看运行时产生的变量。	No variables are declared in this scheme yet. Click "New variable", or run the scheme to see variables created at run time.
+Vars_TableHint.Text	方案变量每台设备各有一份；全局变量由所有设备共享。设置了网络同步的变量可通过同步服务被其他程序读写。修改声明后记得在自动化页保存方案。	Scheme variables have one copy per device; global variables are shared by all devices. Variables with network sync can be read or written by other programs through the sync service. Save the scheme on the Automation page after changing declarations.
+Vars_NameEmpty	名称不能为空	Name is required
+Vars_NameInvalid	只能包含字母、数字、下划线和点，且不能以数字开头	Use letters, digits, underscores and dots; do not start with a digit
+Vars_NameDuplicate	已有同名变量	A variable with this name already exists
+Vars_Remove	删除声明	Remove declaration
+Vars_Declare	声明到方案	Declare in scheme
+Vars_CopyName	复制名称	Copy name
+# ---- Sync card ----
+Vars_SyncCard.Header	变量同步服务	Variable sync service
+Vars_SyncCard.Description	允许其他程序通过 TCP 读取、修改和订阅变量	Let other programs read, write and subscribe to variables over TCP
+Vars_SyncRunning	正在监听端口 {0}，已连接 {1} 个客户端	Listening on port {0}, {1} client(s) connected
+Vars_SyncStopped	服务未运行	The service is not running
+Vars_SyncFailed	启动失败：{0}	Could not start: {0}
+Vars_PortCard.Header	端口	Port
+Vars_PortCard.Description	修改后点击下方“应用端口与令牌”	Click "Apply port and token" below after changing
+Vars_TokenCard.Header	访问令牌	Access token
+Vars_TokenCard.Description	客户端连接时必须提供；留空表示不验证（不建议在局域网中使用）	Clients must send it when connecting; empty means no authentication (not recommended on a network)
+Vars_TokenBox.PlaceholderText	未设置令牌	No token
+Vars_TokenShow.ToolTipService.ToolTip	显示/隐藏令牌	Show or hide the token
+Vars_TokenRegenerate.ToolTipService.ToolTip	生成新的随机令牌并立即应用	Generate a new random token and apply it
+Vars_TokenRegenerateText.Text	重新生成	Regenerate
+Vars_TokenCopy.ToolTipService.ToolTip	复制令牌	Copy the token
+Vars_TokenCopied	令牌已复制到剪贴板。	Token copied to the clipboard.
+Vars_Apply.Content	应用端口与令牌	Apply port and token
+Vars_AddressCard.Header	本机地址	Addresses of this PC
+Vars_NoAddresses	没有可用的网络地址	No network address available
+Vars_ClientsCard.Header	已连接的客户端	Connected clients
+Vars_ClientsCard.Description	名称、地址、连接时间与订阅的变量	Name, address, connection time and subscriptions
+Vars_NoClients.Text	暂无客户端连接	No clients connected
+Vars_ClientLine	{0}  ·  {1}  ·  {2} 起  ·  订阅：{3}	{0}  ·  {1}  ·  since {2}  ·  subscribed: {3}
+Vars_ProtocolLink.Content	查看协议文档（含 Python / C# 示例）	Protocol documentation (with Python / C# examples)
+Status_SyncRunning	同步服务：端口 {0}，{1} 个客户端	Sync service: port {0}, {1} client(s)
+Status_SyncFailed	同步服务：启动失败	Sync service: failed to start

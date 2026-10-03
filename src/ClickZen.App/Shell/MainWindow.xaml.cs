@@ -55,7 +55,12 @@ public sealed partial class MainWindow : Window
         };
         UpdateRecordingStatus();
         _recording.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(UpdateRecordingStatus);
-        StatusSync.Text = _loc["Status_SyncOff"];
+        var sync = services.GetRequiredService<VariableSyncService>();
+        void UpdateSync() => StatusSync.Text = sync.IsRunning
+            ? _loc.Format("Status_SyncRunning", sync.Port, sync.Clients.Count)
+            : sync.LastError is not null ? _loc["Status_SyncFailed"] : _loc["Status_SyncOff"];
+        UpdateSync();
+        sync.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(UpdateSync);
 
         DeviceSwitcher.ItemsSource = _hub.Devices;
         DeviceSwitcher.PlaceholderText = _loc["TitleBar_NoDevice"];

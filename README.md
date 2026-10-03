@@ -1,240 +1,108 @@
-# ClickZen - 基于ADB的Android自动化控制工具
+# ClickZen
+
+基于 ADB 与 scrcpy 的 Android 自动化控制工具：应用内投屏、触控录制回放、图像识别自动化、变量与网络同步，支持真机、无线设备和主流模拟器。
+
+> 2.0 版本使用 C# / WinUI 3 完全重写，不再兼容 1.x（Python）的配置、方案和录制格式。旧版本代码保留在 `master` 分支和 `1.6.3` 等历史标签中，后续会提供迁移工具。
+
+需要 Windows 桌面自动化？试试 [ClickYen](https://github.com/Exmeaning/ClickYen)。
 
 ---
 
-需要Windows的自动化控制工具？ 试试[ClickYen](https://github.com/Exmeaning/ClickYen)！
+## 主要功能
 
----
+- **应用内投屏**：内置 scrcpy-server 协议客户端与 FFmpeg 解码，毫秒级触控注入，支持多指与连续滑动。
+- **多设备**：同时连接多台真机/模拟器，每台设备独立运行自动化方案，变量可跨设备共享。
+- **录制与回放**：在投屏画面上直接操作即可录制，保存完整轨迹，按原节奏或变速回放。
+- **图像识别自动化**：方案 → 任务 → 规则（条件组 + 动作），支持模板匹配、颜色、变量表达式，可点击匹配到的位置。
+- **模拟器窗口模式**：直接捕获模拟器窗口画面（支持后台和被遮挡窗口）。
+- **变量网络同步**：TCP 服务，让外部程序或其他实例读写自动化变量。
+- **深色/浅色主题、中英双语界面**。
 
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python Version">
-  <img src="https://img.shields.io/badge/platform-Windows-lightgrey.svg" alt="Platform">
-</p>
+## 系统要求
 
----
+- Windows 10 1809（17763）或更高版本，x64
+- Android 5.0+ 设备，开启 USB 调试（小米需额外开启「USB 调试（安全设置）」）
 
-## 📋 项目主页
+## 下载
 
--   [ClickZen的GitHub页面](https://github.com/Exmeaning/ClickZen) 
+前往 [Releases](https://github.com/Exmeaning/ClickZen/releases)：
 
----
+- `ClickZen-<版本>-win-x64.zip`：解压即用，启动最快（推荐）。
+- `ClickZen-<版本>-win-x64.exe`：单文件版。
 
-## 📋 项目简介
+adb、scrcpy-server 和 FFmpeg 均已随程序附带，无需另外安装。
 
-ClickZen 是一个基于 Python 开发的 Android 设备自动化控制工具，通过 ADB 和 Scrcpy 实现设备投屏、操作录制回放、图像识别自动化等功能。特别适用于自动化测试、游戏挂机、批量操作等场景。部分自动化灵感来源于手机端的成熟项目"klick‘r"。
+## 从源码构建
 
----
+前置条件：
 
-## ⚠️ 重要声明
-
-1.  **AI代码风险提示**：本项目部分代码由AI辅助生成，可能存在潜在的bug或安全问题。使用前请仔细审查代码，风险自负。
-2.  **作者能力有限**：本人编程水平有限，代码质量可能不高。作者 Python 水平约等于 Hello World → 欢迎 PR 教我写 class。
-3.  **使用责任**：请合理使用本工具，遵守相关法律法规。因使用本工具产生的任何问题，作者不承担责任。
-
----
-
-## ✨ 主要功能
-
-- 🖥️ **设备投屏控制**：通过 Scrcpy 实现低延迟投屏
-- 📱 **多平台支持**：完美支持 **真机**、**WSA (Windows Subsystem for Android)** 以及 **主流模拟器** (MuMu、雷电、夜神等)
-- 🎬 **操作录制回放**：精确记录和回放用户操作，支持滑动手势录制
-- 🎯 **图像识别自动化**：基于模板匹配的自动化任务（类Klick’r）
-- 🪟 **后台挂机**：支持后台窗口捕获 (PrintWindow)，应用被遮挡也能正常运行
-- 🎲 **防检测机制**：随机化操作模拟人工行为
-- 📊 **变量系统**：支持条件判断和动态变量
-- 🔧 **易用的GUI**：直观的图形界面操作，新增精准截图与坐标拾取工具
-- 🌓 **深色/浅色主题**：自动跟随系统深浅色（解决系统深色模式下"白底白字"问题，见 [#1](https://github.com/Exmeaning/ClickZen/issues/1)），也可在 *设置 → 外观* 手动切换
-
----
-
-## 🚀 快速上手 (面向普通用户)
-
-如果您不了解代码，只想直接使用本软件，请按以下步骤操作：
-
-1.  **下载程序**：
-    *   前往 [**Releases 发布页面**](https://github.com/Exmeaning/ClickZen/releases)。
-
-2.  **连接设备**：
-    *   **真机用户**：开启“USB调试”（小米需开启安全设置），连接电脑。
-    *   **模拟器用户**：启动模拟器，软件通常会自动识别；如未识别请在设置中手动指定端口。
-
-3.  **运行软件**：
-    *   找到并双击 `ClickZen.exe` 即可启动程序。
-    *   点击软件界面上的 **“刷新设备”**。
-    *   点击 **“启动 scrcpy”** (或直接使用模拟器窗口模式) 即可开始操作。
-
----
-
-## 📖 功能指南
-
-### 🧩 基础使用
-
-1.  确保设备已连接。
-2.  点击 **“刷新设备”** 识别设备。
-3.  对于模拟器，推荐使用 **“模拟器模式”** 以获得更好的后台挂机体验。
-
-### ⚙️ 进阶功能
-
-#### 🎬 录制脚本
-- 点击 **“录制”** 会从第一个操作开始录制，支持点击与滑动。
-- 点击 **“结束录制”** 完成录制。
-- 可以执行录制好的文件——**记得先保存！**
-
-#### 🤖 类 Klick'r 的自动化监控
-
-1.  创建任务，设置好变量和条件（如果需要复杂的监控方案）。
-2.  点击 **“监控区域”** → 在弹出的投屏窗口上框选您想监控的区域 → 点击 **“截取区域”**，系统会自动将这块区域的图像作为后续识别的目标。
-3.  选择匹配阈值与冷却时间。  
-    🔸 *冷却时间* 指的是当条件满足后，执行相应操作的间隔，而不是检测的间隔。
-4.  添加您希望执行的动作。  
-    可执行操作包括：
-    -   变量更改
-    -   点击、滑动、等待等物理操作
-    -   调用您已录制好的脚本
-
-![autoclickGUI](https://github.com/Exmeaning/Exmeaning-Image-hosting/blob/main/ClickZen/readme/autoclickGUI.png)
-
----
-
-## 🎥 截图示例
-![mainGUI](https://github.com/Exmeaning/Exmeaning-Image-hosting/blob/main/ClickZen/readme/mainGUI.png)
-
----
-
-## 🗓️ ClickZen 更新计划
-
-> ClickZen 目前已更新至 **v1.6.3**，整合了之前规划的窗口捕获、模拟器支持等大量功能。
-> 后续将继续优化稳定性与插件系统。
-
----
-
-### 【v1.6.3】✅ 当前版本
-
-> **全能兼容与体验升级**
-
-* **全面模拟器支持**：深度适配 MuMu、雷电、WSA 等主流模拟器
-* **后台与遮挡运行**：全新窗口捕获机制，不再依赖前台显示
-* **精准录制**：支持滑动手势录制，操作更丝滑
-* **工具增强**：优化的截屏拾取与坐标调试工具
-
-### 更多历史更新详见 [ROADMAP.md](ROADMAP.md)
-
----
-
-## 👨‍💻 从源码运行（面向开发者）
-
-> 想要参与开发或测试新功能？请参考文档中的「从源码运行」部分。
-> 欢迎提交你的 Pull Request，让 ClickZen 变得更强大！
-
-
-### 环境要求
-
--   Windows 10/11 (64位)
--   Python 3.8+
--   Android 设备（需开启USB调试，小米设备需要开启USB调试安全模式）
-
-### 安装步骤
-
-1.  克隆项目
-    ```bash
-    git clone https://github.com/Exmeaning/ClickZen.git
-    cd ClickZen
-    ```
-
-2.  安装依赖
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  运行程序
-    ```bash
-    python main.py
-    ```
-    首次运行时会自动下载 ADB 和 Scrcpy 工具。
-
-### 🌓 主题系统（深色 / 浅色）
-
--   主题由 [`utils/theme.py`](utils/theme.py) 统一管理，提供一套语义化颜色令牌（`window_bg`、`text`、`success`、`warning` 等），浅色 / 深色各一份。
--   模式支持 **跟随系统 / 浅色 / 深色**，保存在 `config.json` 的 `theme_mode` 字段，可在 *设置 → 外观* 切换。
--   **新增/修改界面样式时，请不要写死十六进制颜色**，改用 `theme.color('xxx')`（或 `t = theme.colors`）取当前主题的颜色；需要随主题刷新样式的长生命周期面板，请在初始化时调用 `theme.register(self.apply_theme)`。
--   所有颜色令牌都需满足 WCAG 对比度要求，相关回归测试见 [`tests/test_theme.py`](tests/test_theme.py)。
-
-### 🧪 运行测试
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- Windows SDK 10.0.19041 或更高（或安装 Visual Studio 的「WinUI 应用程序开发」工作负载）
 
 ```bash
-# 依赖 PyQt6（Linux/macOS 下离屏运行）
-QT_QPA_PLATFORM=offscreen python -m unittest tests.test_theme -v
+git clone https://github.com/Exmeaning/ClickZen.git
+cd ClickZen
+dotnet build ClickZen.slnx -c Release          # 首次构建会下载并校验 scrcpy 4.1 发布包
+dotnet test --solution ClickZen.slnx -c Release
+dotnet run --project src/ClickZen.App -c Release
 ```
 
-测试会真实构建主窗口，检查深色主题下不再出现写死的浅色、所有文字/背景组合的对比度，以及运行时切换主题能正确刷新。
+冒烟测试（逐页导航、切换主题后自动退出，退出码 0 表示通过）：
 
----
-
-## 🔧 技术栈
-
--   **GUI**: PyQt6
--   **设备通信**: ADB (Android Debug Bridge)
--   **投屏**: Scrcpy
--   **图像识别**: OpenCV
--   **截图**: mss, win32api
-
----
-
-## 📁 项目结构
-
-```
-ClickZen/
-├── core/               # 核心功能模块
-│   ├── adb_manager.py      # ADB管理
-│   ├── auto_monitor.py     # 自动监控
-│   ├── device_controller.py # 设备控制
-│   └── ...
-├── gui/                # GUI界面
-│   ├── main_window.py      # 主窗口
-│   └── monitor_dialog.py   # 监控配置
-├── utils/              # 工具模块
-├── main.py            # 程序入口
-└── requirements.txt   # 依赖列表
+```bash
+CLICKZEN_DATA_DIR=%TEMP%\cz-smoke src\ClickZen.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\ClickZen.exe --smoke
 ```
 
----
+### 项目结构
 
-## 🤝 贡献指南
+```
+src/
+  ClickZen.Core/      领域模型与纯逻辑（坐标、手势、自动化引擎、变量、序列化），不依赖 Windows
+  ClickZen.Device/    ADB、scrcpy 协议、视频解码、输入注入、设备会话
+  ClickZen.Platform/  Win32/WinRT：窗口枚举与窗口捕获
+  ClickZen.App/       WinUI 3 界面
+tests/                xUnit v3 测试
+build/                构建脚本（第三方组件下载与校验）
+```
 
-非常欢迎您的贡献！请通过以下方式参与： 
+### 升级 scrcpy
 
-1.  Fork 本项目
-2.  创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3.  提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4.  推送到分支 (`git push origin feature/AmazingFeature`)
-5.  提交 Pull Request
+scrcpy 客户端与 server 的协议必须版本一致。升级时需同时修改：
 
-### 需要帮助的方面
+1. `build/ThirdParty.targets` 中的版本号与 SHA-256；
+2. `src/ClickZen.Device/Scrcpy/ScrcpyServerInfo.cs` 中的 `Version`；
+3. 对照新版 `doc/develop.md` 与 `app/src/control_msg.c` 检查协议变更。
 
--   🐛 Bug修复
--   📝 文档改进
--   🎨 UI优化
--   ⚡ 性能优化
--   🌍 国际化支持
+### 界面文字
 
----
+界面字符串维护在 `src/ClickZen.App/Strings/strings.tsv`（中英对照），修改后运行：
 
-## 📄 开源协议
+```bash
+python src/ClickZen.App/Strings/gen_resw.py
+```
 
-本项目采用 AGPL-v3 协议开源 - 查看 [LICENSE](LICENSE) 文件了解详情
+测试会检查中英文键集合一致、所有 `x:Uid` 都有对应资源。
 
-## 🙏 致谢
+## 数据位置
 
--   [Scrcpy](https://github.com/Genymobile/scrcpy) - 优秀的Android投屏工具
--   [Pure-python-adb](https://github.com/Swind/pure-python-adb) - Python ADB客户端
--   [Klick'r](https://github.com/Nain57/Smart-AutoClicker) - 项目功能主要参考的安卓客户端
--   所有贡献者和用户
+| 内容 | 位置 |
+|---|---|
+| 设置、设备、模拟器档案、日志、崩溃报告 | `%LocalAppData%\ClickZen\` |
+| 方案（`.czscheme`）、录制（`.czrec`）、截图 | `文档\ClickZen\` |
 
-## 📞 联系方式
+## 开源协议
 
--   GitHub Issues: [提交问题](https://github.com/Exmeaning/ClickZen/issues)
--   Pull Requests: [贡献代码](https://github.com/Exmeaning/ClickZen/pulls)
--   个人邮箱：[联系我](exmeaning@foxmail.com)
+AGPL-3.0，见 [LICENSE](LICENSE)。第三方组件见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
 
----
-**免责声明**：本软件不提供任何形式的保证。作者不对使用本软件导致的任何损失负责。
+## 致谢
+
+- [scrcpy](https://github.com/Genymobile/scrcpy)
+- [AdvancedSharpAdbClient](https://github.com/SharpAdb/AdvancedSharpAdbClient)
+- [Klick'r](https://github.com/Nain57/Smart-AutoClicker)：自动化功能的主要参考
+- [FFmpeg](https://ffmpeg.org/)、[OpenCV](https://opencv.org/) / [OpenCvSharp](https://github.com/shimat/opencvsharp)
+
+## 免责声明
+
+本软件不提供任何形式的保证，请合理合法使用。
+
+联系：[GitHub Issues](https://github.com/Exmeaning/ClickZen/issues) · exmeaning@foxmail.com

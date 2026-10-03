@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from strings.tsv by gen_resw.py. Do not edit by hand. -->
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Nav_Devices" xml:space="preserve"><value>Devices</value></data>
+  <data name="Nav_Mirror" xml:space="preserve"><value>Mirror</value></data>
+  <data name="Nav_Recording" xml:space="preserve"><value>Recording</value></data>
+  <data name="Nav_Automation" xml:space="preserve"><value>Automation</value></data>
+  <data name="Nav_Variables" xml:space="preserve"><value>Variables</value></data>
+  <data name="Nav_Logs" xml:space="preserve"><value>Logs</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Status_EngineIdle" xml:space="preserve"><value>Automation: idle</value></data>
+  <data name="Status_RecordingIdle" xml:space="preserve"><value>Recording: idle</value></data>
+  <data name="Status_SyncOff" xml:space="preserve"><value>Sync service: off</value></data>
+  <data name="Page_Devices_Title.Text" xml:space="preserve"><value>Devices</value></data>
+  <data name="Page_Devices_Description.Text" xml:space="preserve"><value>Manage USB devices, wireless devices and emulator windows.</value></data>
+  <data name="Page_Mirror_Title.Text" xml:space="preserve"><value>Mirror</value></data>
+  <data name="Page_Mirror_Description.Text" xml:space="preserve"><value>View and control the current device in real time.</value></data>
+  <data name="Page_Recording_Title.Text" xml:space="preserve"><value>Recording</value></data>
+  <data name="Page_Recording_Description.Text" xml:space="preserve"><value>Record touch gestures, edit them and play them back with the original timing.</value></data>
+  <data name="Page_Automation_Title.Text" xml:space="preserve"><value>Automation</value></data>
+  <data name="Page_Automation_Description.Text" xml:space="preserve"><value>Image-recognition and variable driven automation schemes.</value></data>
+  <data name="Page_Variables_Title.Text" xml:space="preserve"><value>Variables</value></data>
+  <data name="Page_Variables_Description.Text" xml:space="preserve"><value>Inspect runtime variables and configure the network sync service.</value></data>
+  <data name="Page_Logs_Title.Text" xml:space="preserve"><value>Logs</value></data>
+  <data name="Page_Logs_Description.Text" xml:space="preserve"><value>Runtime log and ADB terminal.</value></data>
+  <data name="Page_Settings_Title.Text" xml:space="preserve"><value>Settings</value></data>
+  <data name="Page_Settings_Description.Text" xml:space="preserve"><value>Appearance, devices, automation and other preferences.</value></data>
+  <data name="Error_Title" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="Error_CrashSaved" xml:space="preserve"><value>ClickZen hit an unhandled error. A report was saved to:
+{0}</value></data>
+  <data name="Error_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Error_MissingTools" xml:space="preserve"><value>Bundled components are missing: {0}. Please re-download the full ClickZen package.</value></data>
+</root>

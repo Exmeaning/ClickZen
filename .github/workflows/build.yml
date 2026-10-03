@@ -1,0 +1,103 @@
+name: Build
+
+on:
+  push:
+    branches: [ master, main, csharp-rewrite ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Version from tag
+        id: ver
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") { $v = "${{ github.ref_name }}".TrimStart('v') } else { $v = "2.0.0-ci.${{ github.run_number }}" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Cache NuGet and third-party binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            .nuget/packages
+            .cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('Directory.Packages.props', 'build/ThirdParty.targets') }}
+          restore-keys: ${{ runner.os }}-deps-
+
+      - name: Restore
+        run: dotnet restore ClickZen.slnx
+
+      - name: Build
+        run: dotnet build ClickZen.slnx -c Release --no-restore -p:Version=${{ steps.ver.outputs.version }}
+
+      - name: Test
+        run: dotnet test --solution ClickZen.slnx -c Release --no-build -- --filter-not-trait "Category=Device"
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          $exe = "src/ClickZen.App/bin/Release/net10.0-windows10.0.19041.0/win-x64/ClickZen.exe"
+          $env:CLICKZEN_DATA_DIR = "$env:RUNNER_TEMP\cz-smoke"
+          $env:CLICKZEN_SMOKE_MARKER = "$env:RUNNER_TEMP\cz-smoke-marker.txt"
+          $p = Start-Process -FilePath $exe -ArgumentList "--smoke" -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "Smoke test timed out" }
+          $marker = Get-Content $env:CLICKZEN_SMOKE_MARKER -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0 -or $marker -ne "ok") {
+            Get-ChildItem "$env:CLICKZEN_DATA_DIR\logs" -ErrorAction SilentlyContinue | Get-Content
+            throw "Smoke test failed (exit $($p.ExitCode), marker '$marker')"
+          }
+
+      - name: Publish (folder)
+        run: >
+          dotnet publish src/ClickZen.App/ClickZen.App.csproj -c Release -r win-x64
+          -p:Version=${{ steps.ver.outputs.version }}
+          -o artifacts/folder
+
+      - name: Publish (single file)
+        run: >
+          dotnet publish src/ClickZen.App/ClickZen.App.csproj -c Release -r win-x64
+          -p:Version=${{ steps.ver.outputs.version }}
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
+          -o artifacts/single
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path artifacts/folder/* -DestinationPath "dist/ClickZen-$v-win-x64.zip"
+          Copy-Item artifacts/single/ClickZen.exe "dist/ClickZen-$v-win-x64.exe"
+          Get-ChildItem dist | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content dist/SHA256SUMS.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClickZen-${{ steps.ver.outputs.version }}
+          path: dist/*
+          retention-days: 14
+
+      - name: Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

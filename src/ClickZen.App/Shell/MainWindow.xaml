@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="ClickZen.App.Shell.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Custom title bar: app identity + current device switcher (filled in M2) -->
+        <Grid x:Name="AppTitleBar" Grid.Row="0" Padding="16,0,0,0" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="TitleBarRightInset" Width="0" />
+            </Grid.ColumnDefinitions>
+            <Image Source="ms-appx:///Assets/ClickZen-256.png" Width="18" Height="18" VerticalAlignment="Center" />
+            <TextBlock x:Name="AppTitleText" Grid.Column="1" Text="ClickZen" VerticalAlignment="Center"
+                       Style="{StaticResource CaptionTextBlockStyle}" />
+            <StackPanel x:Name="TitleBarDeviceHost" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center"
+                        VerticalAlignment="Center" Spacing="8" />
+        </Grid>
+
+        <NavigationView
+            x:Name="NavView"
+            Grid.Row="1"
+            IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False"
+            IsPaneToggleButtonVisible="True"
+            PaneDisplayMode="Left"
+            OpenPaneLength="200"
+            IsTitleBarAutoPaddingEnabled="False"
+            SelectionChanged="OnNavigationSelectionChanged">
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
+
+        <!-- Status bar -->
+        <Border Grid.Row="2"
+                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
+                Padding="16,4">
+            <StackPanel Orientation="Horizontal" Spacing="24">
+                <TextBlock x:Name="StatusEngine" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                <TextBlock x:Name="StatusRecording" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                <TextBlock x:Name="StatusSync" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                <TextBlock x:Name="StatusVersion" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

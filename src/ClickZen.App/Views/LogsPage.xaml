@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ClickZen.App.Views.LogsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer>
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="8">
+            <TextBlock x:Uid="Page_Logs_Title" Style="{StaticResource PageTitleTextBlockStyle}" />
+            <TextBlock x:Uid="Page_Logs_Description" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

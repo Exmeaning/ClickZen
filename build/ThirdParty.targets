@@ -1,0 +1,57 @@
+<Project>
+  <!--
+    Fetches the third-party runtime binaries ClickZen depends on, verifies them,
+    and copies them next to the app under ThirdParty\.
+
+    Source: scrcpy v4.1 official Windows release (Apache-2.0). From it we use:
+      - scrcpy-server                         pushed to the device (protocol must match ScrcpyServerInfo)
+      - adb.exe, AdbWinApi.dll, AdbWinUsbApi.dll   bundled adb (Apache-2.0)
+      - avcodec-62.dll, avutil-60.dll, swresample-6.dll   FFmpeg 8.1.2 (LGPL, dynamically linked)
+
+    Nothing is committed to git; the zip is cached in $(RepoRoot).cache\.
+    Keep version/hash in sync with src/ClickZen.Device/Scrcpy/ScrcpyServerInfo.cs.
+  -->
+  <PropertyGroup>
+    <CzScrcpyVersion>4.1</CzScrcpyVersion>
+    <CzScrcpyZipSha256>5B12172B3264B2889F4583EE64752CE832E29BC8B1089DCA81093459697165DB</CzScrcpyZipSha256>
+    <CzScrcpyZipName>scrcpy-win64-v$(CzScrcpyVersion).zip</CzScrcpyZipName>
+    <CzScrcpyZipUrl>https://github.com/Genymobile/scrcpy/releases/download/v$(CzScrcpyVersion)/$(CzScrcpyZipName)</CzScrcpyZipUrl>
+    <CzCacheDir>$(RepoRoot).cache\</CzCacheDir>
+    <CzScrcpyZip>$(CzCacheDir)$(CzScrcpyZipName)</CzScrcpyZip>
+    <CzScrcpyExtractDir>$(CzCacheDir)scrcpy-$(CzScrcpyVersion)\</CzScrcpyExtractDir>
+    <CzScrcpyInnerDir>$(CzScrcpyExtractDir)scrcpy-win64-v$(CzScrcpyVersion)\</CzScrcpyInnerDir>
+    <CzThirdPartyStamp>$(CzScrcpyExtractDir).verified</CzThirdPartyStamp>
+  </PropertyGroup>
+
+  <Target Name="CzFetchThirdParty" Condition="!Exists('$(CzThirdPartyStamp)')">
+    <MakeDir Directories="$(CzCacheDir)" />
+    <DownloadFile Condition="!Exists('$(CzScrcpyZip)')"
+                  SourceUrl="$(CzScrcpyZipUrl)"
+                  DestinationFolder="$(CzCacheDir)"
+                  DestinationFileName="$(CzScrcpyZipName)"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000" />
+    <VerifyFileHash File="$(CzScrcpyZip)" Hash="$(CzScrcpyZipSha256)" Algorithm="SHA256" />
+    <RemoveDir Directories="$(CzScrcpyExtractDir)" />
+    <Unzip SourceFiles="$(CzScrcpyZip)" DestinationFolder="$(CzScrcpyExtractDir)" OverwriteReadOnlyFiles="true" />
+    <Error Condition="!Exists('$(CzScrcpyInnerDir)scrcpy-server')" Text="ClickZen: scrcpy-server not found after extracting $(CzScrcpyZip)." />
+    <Touch Files="$(CzThirdPartyStamp)" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="CzIncludeThirdParty" DependsOnTargets="CzFetchThirdParty" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <CzThirdPartyFile Include="$(CzScrcpyInnerDir)scrcpy-server;
+                                 $(CzScrcpyInnerDir)adb.exe;
+                                 $(CzScrcpyInnerDir)AdbWinApi.dll;
+                                 $(CzScrcpyInnerDir)AdbWinUsbApi.dll;
+                                 $(CzScrcpyInnerDir)avcodec-62.dll;
+                                 $(CzScrcpyInnerDir)avutil-60.dll;
+                                 $(CzScrcpyInnerDir)swresample-6.dll;
+                                 $(CzScrcpyInnerDir)LICENSE.txt" />
+      <None Include="@(CzThirdPartyFile)"
+            Link="ThirdParty\%(Filename)%(Extension)"
+            CopyToOutputDirectory="PreserveNewest"
+            CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+</Project>

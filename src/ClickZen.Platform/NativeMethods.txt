@@ -1,0 +1,14 @@
+EnumWindows
+GetWindowTextLength
+GetWindowText
+GetClassName
+IsWindowVisible
+IsWindow
+IsIconic
+GetWindowLong
+GetWindowThreadProcessId
+DwmGetWindowAttribute
+GetClientRect
+ClientToScreen
+GetShellWindow
+WINDOW_EX_STYLE

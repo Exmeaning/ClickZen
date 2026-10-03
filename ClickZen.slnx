@@ -1,0 +1,21 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/ClickZen.Core/ClickZen.Core.csproj" />
+    <Project Path="src/ClickZen.Device/ClickZen.Device.csproj" />
+    <Project Path="src/ClickZen.Platform/ClickZen.Platform.csproj" />
+    <Project Path="src/ClickZen.App/ClickZen.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ClickZen.Core.Tests/ClickZen.Core.Tests.csproj" />
+    <Project Path="tests/ClickZen.Device.Tests/ClickZen.Device.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="build/ThirdParty.targets" />
+  </Folder>
+</Solution>

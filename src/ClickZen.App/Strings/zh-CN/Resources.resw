@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from strings.tsv by gen_resw.py. Do not edit by hand. -->
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Nav_Devices" xml:space="preserve"><value>设备</value></data>
+  <data name="Nav_Mirror" xml:space="preserve"><value>投屏</value></data>
+  <data name="Nav_Recording" xml:space="preserve"><value>录制</value></data>
+  <data name="Nav_Automation" xml:space="preserve"><value>自动化</value></data>
+  <data name="Nav_Variables" xml:space="preserve"><value>变量</value></data>
+  <data name="Nav_Logs" xml:space="preserve"><value>日志</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>设置</value></data>
+  <data name="Status_EngineIdle" xml:space="preserve"><value>自动化：空闲</value></data>
+  <data name="Status_RecordingIdle" xml:space="preserve"><value>录制：空闲</value></data>
+  <data name="Status_SyncOff" xml:space="preserve"><value>同步服务：未启用</value></data>
+  <data name="Page_Devices_Title.Text" xml:space="preserve"><value>设备</value></data>
+  <data name="Page_Devices_Description.Text" xml:space="preserve"><value>管理 USB、无线设备和模拟器窗口。</value></data>
+  <data name="Page_Mirror_Title.Text" xml:space="preserve"><value>投屏</value></data>
+  <data name="Page_Mirror_Description.Text" xml:space="preserve"><value>实时显示并控制当前设备的画面。</value></data>
+  <data name="Page_Recording_Title.Text" xml:space="preserve"><value>录制</value></data>
+  <data name="Page_Recording_Description.Text" xml:space="preserve"><value>录制触控操作，编辑后按原节奏回放。</value></data>
+  <data name="Page_Automation_Title.Text" xml:space="preserve"><value>自动化</value></data>
+  <data name="Page_Automation_Description.Text" xml:space="preserve"><value>基于图像识别和变量的自动化方案。</value></data>
+  <data name="Page_Variables_Title.Text" xml:space="preserve"><value>变量</value></data>
+  <data name="Page_Variables_Description.Text" xml:space="preserve"><value>查看运行时变量，配置网络同步服务。</value></data>
+  <data name="Page_Logs_Title.Text" xml:space="preserve"><value>日志</value></data>
+  <data name="Page_Logs_Description.Text" xml:space="preserve"><value>运行日志与 ADB 终端。</value></data>
+  <data name="Page_Settings_Title.Text" xml:space="preserve"><value>设置</value></data>
+  <data name="Page_Settings_Description.Text" xml:space="preserve"><value>外观、设备、自动化与其他偏好。</value></data>
+  <data name="Error_Title" xml:space="preserve"><value>出现错误</value></data>
+  <data name="Error_CrashSaved" xml:space="preserve"><value>程序遇到未处理的错误。错误报告已保存到：
+{0}</value></data>
+  <data name="Error_OpenFolder" xml:space="preserve"><value>打开所在文件夹</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>关闭</value></data>
+  <data name="Common_Ok" xml:space="preserve"><value>确定</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="Error_MissingTools" xml:space="preserve"><value>缺少随附的组件：{0}。请重新下载完整的 ClickZen。</value></data>
+</root>

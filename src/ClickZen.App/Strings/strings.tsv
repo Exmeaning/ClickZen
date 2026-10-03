@@ -1,0 +1,36 @@
+# key	zh-CN	en-US
+# ---- Navigation ----
+Nav_Devices	设备	Devices
+Nav_Mirror	投屏	Mirror
+Nav_Recording	录制	Recording
+Nav_Automation	自动化	Automation
+Nav_Variables	变量	Variables
+Nav_Logs	日志	Logs
+Nav_Settings	设置	Settings
+# ---- Status bar ----
+Status_EngineIdle	自动化：空闲	Automation: idle
+Status_RecordingIdle	录制：空闲	Recording: idle
+Status_SyncOff	同步服务：未启用	Sync service: off
+# ---- Pages (x:Uid) ----
+Page_Devices_Title.Text	设备	Devices
+Page_Devices_Description.Text	管理 USB、无线设备和模拟器窗口。	Manage USB devices, wireless devices and emulator windows.
+Page_Mirror_Title.Text	投屏	Mirror
+Page_Mirror_Description.Text	实时显示并控制当前设备的画面。	View and control the current device in real time.
+Page_Recording_Title.Text	录制	Recording
+Page_Recording_Description.Text	录制触控操作，编辑后按原节奏回放。	Record touch gestures, edit them and play them back with the original timing.
+Page_Automation_Title.Text	自动化	Automation
+Page_Automation_Description.Text	基于图像识别和变量的自动化方案。	Image-recognition and variable driven automation schemes.
+Page_Variables_Title.Text	变量	Variables
+Page_Variables_Description.Text	查看运行时变量，配置网络同步服务。	Inspect runtime variables and configure the network sync service.
+Page_Logs_Title.Text	日志	Logs
+Page_Logs_Description.Text	运行日志与 ADB 终端。	Runtime log and ADB terminal.
+Page_Settings_Title.Text	设置	Settings
+Page_Settings_Description.Text	外观、设备、自动化与其他偏好。	Appearance, devices, automation and other preferences.
+# ---- Dialogs / errors ----
+Error_Title	出现错误	Something went wrong
+Error_CrashSaved	程序遇到未处理的错误。错误报告已保存到：\n{0}	ClickZen hit an unhandled error. A report was saved to:\n{0}
+Error_OpenFolder	打开所在文件夹	Open folder
+Common_Close	关闭	Close
+Common_Ok	确定	OK
+Common_Cancel	取消	Cancel
+Error_MissingTools	缺少随附的组件：{0}。请重新下载完整的 ClickZen。	Bundled components are missing: {0}. Please re-download the full ClickZen package.

@@ -34,3 +34,93 @@ Common_Close	关闭	Close
 Common_Ok	确定	OK
 Common_Cancel	取消	Cancel
 Error_MissingTools	缺少随附的组件：{0}。请重新下载完整的 ClickZen。	Bundled components are missing: {0}. Please re-download the full ClickZen package.
+# ---- Title bar / device status ----
+TitleBar_DeviceSwitcher.PlaceholderText	未连接设备	No device
+TitleBar_NoDevice	未连接设备	No device
+SessionState_Streaming	投屏中	Mirroring
+SessionState_Connected	已连接（无画面）	Connected (no video)
+SessionState_Connecting	正在连接	Connecting
+SessionState_Reconnecting	正在重连	Reconnecting
+SessionState_Faulted	连接失败	Connection failed
+SessionState_Disconnected	未投屏	Not mirroring
+Status_DeviceStreaming	{0}  {1}×{2}  {3} fps	{0}  {1}×{2}  {3} fps
+Devices_AdbStartFailed	ADB 服务无法启动	ADB server could not be started
+# ---- Devices page ----
+Devices_AddWireless.Label	添加无线设备	Add wireless device
+Devices_Refresh.Label	刷新	Refresh
+Devices_ConnectedHeader.Text	已连接的设备	Connected devices
+Devices_EmptyTitle.Text	没有检测到设备	No devices detected
+Devices_EmptyHint.Text	用 USB 连接手机并开启“USB 调试”（小米等机型还需开启“USB 调试（安全设置）”），或在右上角添加无线设备、扫描本地模拟器。	Connect a phone over USB with USB debugging enabled, or add a wireless device / scan for local emulators using the buttons above.
+Devices_CurrentBadge.Text	当前设备	Current
+Devices_StartMirror.Content	开始投屏	Start mirroring
+Devices_StopMirror.Content	停止投屏	Stop mirroring
+Devices_SetCurrent.Content	设为当前	Set as current
+Devices_DisconnectWireless.Content	断开	Disconnect
+Devices_SavedHeader.Text	已保存的无线设备	Saved wireless devices
+Devices_SavedEmpty.Text	连接无线设备时填写名称即可保存，之后可一键连接或开机自动连接。	Give a wireless device a name when connecting to save it for one-click or automatic reconnection.
+Devices_AutoConnect.Content	自动连接	Auto connect
+Devices_Connect.Content	连接	Connect
+Devices_RemoveSaved.ToolTipService.ToolTip	删除	Remove
+Devices_Connected	已连接 {0}	Connected to {0}
+Devices_Disconnected	已断开 {0}	Disconnected {0}
+Devices_Paired	配对成功。请在下方输入手机“无线调试”页面上显示的 IP 地址和端口完成连接。	Paired. Now enter the IP address and port shown on the phone's Wireless debugging screen to connect.
+Devices_ScanNone	没有发现本地模拟器。请确认模拟器已启动并开启了 ADB 调试。	No local emulators found. Make sure the emulator is running with ADB enabled.
+Devices_ScanFound	发现 {0} 个模拟器，已连接。	Found and connected {0} emulator(s).
+DeviceKind_Usb	USB	USB
+DeviceKind_Wireless	无线	Wireless
+DeviceKind_Emulator	模拟器	Emulator
+DeviceState_Unauthorized	未授权：请在手机上允许 USB 调试	Unauthorized: allow USB debugging on the phone
+DeviceState_Offline	离线	Offline
+DeviceState_Other	不可用	Unavailable
+DeviceState_Ready	已就绪	Ready
+AdbError_Unauthorized	设备未授权。请在手机弹出的对话框中允许 USB 调试。	The device is not authorized. Allow USB debugging in the prompt on the phone.
+AdbError_Offline	设备离线。请重新插拔数据线或重启 USB 调试。	The device is offline. Reconnect the cable or toggle USB debugging.
+AdbError_DeviceNotFound	找不到设备，它可能已断开。	Device not found; it may have been disconnected.
+AdbError_Timeout	操作超时。	The operation timed out.
+AdbError_ServerStartFailed	ADB 服务无法启动。	The ADB server could not be started.
+AdbError_ConnectionRefused	连接被拒绝。请确认设备已开启无线调试且地址正确。	Connection refused. Check that wireless debugging is on and the address is correct.
+# ---- Add wireless dialog ----
+AddWireless_Dialog.Title	添加无线设备	Add wireless device
+AddWireless_TabDirect.Text	IP 直连	Connect by IP
+AddWireless_TabPair.Text	配对码配对	Pair with code
+AddWireless_TabScan.Text	扫描模拟器	Scan emulators
+AddWireless_DirectHint.Text	适用于已开启 TCP 调试（adb tcpip）的设备或局域网内的模拟器。不填端口时默认 5555。	For devices with TCP debugging enabled (adb tcpip) or emulators on the network. Port defaults to 5555.
+AddWireless_Address.Header	地址	Address
+AddWireless_Address.PlaceholderText	192.168.1.20:5555	192.168.1.20:5555
+AddWireless_SaveAs.Header	保存为（可选）	Save as (optional)
+AddWireless_SaveAs.PlaceholderText	例如：卧室的平板	e.g. Bedroom tablet
+AddWireless_ConnectButton.Content	连接	Connect
+AddWireless_PairHint.Text	Android 11 及以上：在手机“开发者选项 → 无线调试 → 使用配对码配对设备”中查看配对地址和配对码。	Android 11+: on the phone open Developer options → Wireless debugging → Pair device with pairing code.
+AddWireless_PairAddress.Header	配对地址	Pairing address
+AddWireless_PairAddress.PlaceholderText	192.168.1.20:37099	192.168.1.20:37099
+AddWireless_PairCode.Header	配对码	Pairing code
+AddWireless_PairButton.Content	配对	Pair
+AddWireless_PairThenConnect.Text	配对后，使用“无线调试”页面顶部显示的地址和端口连接（与配对端口不同）。	After pairing, connect using the address and port shown at the top of the Wireless debugging screen (different from the pairing port).
+AddWireless_ConnectAddress.Header	连接地址	Connect address
+AddWireless_ConnectAddress.PlaceholderText	192.168.1.20:41231	192.168.1.20:41231
+AddWireless_ScanHint.Text	依次尝试常见模拟器的本地 ADB 端口（MuMu、雷电、夜神、逍遥、蓝叠等）。	Tries the local ADB ports used by common emulators (MuMu, LDPlayer, Nox, MEmu, BlueStacks…).
+AddWireless_ScanButton.Content	开始扫描	Scan
+AddWireless_PresetsHeader.Text	常见模拟器端口	Common emulator ports
+AddWireless_AddressRequired	请输入地址。	Enter an address.
+AddWireless_PairFieldsRequired	请输入配对地址和配对码。	Enter the pairing address and code.
+AddWireless_ConnectPortRequired	请输入包含端口的连接地址。	Enter the connect address including the port.
+# ---- Logs page ----
+Logs_Level.Header	级别	Level
+Logs_LevelDebug.Content	调试及以上	Debug and above
+Logs_LevelInfo.Content	信息及以上	Info and above
+Logs_LevelWarning.Content	警告及以上	Warnings and above
+Logs_LevelError.Content	仅错误	Errors only
+Logs_Search.PlaceholderText	搜索日志	Search log
+Logs_Search.Header	搜索	Search
+Logs_Pause.ToolTipService.ToolTip	暂停滚动	Pause
+Logs_Clear.ToolTipService.ToolTip	清空日志	Clear log
+Logs_OpenFolder.ToolTipService.ToolTip	打开日志文件夹	Open log folder
+Logs_TerminalHeader.Text	ADB 终端（当前设备）	ADB terminal (current device)
+Logs_QuickCommands.Content	常用命令	Quick commands
+Logs_CommandBox.PlaceholderText	输入 shell 命令，回车执行，上下键切换历史	Type a shell command, Enter to run, Up/Down for history
+Logs_AsRoot.Content	以 su 执行	Run as su
+Logs_Run.Content	执行	Run
+Logs_Cancel.Content	停止	Stop
+Logs_ClearTerminal.ToolTipService.ToolTip	清空终端	Clear terminal
+Logs_NoDevice	没有当前设备。请先在“设备”页连接设备。	No current device. Connect one on the Devices page first.
+Logs_Cancelled	（已停止）	(stopped)

@@ -23,6 +23,7 @@
     <ProjectReference Include="..\ClickZen.Core\ClickZen.Core.csproj" />
     <ProjectReference Include="..\ClickZen.Device\ClickZen.Device.csproj" />
     <ProjectReference Include="..\ClickZen.Platform\ClickZen.Platform.csproj" />
+    <ProjectReference Include="..\ClickZen.Vision\ClickZen.Vision.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,7 +2,8 @@
 <Window
     x:Class="ClickZen.App.Shell.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:svc="using:ClickZen.App.Services">
 
     <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
@@ -11,19 +12,32 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Custom title bar: app identity + current device switcher (filled in M2) -->
+        <!-- Custom title bar: app identity + current device switcher -->
         <Grid x:Name="AppTitleBar" Grid.Row="0" Padding="16,0,0,0" ColumnSpacing="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition x:Name="TitleBarRightInset" Width="0" />
+                <ColumnDefinition x:Name="TitleBarRightInset" Width="140" />
             </Grid.ColumnDefinitions>
             <Image Source="ms-appx:///Assets/ClickZen-256.png" Width="18" Height="18" VerticalAlignment="Center" />
             <TextBlock x:Name="AppTitleText" Grid.Column="1" Text="ClickZen" VerticalAlignment="Center"
                        Style="{StaticResource CaptionTextBlockStyle}" />
+
             <StackPanel x:Name="TitleBarDeviceHost" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center"
-                        VerticalAlignment="Center" Spacing="8" />
+                        VerticalAlignment="Center" Spacing="8">
+                <Ellipse x:Name="DeviceStateDot" Width="8" Height="8" VerticalAlignment="Center"
+                         Fill="{ThemeResource SystemFillColorNeutralBrush}" />
+                <ComboBox x:Name="DeviceSwitcher" x:Uid="TitleBar_DeviceSwitcher" MinWidth="260" MaxWidth="420"
+                          VerticalAlignment="Center" SelectionChanged="OnDeviceSwitcherSelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="svc:DeviceEntry">
+                            <TextBlock Text="{x:Bind Info.DisplayName, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock x:Name="DeviceStateText" VerticalAlignment="Center" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+            </StackPanel>
         </Grid>
 
         <NavigationView
@@ -36,7 +50,14 @@
             OpenPaneLength="200"
             IsTitleBarAutoPaddingEnabled="False"
             SelectionChanged="OnNavigationSelectionChanged">
-            <Frame x:Name="ContentFrame" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <InfoBar x:Name="GlobalInfoBar" IsOpen="False" IsClosable="True" Margin="16,8,16,0" />
+                <Frame x:Name="ContentFrame" Grid.Row="1" />
+            </Grid>
         </NavigationView>
 
         <!-- Status bar -->
@@ -46,6 +67,7 @@
                 Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
                 Padding="16,4">
             <StackPanel Orientation="Horizontal" Spacing="24">
+                <TextBlock x:Name="StatusDevice" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
                 <TextBlock x:Name="StatusEngine" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
                 <TextBlock x:Name="StatusRecording" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
                 <TextBlock x:Name="StatusSync" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />

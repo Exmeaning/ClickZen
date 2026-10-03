@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="ClickZen.App.Views.AddWirelessDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Uid="AddWireless_Dialog"
+    DefaultButton="None"
+    Style="{StaticResource DefaultContentDialogStyle}">
+
+    <Grid MinWidth="460" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <SelectorBar x:Name="Tabs" SelectionChanged="OnTabChanged">
+            <SelectorBarItem x:Uid="AddWireless_TabDirect" Tag="direct" IsSelected="True" />
+            <SelectorBarItem x:Uid="AddWireless_TabPair" Tag="pair" />
+            <SelectorBarItem x:Uid="AddWireless_TabScan" Tag="scan" />
+        </SelectorBar>
+
+        <!-- Direct connect -->
+        <StackPanel x:Name="DirectPanel" Grid.Row="1" Spacing="12">
+            <TextBlock x:Uid="AddWireless_DirectHint" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+            <TextBox x:Name="DirectAddress" x:Uid="AddWireless_Address" />
+            <TextBox x:Name="DirectName" x:Uid="AddWireless_SaveAs" />
+            <Button x:Name="DirectConnect" x:Uid="AddWireless_ConnectButton" Style="{StaticResource AccentButtonStyle}" Click="OnDirectConnect" />
+        </StackPanel>
+
+        <!-- Pairing (Android 11+) -->
+        <StackPanel x:Name="PairPanel" Grid.Row="1" Spacing="12" Visibility="Collapsed">
+            <TextBlock x:Uid="AddWireless_PairHint" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="140" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="PairAddress" x:Uid="AddWireless_PairAddress" />
+                <TextBox x:Name="PairCode" x:Uid="AddWireless_PairCode" Grid.Column="1" MaxLength="10" />
+            </Grid>
+            <Button x:Name="PairButton" x:Uid="AddWireless_PairButton" Style="{StaticResource AccentButtonStyle}" Click="OnPair" />
+            <TextBlock x:Uid="AddWireless_PairThenConnect" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="PairConnectAddress" x:Uid="AddWireless_ConnectAddress" />
+                <Button x:Name="PairConnectButton" x:Uid="AddWireless_ConnectButton" Grid.Column="1" Click="OnPairConnect" />
+            </Grid>
+        </StackPanel>
+
+        <!-- Emulator scan -->
+        <StackPanel x:Name="ScanPanel" Grid.Row="1" Spacing="12" Visibility="Collapsed">
+            <TextBlock x:Uid="AddWireless_ScanHint" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+            <Button x:Name="ScanButton" x:Uid="AddWireless_ScanButton" Style="{StaticResource AccentButtonStyle}" Click="OnScan" />
+            <ListView x:Name="ScanResults" MaxHeight="200" SelectionMode="None" />
+            <TextBlock x:Uid="AddWireless_PresetsHeader" Style="{StaticResource BodyStrongTextBlockStyle}" />
+            <TextBlock x:Name="PresetList" Style="{StaticResource SecondaryCaptionTextBlockStyle}" IsTextSelectionEnabled="True" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+            <ProgressRing x:Name="Busy" Width="16" Height="16" IsActive="False" />
+            <TextBlock x:Name="Result" TextWrapping="Wrap" MaxWidth="440" />
+        </StackPanel>
+    </Grid>
+</ContentDialog>

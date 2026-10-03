@@ -5,6 +5,10 @@ using ClickZen.Core;
 using ClickZen.Core.Persistence;
 using ClickZen.Core.Settings;
 using ClickZen.Device;
+using ClickZen.Device.Adb;
+using ClickZen.Device.Scrcpy;
+using ClickZen.Vision;
+using ClickZen.Core.Automation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -49,6 +53,20 @@ public partial class App : Application
         sc.AddSingleton<ThemeService>();
         sc.AddSingleton<ILocalizer, Localizer>();
         sc.AddSingleton(new BundledTools());
+
+        // Devices
+        sc.AddSingleton<AdbServerHost>();
+        sc.AddSingleton<AdbService>();
+        sc.AddSingleton<DeviceWatcher>();
+        sc.AddSingleton<SavedDeviceStore>();
+        sc.AddSingleton<AutoConnector>();
+        sc.AddSingleton<IScrcpyTransport, AdbScrcpyTransport>();
+        sc.AddSingleton<DeviceHub>();
+        sc.AddTransient<ClickZen.App.ViewModels.DevicesViewModel>();
+        sc.AddTransient<ClickZen.App.ViewModels.LogsViewModel>();
+
+        // Vision
+        sc.AddSingleton<IImageMatcher, OpenCvImageMatcher>();
         _services = sc.BuildServiceProvider();
 
         _log = _services.GetRequiredService<ILogger<App>>();
@@ -82,8 +100,8 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        _window = new MainWindow(_services.GetRequiredService<ILocalizer>(), _services.GetRequiredService<ThemeService>());
-        _window.Closed += (_, _) => _services.Dispose();
+        _window = new MainWindow(_services);
+        _window.Closed += OnMainWindowClosed;
         _window.Activate();
 
         var missing = _services.GetRequiredService<BundledTools>().MissingFiles();
@@ -92,9 +110,43 @@ public partial class App : Application
             _log.LogError("Bundled tools missing: {Missing}", string.Join(", ", missing));
         }
 
-        if (Environment.GetCommandLineArgs().Contains("--smoke", StringComparer.OrdinalIgnoreCase))
+        if (IsSmokeTest)
         {
+            // Never touch the user's adb server from an automated self-check.
             _ = new SmokeTest(_window, _services, _log).RunAsync();
+            return;
+        }
+
+        _ = StartDevicesAsync();
+    }
+
+    public static bool IsSmokeTest { get; } = Environment.GetCommandLineArgs().Contains("--smoke", StringComparer.OrdinalIgnoreCase);
+
+    private async Task StartDevicesAsync()
+    {
+        try
+        {
+            await _services.GetRequiredService<DeviceHub>().StartAsync(_window!.DispatcherQueue);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Device subsystem failed to start");
+        }
+    }
+
+    private async void OnMainWindowClosed(object sender, WindowEventArgs args)
+    {
+        try
+        {
+            await _services.GetRequiredService<DeviceHub>().DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning(ex, "Error while shutting down devices");
+        }
+        finally
+        {
+            await _services.DisposeAsync();
         }
     }
 
@@ -104,7 +156,7 @@ public partial class App : Application
         var file = _crash.Write(e.Exception, "UI");
         e.Handled = true;
 
-        if (Environment.GetCommandLineArgs().Contains("--smoke", StringComparer.OrdinalIgnoreCase))
+        if (IsSmokeTest)
         {
             Environment.Exit(3);
         }

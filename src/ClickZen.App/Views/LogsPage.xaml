@@ -2,11 +2,146 @@
 <Page
     x:Class="ClickZen.App.Views.LogsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer>
-        <StackPanel Padding="{StaticResource PagePadding}" Spacing="8">
-            <TextBlock x:Uid="Page_Logs_Title" Style="{StaticResource PageTitleTextBlockStyle}" />
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:log="using:ClickZen.App.Services.Logging"
+    xmlns:vm="using:ClickZen.App.ViewModels"
+    xmlns:ctk="using:CommunityToolkit.WinUI.Controls">
+
+    <Grid Padding="{StaticResource PagePadding}" RowSpacing="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="2*" MinHeight="120" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="*" MinHeight="140" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Spacing="4">
+            <TextBlock x:Uid="Page_Logs_Title" Style="{StaticResource TitleTextBlockStyle}" />
             <TextBlock x:Uid="Page_Logs_Description" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
         </StackPanel>
-    </ScrollViewer>
+
+        <!-- Log toolbar -->
+        <Grid Grid.Row="1" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ComboBox x:Uid="Logs_Level" SelectedIndex="{x:Bind ViewModel.LevelFilter, Mode=TwoWay}" MinWidth="130">
+                <ComboBoxItem x:Uid="Logs_LevelDebug" />
+                <ComboBoxItem x:Uid="Logs_LevelInfo" />
+                <ComboBoxItem x:Uid="Logs_LevelWarning" />
+                <ComboBoxItem x:Uid="Logs_LevelError" />
+            </ComboBox>
+            <AutoSuggestBox Grid.Column="1" x:Uid="Logs_Search" QueryIcon="Find"
+                            Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                <ToggleButton x:Uid="Logs_Pause" IsChecked="{x:Bind ViewModel.IsPaused, Mode=TwoWay}">
+                    <FontIcon Glyph="&#xE769;" FontSize="14" />
+                </ToggleButton>
+                <Button x:Uid="Logs_Clear" Command="{x:Bind ViewModel.ClearCommand}">
+                    <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                </Button>
+                <Button x:Uid="Logs_OpenFolder" Command="{x:Bind ViewModel.OpenLogFolderCommand}">
+                    <FontIcon Glyph="&#xE838;" FontSize="14" />
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Log list -->
+        <Border Grid.Row="2" Style="{StaticResource CardBorderStyle}" Padding="0">
+            <ListView x:Name="LogList" ItemsSource="{x:Bind ViewModel.Entries}" SelectionMode="Extended"
+                      ScrollViewer.HorizontalScrollMode="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                        <Setter Property="MinHeight" Value="24" />
+                        <Setter Property="Padding" Value="12,1" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="log:LogEntry">
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="86" />
+                                <ColumnDefinition Width="40" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Bind vm:LogFormat.Time(Timestamp)}" FontFamily="{StaticResource MonoFontFamily}"
+                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontSize="12" />
+                            <TextBlock Grid.Column="1" Text="{x:Bind vm:LogFormat.Level(Level)}" FontFamily="{StaticResource MonoFontFamily}"
+                                       Foreground="{x:Bind vm:LogFormat.LevelBrush(Level)}" FontSize="12" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="2" Text="{x:Bind Source}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Grid.Column="3" Text="{x:Bind vm:LogFormat.Message(Message, Exception)}" FontSize="12"
+                                       IsTextSelectionEnabled="True" TextWrapping="NoWrap" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Border>
+
+        <ctk:GridSplitter Grid.Row="3" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="12" Background="Transparent" />
+
+        <!-- ADB terminal -->
+        <Grid Grid.Row="4" RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Uid="Logs_TerminalHeader" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                <DropDownButton Grid.Column="2" x:Uid="Logs_QuickCommands">
+                    <DropDownButton.Flyout>
+                        <MenuFlyout x:Name="QuickMenu" Placement="BottomEdgeAlignedRight" />
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+            </Grid>
+
+            <Border Grid.Row="1" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8">
+                <ListView x:Name="TerminalList" ItemsSource="{x:Bind ViewModel.Terminal}" SelectionMode="None" Padding="8,4">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                            <Setter Property="MinHeight" Value="20" />
+                            <Setter Property="Padding" Value="4,0" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TerminalLine">
+                            <TextBlock Text="{x:Bind Text}" FontFamily="{StaticResource MonoFontFamily}" FontSize="12"
+                                       IsTextSelectionEnabled="True" TextWrapping="Wrap"
+                                       Foreground="{x:Bind vm:LogFormat.TerminalBrush(IsCommand, IsError)}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Border>
+
+            <Grid Grid.Row="2" ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Uid="Logs_CommandBox" FontFamily="{StaticResource MonoFontFamily}"
+                         Text="{x:Bind ViewModel.Command, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         KeyDown="OnCommandKeyDown" />
+                <CheckBox Grid.Column="1" x:Uid="Logs_AsRoot" IsChecked="{x:Bind ViewModel.AsRoot, Mode=TwoWay}" MinWidth="0" />
+                <Button Grid.Column="2" x:Uid="Logs_Run" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.RunCommand}" />
+                <Button Grid.Column="3" x:Uid="Logs_Cancel" Command="{x:Bind ViewModel.CancelCommand}" />
+                <Button Grid.Column="4" x:Uid="Logs_ClearTerminal" Command="{x:Bind ViewModel.ClearTerminalCommand}">
+                    <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                </Button>
+            </Grid>
+        </Grid>
+    </Grid>
 </Page>

@@ -37,4 +37,90 @@
   <data name="Common_Ok" xml:space="preserve"><value>确定</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>取消</value></data>
   <data name="Error_MissingTools" xml:space="preserve"><value>缺少随附的组件：{0}。请重新下载完整的 ClickZen。</value></data>
+  <data name="TitleBar_DeviceSwitcher.PlaceholderText" xml:space="preserve"><value>未连接设备</value></data>
+  <data name="TitleBar_NoDevice" xml:space="preserve"><value>未连接设备</value></data>
+  <data name="SessionState_Streaming" xml:space="preserve"><value>投屏中</value></data>
+  <data name="SessionState_Connected" xml:space="preserve"><value>已连接（无画面）</value></data>
+  <data name="SessionState_Connecting" xml:space="preserve"><value>正在连接</value></data>
+  <data name="SessionState_Reconnecting" xml:space="preserve"><value>正在重连</value></data>
+  <data name="SessionState_Faulted" xml:space="preserve"><value>连接失败</value></data>
+  <data name="SessionState_Disconnected" xml:space="preserve"><value>未投屏</value></data>
+  <data name="Status_DeviceStreaming" xml:space="preserve"><value>{0}  {1}×{2}  {3} fps</value></data>
+  <data name="Devices_AdbStartFailed" xml:space="preserve"><value>ADB 服务无法启动</value></data>
+  <data name="Devices_AddWireless.Label" xml:space="preserve"><value>添加无线设备</value></data>
+  <data name="Devices_Refresh.Label" xml:space="preserve"><value>刷新</value></data>
+  <data name="Devices_ConnectedHeader.Text" xml:space="preserve"><value>已连接的设备</value></data>
+  <data name="Devices_EmptyTitle.Text" xml:space="preserve"><value>没有检测到设备</value></data>
+  <data name="Devices_EmptyHint.Text" xml:space="preserve"><value>用 USB 连接手机并开启“USB 调试”（小米等机型还需开启“USB 调试（安全设置）”），或在右上角添加无线设备、扫描本地模拟器。</value></data>
+  <data name="Devices_CurrentBadge.Text" xml:space="preserve"><value>当前设备</value></data>
+  <data name="Devices_StartMirror.Content" xml:space="preserve"><value>开始投屏</value></data>
+  <data name="Devices_StopMirror.Content" xml:space="preserve"><value>停止投屏</value></data>
+  <data name="Devices_SetCurrent.Content" xml:space="preserve"><value>设为当前</value></data>
+  <data name="Devices_DisconnectWireless.Content" xml:space="preserve"><value>断开</value></data>
+  <data name="Devices_SavedHeader.Text" xml:space="preserve"><value>已保存的无线设备</value></data>
+  <data name="Devices_SavedEmpty.Text" xml:space="preserve"><value>连接无线设备时填写名称即可保存，之后可一键连接或开机自动连接。</value></data>
+  <data name="Devices_AutoConnect.Content" xml:space="preserve"><value>自动连接</value></data>
+  <data name="Devices_Connect.Content" xml:space="preserve"><value>连接</value></data>
+  <data name="Devices_RemoveSaved.ToolTipService.ToolTip" xml:space="preserve"><value>删除</value></data>
+  <data name="Devices_Connected" xml:space="preserve"><value>已连接 {0}</value></data>
+  <data name="Devices_Disconnected" xml:space="preserve"><value>已断开 {0}</value></data>
+  <data name="Devices_Paired" xml:space="preserve"><value>配对成功。请在下方输入手机“无线调试”页面上显示的 IP 地址和端口完成连接。</value></data>
+  <data name="Devices_ScanNone" xml:space="preserve"><value>没有发现本地模拟器。请确认模拟器已启动并开启了 ADB 调试。</value></data>
+  <data name="Devices_ScanFound" xml:space="preserve"><value>发现 {0} 个模拟器，已连接。</value></data>
+  <data name="DeviceKind_Usb" xml:space="preserve"><value>USB</value></data>
+  <data name="DeviceKind_Wireless" xml:space="preserve"><value>无线</value></data>
+  <data name="DeviceKind_Emulator" xml:space="preserve"><value>模拟器</value></data>
+  <data name="DeviceState_Unauthorized" xml:space="preserve"><value>未授权：请在手机上允许 USB 调试</value></data>
+  <data name="DeviceState_Offline" xml:space="preserve"><value>离线</value></data>
+  <data name="DeviceState_Other" xml:space="preserve"><value>不可用</value></data>
+  <data name="DeviceState_Ready" xml:space="preserve"><value>已就绪</value></data>
+  <data name="AdbError_Unauthorized" xml:space="preserve"><value>设备未授权。请在手机弹出的对话框中允许 USB 调试。</value></data>
+  <data name="AdbError_Offline" xml:space="preserve"><value>设备离线。请重新插拔数据线或重启 USB 调试。</value></data>
+  <data name="AdbError_DeviceNotFound" xml:space="preserve"><value>找不到设备，它可能已断开。</value></data>
+  <data name="AdbError_Timeout" xml:space="preserve"><value>操作超时。</value></data>
+  <data name="AdbError_ServerStartFailed" xml:space="preserve"><value>ADB 服务无法启动。</value></data>
+  <data name="AdbError_ConnectionRefused" xml:space="preserve"><value>连接被拒绝。请确认设备已开启无线调试且地址正确。</value></data>
+  <data name="AddWireless_Dialog.Title" xml:space="preserve"><value>添加无线设备</value></data>
+  <data name="AddWireless_TabDirect.Text" xml:space="preserve"><value>IP 直连</value></data>
+  <data name="AddWireless_TabPair.Text" xml:space="preserve"><value>配对码配对</value></data>
+  <data name="AddWireless_TabScan.Text" xml:space="preserve"><value>扫描模拟器</value></data>
+  <data name="AddWireless_DirectHint.Text" xml:space="preserve"><value>适用于已开启 TCP 调试（adb tcpip）的设备或局域网内的模拟器。不填端口时默认 5555。</value></data>
+  <data name="AddWireless_Address.Header" xml:space="preserve"><value>地址</value></data>
+  <data name="AddWireless_Address.PlaceholderText" xml:space="preserve"><value>192.168.1.20:5555</value></data>
+  <data name="AddWireless_SaveAs.Header" xml:space="preserve"><value>保存为（可选）</value></data>
+  <data name="AddWireless_SaveAs.PlaceholderText" xml:space="preserve"><value>例如：卧室的平板</value></data>
+  <data name="AddWireless_ConnectButton.Content" xml:space="preserve"><value>连接</value></data>
+  <data name="AddWireless_PairHint.Text" xml:space="preserve"><value>Android 11 及以上：在手机“开发者选项 → 无线调试 → 使用配对码配对设备”中查看配对地址和配对码。</value></data>
+  <data name="AddWireless_PairAddress.Header" xml:space="preserve"><value>配对地址</value></data>
+  <data name="AddWireless_PairAddress.PlaceholderText" xml:space="preserve"><value>192.168.1.20:37099</value></data>
+  <data name="AddWireless_PairCode.Header" xml:space="preserve"><value>配对码</value></data>
+  <data name="AddWireless_PairButton.Content" xml:space="preserve"><value>配对</value></data>
+  <data name="AddWireless_PairThenConnect.Text" xml:space="preserve"><value>配对后，使用“无线调试”页面顶部显示的地址和端口连接（与配对端口不同）。</value></data>
+  <data name="AddWireless_ConnectAddress.Header" xml:space="preserve"><value>连接地址</value></data>
+  <data name="AddWireless_ConnectAddress.PlaceholderText" xml:space="preserve"><value>192.168.1.20:41231</value></data>
+  <data name="AddWireless_ScanHint.Text" xml:space="preserve"><value>依次尝试常见模拟器的本地 ADB 端口（MuMu、雷电、夜神、逍遥、蓝叠等）。</value></data>
+  <data name="AddWireless_ScanButton.Content" xml:space="preserve"><value>开始扫描</value></data>
+  <data name="AddWireless_PresetsHeader.Text" xml:space="preserve"><value>常见模拟器端口</value></data>
+  <data name="AddWireless_AddressRequired" xml:space="preserve"><value>请输入地址。</value></data>
+  <data name="AddWireless_PairFieldsRequired" xml:space="preserve"><value>请输入配对地址和配对码。</value></data>
+  <data name="AddWireless_ConnectPortRequired" xml:space="preserve"><value>请输入包含端口的连接地址。</value></data>
+  <data name="Logs_Level.Header" xml:space="preserve"><value>级别</value></data>
+  <data name="Logs_LevelDebug.Content" xml:space="preserve"><value>调试及以上</value></data>
+  <data name="Logs_LevelInfo.Content" xml:space="preserve"><value>信息及以上</value></data>
+  <data name="Logs_LevelWarning.Content" xml:space="preserve"><value>警告及以上</value></data>
+  <data name="Logs_LevelError.Content" xml:space="preserve"><value>仅错误</value></data>
+  <data name="Logs_Search.PlaceholderText" xml:space="preserve"><value>搜索日志</value></data>
+  <data name="Logs_Search.Header" xml:space="preserve"><value>搜索</value></data>
+  <data name="Logs_Pause.ToolTipService.ToolTip" xml:space="preserve"><value>暂停滚动</value></data>
+  <data name="Logs_Clear.ToolTipService.ToolTip" xml:space="preserve"><value>清空日志</value></data>
+  <data name="Logs_OpenFolder.ToolTipService.ToolTip" xml:space="preserve"><value>打开日志文件夹</value></data>
+  <data name="Logs_TerminalHeader.Text" xml:space="preserve"><value>ADB 终端（当前设备）</value></data>
+  <data name="Logs_QuickCommands.Content" xml:space="preserve"><value>常用命令</value></data>
+  <data name="Logs_CommandBox.PlaceholderText" xml:space="preserve"><value>输入 shell 命令，回车执行，上下键切换历史</value></data>
+  <data name="Logs_AsRoot.Content" xml:space="preserve"><value>以 su 执行</value></data>
+  <data name="Logs_Run.Content" xml:space="preserve"><value>执行</value></data>
+  <data name="Logs_Cancel.Content" xml:space="preserve"><value>停止</value></data>
+  <data name="Logs_ClearTerminal.ToolTipService.ToolTip" xml:space="preserve"><value>清空终端</value></data>
+  <data name="Logs_NoDevice" xml:space="preserve"><value>没有当前设备。请先在“设备”页连接设备。</value></data>
+  <data name="Logs_Cancelled" xml:space="preserve"><value>（已停止）</value></data>
 </root>

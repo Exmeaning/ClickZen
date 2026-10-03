@@ -37,4 +37,90 @@
   <data name="Common_Ok" xml:space="preserve"><value>OK</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Error_MissingTools" xml:space="preserve"><value>Bundled components are missing: {0}. Please re-download the full ClickZen package.</value></data>
+  <data name="TitleBar_DeviceSwitcher.PlaceholderText" xml:space="preserve"><value>No device</value></data>
+  <data name="TitleBar_NoDevice" xml:space="preserve"><value>No device</value></data>
+  <data name="SessionState_Streaming" xml:space="preserve"><value>Mirroring</value></data>
+  <data name="SessionState_Connected" xml:space="preserve"><value>Connected (no video)</value></data>
+  <data name="SessionState_Connecting" xml:space="preserve"><value>Connecting</value></data>
+  <data name="SessionState_Reconnecting" xml:space="preserve"><value>Reconnecting</value></data>
+  <data name="SessionState_Faulted" xml:space="preserve"><value>Connection failed</value></data>
+  <data name="SessionState_Disconnected" xml:space="preserve"><value>Not mirroring</value></data>
+  <data name="Status_DeviceStreaming" xml:space="preserve"><value>{0}  {1}×{2}  {3} fps</value></data>
+  <data name="Devices_AdbStartFailed" xml:space="preserve"><value>ADB server could not be started</value></data>
+  <data name="Devices_AddWireless.Label" xml:space="preserve"><value>Add wireless device</value></data>
+  <data name="Devices_Refresh.Label" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Devices_ConnectedHeader.Text" xml:space="preserve"><value>Connected devices</value></data>
+  <data name="Devices_EmptyTitle.Text" xml:space="preserve"><value>No devices detected</value></data>
+  <data name="Devices_EmptyHint.Text" xml:space="preserve"><value>Connect a phone over USB with USB debugging enabled, or add a wireless device / scan for local emulators using the buttons above.</value></data>
+  <data name="Devices_CurrentBadge.Text" xml:space="preserve"><value>Current</value></data>
+  <data name="Devices_StartMirror.Content" xml:space="preserve"><value>Start mirroring</value></data>
+  <data name="Devices_StopMirror.Content" xml:space="preserve"><value>Stop mirroring</value></data>
+  <data name="Devices_SetCurrent.Content" xml:space="preserve"><value>Set as current</value></data>
+  <data name="Devices_DisconnectWireless.Content" xml:space="preserve"><value>Disconnect</value></data>
+  <data name="Devices_SavedHeader.Text" xml:space="preserve"><value>Saved wireless devices</value></data>
+  <data name="Devices_SavedEmpty.Text" xml:space="preserve"><value>Give a wireless device a name when connecting to save it for one-click or automatic reconnection.</value></data>
+  <data name="Devices_AutoConnect.Content" xml:space="preserve"><value>Auto connect</value></data>
+  <data name="Devices_Connect.Content" xml:space="preserve"><value>Connect</value></data>
+  <data name="Devices_RemoveSaved.ToolTipService.ToolTip" xml:space="preserve"><value>Remove</value></data>
+  <data name="Devices_Connected" xml:space="preserve"><value>Connected to {0}</value></data>
+  <data name="Devices_Disconnected" xml:space="preserve"><value>Disconnected {0}</value></data>
+  <data name="Devices_Paired" xml:space="preserve"><value>Paired. Now enter the IP address and port shown on the phone's Wireless debugging screen to connect.</value></data>
+  <data name="Devices_ScanNone" xml:space="preserve"><value>No local emulators found. Make sure the emulator is running with ADB enabled.</value></data>
+  <data name="Devices_ScanFound" xml:space="preserve"><value>Found and connected {0} emulator(s).</value></data>
+  <data name="DeviceKind_Usb" xml:space="preserve"><value>USB</value></data>
+  <data name="DeviceKind_Wireless" xml:space="preserve"><value>Wireless</value></data>
+  <data name="DeviceKind_Emulator" xml:space="preserve"><value>Emulator</value></data>
+  <data name="DeviceState_Unauthorized" xml:space="preserve"><value>Unauthorized: allow USB debugging on the phone</value></data>
+  <data name="DeviceState_Offline" xml:space="preserve"><value>Offline</value></data>
+  <data name="DeviceState_Other" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="DeviceState_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="AdbError_Unauthorized" xml:space="preserve"><value>The device is not authorized. Allow USB debugging in the prompt on the phone.</value></data>
+  <data name="AdbError_Offline" xml:space="preserve"><value>The device is offline. Reconnect the cable or toggle USB debugging.</value></data>
+  <data name="AdbError_DeviceNotFound" xml:space="preserve"><value>Device not found; it may have been disconnected.</value></data>
+  <data name="AdbError_Timeout" xml:space="preserve"><value>The operation timed out.</value></data>
+  <data name="AdbError_ServerStartFailed" xml:space="preserve"><value>The ADB server could not be started.</value></data>
+  <data name="AdbError_ConnectionRefused" xml:space="preserve"><value>Connection refused. Check that wireless debugging is on and the address is correct.</value></data>
+  <data name="AddWireless_Dialog.Title" xml:space="preserve"><value>Add wireless device</value></data>
+  <data name="AddWireless_TabDirect.Text" xml:space="preserve"><value>Connect by IP</value></data>
+  <data name="AddWireless_TabPair.Text" xml:space="preserve"><value>Pair with code</value></data>
+  <data name="AddWireless_TabScan.Text" xml:space="preserve"><value>Scan emulators</value></data>
+  <data name="AddWireless_DirectHint.Text" xml:space="preserve"><value>For devices with TCP debugging enabled (adb tcpip) or emulators on the network. Port defaults to 5555.</value></data>
+  <data name="AddWireless_Address.Header" xml:space="preserve"><value>Address</value></data>
+  <data name="AddWireless_Address.PlaceholderText" xml:space="preserve"><value>192.168.1.20:5555</value></data>
+  <data name="AddWireless_SaveAs.Header" xml:space="preserve"><value>Save as (optional)</value></data>
+  <data name="AddWireless_SaveAs.PlaceholderText" xml:space="preserve"><value>e.g. Bedroom tablet</value></data>
+  <data name="AddWireless_ConnectButton.Content" xml:space="preserve"><value>Connect</value></data>
+  <data name="AddWireless_PairHint.Text" xml:space="preserve"><value>Android 11+: on the phone open Developer options → Wireless debugging → Pair device with pairing code.</value></data>
+  <data name="AddWireless_PairAddress.Header" xml:space="preserve"><value>Pairing address</value></data>
+  <data name="AddWireless_PairAddress.PlaceholderText" xml:space="preserve"><value>192.168.1.20:37099</value></data>
+  <data name="AddWireless_PairCode.Header" xml:space="preserve"><value>Pairing code</value></data>
+  <data name="AddWireless_PairButton.Content" xml:space="preserve"><value>Pair</value></data>
+  <data name="AddWireless_PairThenConnect.Text" xml:space="preserve"><value>After pairing, connect using the address and port shown at the top of the Wireless debugging screen (different from the pairing port).</value></data>
+  <data name="AddWireless_ConnectAddress.Header" xml:space="preserve"><value>Connect address</value></data>
+  <data name="AddWireless_ConnectAddress.PlaceholderText" xml:space="preserve"><value>192.168.1.20:41231</value></data>
+  <data name="AddWireless_ScanHint.Text" xml:space="preserve"><value>Tries the local ADB ports used by common emulators (MuMu, LDPlayer, Nox, MEmu, BlueStacks…).</value></data>
+  <data name="AddWireless_ScanButton.Content" xml:space="preserve"><value>Scan</value></data>
+  <data name="AddWireless_PresetsHeader.Text" xml:space="preserve"><value>Common emulator ports</value></data>
+  <data name="AddWireless_AddressRequired" xml:space="preserve"><value>Enter an address.</value></data>
+  <data name="AddWireless_PairFieldsRequired" xml:space="preserve"><value>Enter the pairing address and code.</value></data>
+  <data name="AddWireless_ConnectPortRequired" xml:space="preserve"><value>Enter the connect address including the port.</value></data>
+  <data name="Logs_Level.Header" xml:space="preserve"><value>Level</value></data>
+  <data name="Logs_LevelDebug.Content" xml:space="preserve"><value>Debug and above</value></data>
+  <data name="Logs_LevelInfo.Content" xml:space="preserve"><value>Info and above</value></data>
+  <data name="Logs_LevelWarning.Content" xml:space="preserve"><value>Warnings and above</value></data>
+  <data name="Logs_LevelError.Content" xml:space="preserve"><value>Errors only</value></data>
+  <data name="Logs_Search.PlaceholderText" xml:space="preserve"><value>Search log</value></data>
+  <data name="Logs_Search.Header" xml:space="preserve"><value>Search</value></data>
+  <data name="Logs_Pause.ToolTipService.ToolTip" xml:space="preserve"><value>Pause</value></data>
+  <data name="Logs_Clear.ToolTipService.ToolTip" xml:space="preserve"><value>Clear log</value></data>
+  <data name="Logs_OpenFolder.ToolTipService.ToolTip" xml:space="preserve"><value>Open log folder</value></data>
+  <data name="Logs_TerminalHeader.Text" xml:space="preserve"><value>ADB terminal (current device)</value></data>
+  <data name="Logs_QuickCommands.Content" xml:space="preserve"><value>Quick commands</value></data>
+  <data name="Logs_CommandBox.PlaceholderText" xml:space="preserve"><value>Type a shell command, Enter to run, Up/Down for history</value></data>
+  <data name="Logs_AsRoot.Content" xml:space="preserve"><value>Run as su</value></data>
+  <data name="Logs_Run.Content" xml:space="preserve"><value>Run</value></data>
+  <data name="Logs_Cancel.Content" xml:space="preserve"><value>Stop</value></data>
+  <data name="Logs_ClearTerminal.ToolTipService.ToolTip" xml:space="preserve"><value>Clear terminal</value></data>
+  <data name="Logs_NoDevice" xml:space="preserve"><value>No current device. Connect one on the Devices page first.</value></data>
+  <data name="Logs_Cancelled" xml:space="preserve"><value>(stopped)</value></data>
 </root>

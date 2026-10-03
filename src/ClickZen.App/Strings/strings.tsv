@@ -10,6 +10,8 @@ Nav_Settings	设置	Settings
 # ---- Status bar ----
 Status_EngineIdle	自动化：空闲	Automation: idle
 Status_RecordingIdle	录制：空闲	Recording: idle
+Status_RecordingActive	录制：进行中	Recording: in progress
+Status_RecordingPlaying	录制：回放第 {0} 项（第 {1} 轮）	Recording: playing item {0} (loop {1})
 Status_SyncOff	同步服务：未启用	Sync service: off
 # ---- Pages (x:Uid) ----
 Page_Devices_Title.Text	设备	Devices
@@ -152,3 +154,81 @@ Mirror_ClipboardEmpty	剪贴板中没有文本。	The clipboard has no text.
 Mirror_NoFrame	还没有画面。	No picture yet.
 Mirror_ScreenshotSaved	截图已保存：{0}	Screenshot saved: {0}
 Mirror_ScreenshotCopied	截图已复制到剪贴板。	Screenshot copied to the clipboard.
+# ---- Recording page ----
+Rec_StartRecording	开始录制	Start recording
+Rec_StopRecording	停止录制	Stop recording
+Rec_RecordOnDevice.ToolTipService.ToolTip	在手机上录制：直接在设备屏幕上操作	Record on device: operate on the device screen directly
+Rec_RecordOnDeviceHint	正在录制设备上的触控。完成后点击“停止录制”。	Recording touches made on the device. Click "Stop recording" when done.
+Rec_RecordingOnDevice	设备端录制中	Recording on device
+Rec_DeviceCaptureUnavailable	当前设备不支持设备端录制。	On-device recording is not available for this device.
+Rec_DeviceInfo	{0}  ·  设备 {1}×{2}	{0}  ·  device {1}×{2}
+Rec_Untitled	未命名录制	Untitled recording
+Rec_DocSummary	{0} 个手势  ·  时长 {1}  ·  屏幕 {2}	{0} gestures  ·  length {1}  ·  screen {2}
+Rec_New.Label	新建	New
+Rec_New.ToolTipService.ToolTip	新建录制	New recording
+Rec_Open.Label	打开	Open
+Rec_Open.ToolTipService.ToolTip	打开 .czrec 录制文件	Open a .czrec recording
+Rec_Save.Label	保存	Save
+Rec_Save.ToolTipService.ToolTip	保存（Ctrl+S）	Save (Ctrl+S)
+Rec_SaveAs.Label	另存为	Save as
+Rec_SaveAs.ToolTipService.ToolTip	另存为…	Save as…
+Rec_FileType	ClickZen 录制	ClickZen recording
+Rec_Saved	录制已保存：{0}	Recording saved: {0}
+Rec_SaveFailed	保存失败：{0}	Save failed: {0}
+Rec_Opened	已打开 {0}	Opened {0}
+Rec_OpenFailed	无法打开录制文件：{0}	Could not open the recording: {0}
+Rec_UnsavedTitle	保存更改？	Save changes?
+Rec_UnsavedMessage	“{0}”有未保存的更改。	"{0}" has unsaved changes.
+Rec_SaveChanges	保存	Save
+Rec_DontSave	不保存	Don't save
+Rec_EmptyTimeline.Text	还没有手势。点击画面上方的“开始录制”，然后在投屏画面上操作。	No gestures yet. Click "Start recording" above the picture, then operate on the mirrored screen.
+Rec_Kind_Tap	点击	Tap
+Rec_Kind_LongPress	长按	Long press
+Rec_Kind_Swipe	滑动	Swipe
+Rec_Kind_MultiTouch	多指	Multi-touch
+Rec_Kind_Key	按键	Key
+Rec_Kind_Text	文本	Text
+Rec_Fingers	{0} 指	{0} fingers
+Rec_Key_Back	返回	Back
+Rec_Key_Home	主页	Home
+Rec_Key_Recents	最近任务	Recent apps
+Rec_Key_VolumeUp	音量加	Volume up
+Rec_Key_VolumeDown	音量减	Volume down
+Rec_Key_Power	电源键	Power
+Rec_Key_Code	键码 {0}	Key code {0}
+Rec_EditHeader.Text	编辑	Edit
+Rec_NoSelection	未选择	Nothing selected
+Rec_SelectionCount	已选择 {0} 项	{0} selected
+Rec_StartTime.Header	开始时间（毫秒）	Start time (ms)
+Rec_SetStart.Content	设置	Set
+Rec_TimeDelta.Header	时间偏移（毫秒，可为负）	Time offset (ms, may be negative)
+Rec_ShiftTime.Content	平移	Shift
+Rec_Ripple.Content	同时移动之后的所有手势	Also move every later gesture
+Rec_X.Header	X	X
+Rec_Y.Header	Y	Y
+Rec_PickPoint.ToolTipService.ToolTip	在画面上取点	Pick a point on the picture
+Rec_PickHint	在投屏画面上点击以设置坐标。	Click the mirrored screen to set the coordinates.
+Rec_MoveTo.Content	移到	Move to
+Rec_Dx.Header	X 偏移	X offset
+Rec_Dy.Header	Y 偏移	Y offset
+Rec_Translate.Content	偏移	Offset
+Rec_Delete.Text	删除	Delete
+Rec_PlaybackHeader.Text	回放	Playback
+Rec_Speed.Header	速度	Speed
+Rec_Loops.Header	循环次数（0 = 无限）	Loops (0 = forever)
+Rec_Randomize.Header	随机化	Randomize
+Rec_Randomize.OnContent	开	On
+Rec_Randomize.OffContent	关	Off
+Rec_Play.Text	回放	Play
+Rec_PlayFromSelection.Text	从选择处回放	Play from selection
+Rec_Stop.Text	停止	Stop
+Rec_PlaybackStarting	正在开始回放…	Starting playback…
+Rec_PlaybackProgress	正在回放 {0} / {1}  ·  {2}	Playing {0} / {1}  ·  {2}
+Rec_LoopOf	第 {0} / {1} 轮	loop {0} of {1}
+Rec_LoopInfinite	第 {0} 轮（无限）	loop {0} (forever)
+Rec_PlaybackDone	回放完成。	Playback finished.
+Rec_PlaybackStopped	回放已停止。	Playback stopped.
+Rec_PlaybackFailed	回放失败：{0}	Playback failed: {0}
+Rec_Busy	正在录制或回放。	Recording or playback is in progress.
+Rec_Empty	录制中没有手势。	The recording has no gestures.
+Rec_OrientationWarning	录制时的屏幕方向与当前不同，坐标会按比例缩放，结果可能不准确。	The recording was made in another orientation; coordinates are scaled and may be inaccurate.

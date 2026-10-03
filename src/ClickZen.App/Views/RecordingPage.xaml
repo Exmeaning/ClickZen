@@ -2,11 +2,271 @@
 <Page
     x:Class="ClickZen.App.Views.RecordingPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer>
-        <StackPanel Padding="{StaticResource PagePadding}" Spacing="8">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:ClickZen.App.Controls"
+    xmlns:svc="using:ClickZen.App.Services">
+
+    <Page.Resources>
+        <Style x:Key="RecFieldStyle" TargetType="NumberBox">
+            <Setter Property="SpinButtonPlacementMode" Value="Compact" />
+            <Setter Property="MinWidth" Value="110" />
+        </Style>
+    </Page.Resources>
+
+    <Grid Padding="24,16,24,16" ColumnSpacing="16" RowSpacing="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="280" />
+            <ColumnDefinition Width="420" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.ColumnSpan="2" Spacing="2">
             <TextBlock x:Uid="Page_Recording_Title" Style="{StaticResource PageTitleTextBlockStyle}" />
             <TextBlock x:Uid="Page_Recording_Description" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
         </StackPanel>
-    </ScrollViewer>
+
+        <!-- ============================== Mirror with in-picture record controls -->
+        <Grid Grid.Row="1">
+            <controls:MirrorView x:Name="Mirror" KeyDown="OnMirrorKeyDown" CharacterReceived="OnMirrorCharacterReceived" />
+
+            <Border x:Name="RecordingFrame" BorderThickness="2" CornerRadius="4" IsHitTestVisible="False"
+                    BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
+                    Visibility="{x:Bind Recorder.IsRecording, Mode=OneWay}" />
+
+            <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,12,0,0" Padding="6"
+                    CornerRadius="20" BorderThickness="1"
+                    Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="RecordButton" Click="OnRecordClick" CornerRadius="16" Padding="12,5"
+                            IsEnabled="{x:Bind svc:RecordingUi.Not(Recorder.IsPlaying), Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon x:Name="RecordGlyph" Glyph="&#xE7C8;" FontSize="14"
+                                      Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                            <TextBlock x:Name="RecordText" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="RecordOnDeviceButton" x:Uid="Rec_RecordOnDevice" Click="OnRecordOnDeviceClick"
+                            CornerRadius="16" Padding="10,5" Visibility="Collapsed">
+                        <FontIcon Glyph="&#xE8EA;" FontSize="14" />
+                    </Button>
+                    <TextBlock x:Name="ElapsedText" VerticalAlignment="Center" Margin="0,0,8,0"
+                               FontFamily="{StaticResource MonoFontFamily}"
+                               Visibility="{x:Bind Recorder.IsRecording, Mode=OneWay}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Info strip -->
+        <Grid Grid.Row="2" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="InfoText" Style="{StaticResource SecondaryCaptionTextBlockStyle}" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="1" x:Name="HoverText" FontFamily="{StaticResource MonoFontFamily}"
+                       Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- ============================== Side panel -->
+        <Grid Grid.Row="1" Grid.RowSpan="2" Grid.Column="1" RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" MinHeight="140" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- File toolbar -->
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="DocTitle" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="DocSummary" Style="{StaticResource SecondaryCaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <CommandBar Grid.Column="1" DefaultLabelPosition="Collapsed" IsDynamicOverflowEnabled="False"
+                            Background="Transparent" VerticalAlignment="Center">
+                    <AppBarButton x:Uid="Rec_New" Click="OnNewClick">
+                        <AppBarButton.Icon><FontIcon Glyph="&#xE8A5;" /></AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton x:Uid="Rec_Open" Click="OnOpenClick">
+                        <AppBarButton.Icon><FontIcon Glyph="&#xE8E5;" /></AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton x:Uid="Rec_Save" Click="OnSaveClick">
+                        <AppBarButton.Icon><FontIcon Glyph="&#xE74E;" /></AppBarButton.Icon>
+                        <AppBarButton.KeyboardAccelerators>
+                            <KeyboardAccelerator Modifiers="Control" Key="S" />
+                        </AppBarButton.KeyboardAccelerators>
+                    </AppBarButton>
+                    <AppBarButton x:Uid="Rec_SaveAs" Click="OnSaveAsClick">
+                        <AppBarButton.Icon><FontIcon Glyph="&#xE792;" /></AppBarButton.Icon>
+                    </AppBarButton>
+                </CommandBar>
+            </Grid>
+
+            <!-- Timeline -->
+            <Border Grid.Row="1" Style="{StaticResource CardBorderStyle}" Padding="0">
+                <Grid>
+                    <ListView x:Name="Timeline" ItemsSource="{x:Bind Recorder.Items}" SelectionMode="Extended"
+                              SelectionChanged="OnTimelineSelectionChanged" KeyDown="OnTimelineKeyDown">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                                <Setter Property="MinHeight" Value="36" />
+                                <Setter Property="Padding" Value="12,2" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="svc:GestureItem">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="30" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{x:Bind Number, Mode=OneWay}" VerticalAlignment="Center"
+                                               Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                                    <FontIcon Grid.Column="1" Glyph="{x:Bind Glyph}" FontSize="14" VerticalAlignment="Center"
+                                              Foreground="{x:Bind svc:RecordingUi.PlayingBrush(IsPlaying), Mode=OneWay}" />
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind KindText}" Style="{StaticResource BodyTextBlockStyle}" />
+                                        <TextBlock Text="{x:Bind DetailText}" Style="{StaticResource SecondaryCaptionTextBlockStyle}"
+                                                   FontFamily="{StaticResource MonoFontFamily}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                        <TextBlock Text="{x:Bind TimeText}" FontFamily="{StaticResource MonoFontFamily}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}" HorizontalAlignment="Right" />
+                                        <TextBlock Text="{x:Bind DurationText}" FontFamily="{StaticResource MonoFontFamily}"
+                                                   Style="{StaticResource SecondaryCaptionTextBlockStyle}" HorizontalAlignment="Right" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <TextBlock x:Name="EmptyText" x:Uid="Rec_EmptyTimeline" TextWrapping="Wrap" TextAlignment="Center"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24"
+                               Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                </Grid>
+            </Border>
+
+            <!-- Editing and playback -->
+            <ScrollViewer Grid.Row="2" MaxHeight="440" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="8">
+                    <Border x:Name="EditCard" Style="{StaticResource CardBorderStyle}" Padding="12">
+                        <StackPanel Spacing="8">
+                            <Grid>
+                                <TextBlock x:Uid="Rec_EditHeader" Style="{StaticResource SectionHeaderTextBlockStyle}" Margin="0" />
+                                <TextBlock x:Name="SelectionText" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                           Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                            </Grid>
+
+                            <!-- Time -->
+                            <Grid ColumnSpacing="8" RowSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <NumberBox x:Name="StartBox" x:Uid="Rec_StartTime" Style="{StaticResource RecFieldStyle}"
+                                           Minimum="0" SmallChange="10" LargeChange="100" />
+                                <Button x:Name="SetStartButton" Grid.Column="1" x:Uid="Rec_SetStart" VerticalAlignment="Bottom" Click="OnSetStartClick" />
+                                <NumberBox x:Name="DeltaBox" Grid.Row="1" x:Uid="Rec_TimeDelta" Style="{StaticResource RecFieldStyle}"
+                                           Value="100" SmallChange="10" LargeChange="100" />
+                                <Button x:Name="ShiftButton" Grid.Row="1" Grid.Column="1" x:Uid="Rec_ShiftTime" VerticalAlignment="Bottom" Click="OnShiftTimeClick" />
+                                <CheckBox x:Name="RippleCheck" Grid.Row="2" Grid.ColumnSpan="2" x:Uid="Rec_Ripple" />
+                            </Grid>
+
+                            <MenuFlyoutSeparator />
+
+                            <!-- Coordinates -->
+                            <Grid ColumnSpacing="8" RowSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <NumberBox x:Name="XBox" x:Uid="Rec_X" Style="{StaticResource RecFieldStyle}" Minimum="0" MinWidth="0" />
+                                <NumberBox x:Name="YBox" Grid.Column="1" x:Uid="Rec_Y" Style="{StaticResource RecFieldStyle}" Minimum="0" MinWidth="0" />
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Bottom">
+                                    <ToggleButton x:Name="PickToggle" x:Uid="Rec_PickPoint" Click="OnPickToggle" Padding="8,5">
+                                        <FontIcon Glyph="&#xEF3C;" FontSize="14" />
+                                    </ToggleButton>
+                                    <Button x:Name="MoveToButton" x:Uid="Rec_MoveTo" Click="OnMoveToClick" />
+                                </StackPanel>
+                                <NumberBox x:Name="DxBox" Grid.Row="1" x:Uid="Rec_Dx" Style="{StaticResource RecFieldStyle}" MinWidth="0" Value="0" />
+                                <NumberBox x:Name="DyBox" Grid.Row="1" Grid.Column="1" x:Uid="Rec_Dy" Style="{StaticResource RecFieldStyle}" MinWidth="0" Value="0" />
+                                <Button x:Name="TranslateButton" Grid.Row="1" Grid.Column="2" x:Uid="Rec_Translate"
+                                        VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Click="OnTranslateClick" />
+                            </Grid>
+
+                            <Button x:Name="DeleteButton" Click="OnDeleteClick" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                    <TextBlock x:Uid="Rec_Delete" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardBorderStyle}" Padding="12">
+                        <StackPanel Spacing="8">
+                            <TextBlock x:Uid="Rec_PlaybackHeader" Style="{StaticResource SectionHeaderTextBlockStyle}" Margin="0" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox x:Uid="Rec_Speed" Style="{StaticResource RecFieldStyle}" MinWidth="0"
+                                           Minimum="0.1" Maximum="10" SmallChange="0.1" LargeChange="0.5"
+                                           Value="{x:Bind Recorder.Speed, Mode=TwoWay}" />
+                                <NumberBox Grid.Column="1" x:Uid="Rec_Loops" Style="{StaticResource RecFieldStyle}" MinWidth="0"
+                                           Minimum="0" Maximum="100000" SmallChange="1" LargeChange="10"
+                                           Value="{x:Bind Recorder.Loops, Mode=TwoWay}" />
+                                <ToggleSwitch Grid.Column="2" x:Uid="Rec_Randomize" MinWidth="0"
+                                              IsOn="{x:Bind Recorder.Randomize, Mode=TwoWay}" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="PlayButton" Style="{StaticResource AccentButtonStyle}" Click="OnPlayClick">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14" />
+                                        <TextBlock x:Uid="Rec_Play" />
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="PlayFromButton" Click="OnPlayFromSelectionClick">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE893;" FontSize="14" />
+                                        <TextBlock x:Uid="Rec_PlayFromSelection" />
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="StopButton" Click="OnStopPlaybackClick"
+                                        IsEnabled="{x:Bind Recorder.IsPlaying, Mode=OneWay}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE71A;" FontSize="14" />
+                                        <TextBlock x:Uid="Rec_Stop" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                            <TextBlock x:Name="PlaybackText" Style="{StaticResource SecondaryCaptionTextBlockStyle}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
 </Page>

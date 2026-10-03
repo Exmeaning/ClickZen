@@ -14,6 +14,8 @@
   <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Status_EngineIdle" xml:space="preserve"><value>Automation: idle</value></data>
   <data name="Status_RecordingIdle" xml:space="preserve"><value>Recording: idle</value></data>
+  <data name="Status_RecordingActive" xml:space="preserve"><value>Recording: in progress</value></data>
+  <data name="Status_RecordingPlaying" xml:space="preserve"><value>Recording: playing item {0} (loop {1})</value></data>
   <data name="Status_SyncOff" xml:space="preserve"><value>Sync service: off</value></data>
   <data name="Page_Devices_Title.Text" xml:space="preserve"><value>Devices</value></data>
   <data name="Page_Devices_Description.Text" xml:space="preserve"><value>Manage USB devices, wireless devices and emulator windows.</value></data>
@@ -150,4 +152,81 @@
   <data name="Mirror_NoFrame" xml:space="preserve"><value>No picture yet.</value></data>
   <data name="Mirror_ScreenshotSaved" xml:space="preserve"><value>Screenshot saved: {0}</value></data>
   <data name="Mirror_ScreenshotCopied" xml:space="preserve"><value>Screenshot copied to the clipboard.</value></data>
+  <data name="Rec_StartRecording" xml:space="preserve"><value>Start recording</value></data>
+  <data name="Rec_StopRecording" xml:space="preserve"><value>Stop recording</value></data>
+  <data name="Rec_RecordOnDevice.ToolTipService.ToolTip" xml:space="preserve"><value>Record on device: operate on the device screen directly</value></data>
+  <data name="Rec_RecordOnDeviceHint" xml:space="preserve"><value>Recording touches made on the device. Click "Stop recording" when done.</value></data>
+  <data name="Rec_RecordingOnDevice" xml:space="preserve"><value>Recording on device</value></data>
+  <data name="Rec_DeviceCaptureUnavailable" xml:space="preserve"><value>On-device recording is not available for this device.</value></data>
+  <data name="Rec_DeviceInfo" xml:space="preserve"><value>{0}  ·  device {1}×{2}</value></data>
+  <data name="Rec_Untitled" xml:space="preserve"><value>Untitled recording</value></data>
+  <data name="Rec_DocSummary" xml:space="preserve"><value>{0} gestures  ·  length {1}  ·  screen {2}</value></data>
+  <data name="Rec_New.Label" xml:space="preserve"><value>New</value></data>
+  <data name="Rec_New.ToolTipService.ToolTip" xml:space="preserve"><value>New recording</value></data>
+  <data name="Rec_Open.Label" xml:space="preserve"><value>Open</value></data>
+  <data name="Rec_Open.ToolTipService.ToolTip" xml:space="preserve"><value>Open a .czrec recording</value></data>
+  <data name="Rec_Save.Label" xml:space="preserve"><value>Save</value></data>
+  <data name="Rec_Save.ToolTipService.ToolTip" xml:space="preserve"><value>Save (Ctrl+S)</value></data>
+  <data name="Rec_SaveAs.Label" xml:space="preserve"><value>Save as</value></data>
+  <data name="Rec_SaveAs.ToolTipService.ToolTip" xml:space="preserve"><value>Save as…</value></data>
+  <data name="Rec_FileType" xml:space="preserve"><value>ClickZen recording</value></data>
+  <data name="Rec_Saved" xml:space="preserve"><value>Recording saved: {0}</value></data>
+  <data name="Rec_SaveFailed" xml:space="preserve"><value>Save failed: {0}</value></data>
+  <data name="Rec_Opened" xml:space="preserve"><value>Opened {0}</value></data>
+  <data name="Rec_OpenFailed" xml:space="preserve"><value>Could not open the recording: {0}</value></data>
+  <data name="Rec_UnsavedTitle" xml:space="preserve"><value>Save changes?</value></data>
+  <data name="Rec_UnsavedMessage" xml:space="preserve"><value>"{0}" has unsaved changes.</value></data>
+  <data name="Rec_SaveChanges" xml:space="preserve"><value>Save</value></data>
+  <data name="Rec_DontSave" xml:space="preserve"><value>Don't save</value></data>
+  <data name="Rec_EmptyTimeline.Text" xml:space="preserve"><value>No gestures yet. Click "Start recording" above the picture, then operate on the mirrored screen.</value></data>
+  <data name="Rec_Kind_Tap" xml:space="preserve"><value>Tap</value></data>
+  <data name="Rec_Kind_LongPress" xml:space="preserve"><value>Long press</value></data>
+  <data name="Rec_Kind_Swipe" xml:space="preserve"><value>Swipe</value></data>
+  <data name="Rec_Kind_MultiTouch" xml:space="preserve"><value>Multi-touch</value></data>
+  <data name="Rec_Kind_Key" xml:space="preserve"><value>Key</value></data>
+  <data name="Rec_Kind_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="Rec_Fingers" xml:space="preserve"><value>{0} fingers</value></data>
+  <data name="Rec_Key_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Rec_Key_Home" xml:space="preserve"><value>Home</value></data>
+  <data name="Rec_Key_Recents" xml:space="preserve"><value>Recent apps</value></data>
+  <data name="Rec_Key_VolumeUp" xml:space="preserve"><value>Volume up</value></data>
+  <data name="Rec_Key_VolumeDown" xml:space="preserve"><value>Volume down</value></data>
+  <data name="Rec_Key_Power" xml:space="preserve"><value>Power</value></data>
+  <data name="Rec_Key_Code" xml:space="preserve"><value>Key code {0}</value></data>
+  <data name="Rec_EditHeader.Text" xml:space="preserve"><value>Edit</value></data>
+  <data name="Rec_NoSelection" xml:space="preserve"><value>Nothing selected</value></data>
+  <data name="Rec_SelectionCount" xml:space="preserve"><value>{0} selected</value></data>
+  <data name="Rec_StartTime.Header" xml:space="preserve"><value>Start time (ms)</value></data>
+  <data name="Rec_SetStart.Content" xml:space="preserve"><value>Set</value></data>
+  <data name="Rec_TimeDelta.Header" xml:space="preserve"><value>Time offset (ms, may be negative)</value></data>
+  <data name="Rec_ShiftTime.Content" xml:space="preserve"><value>Shift</value></data>
+  <data name="Rec_Ripple.Content" xml:space="preserve"><value>Also move every later gesture</value></data>
+  <data name="Rec_X.Header" xml:space="preserve"><value>X</value></data>
+  <data name="Rec_Y.Header" xml:space="preserve"><value>Y</value></data>
+  <data name="Rec_PickPoint.ToolTipService.ToolTip" xml:space="preserve"><value>Pick a point on the picture</value></data>
+  <data name="Rec_PickHint" xml:space="preserve"><value>Click the mirrored screen to set the coordinates.</value></data>
+  <data name="Rec_MoveTo.Content" xml:space="preserve"><value>Move to</value></data>
+  <data name="Rec_Dx.Header" xml:space="preserve"><value>X offset</value></data>
+  <data name="Rec_Dy.Header" xml:space="preserve"><value>Y offset</value></data>
+  <data name="Rec_Translate.Content" xml:space="preserve"><value>Offset</value></data>
+  <data name="Rec_Delete.Text" xml:space="preserve"><value>Delete</value></data>
+  <data name="Rec_PlaybackHeader.Text" xml:space="preserve"><value>Playback</value></data>
+  <data name="Rec_Speed.Header" xml:space="preserve"><value>Speed</value></data>
+  <data name="Rec_Loops.Header" xml:space="preserve"><value>Loops (0 = forever)</value></data>
+  <data name="Rec_Randomize.Header" xml:space="preserve"><value>Randomize</value></data>
+  <data name="Rec_Randomize.OnContent" xml:space="preserve"><value>On</value></data>
+  <data name="Rec_Randomize.OffContent" xml:space="preserve"><value>Off</value></data>
+  <data name="Rec_Play.Text" xml:space="preserve"><value>Play</value></data>
+  <data name="Rec_PlayFromSelection.Text" xml:space="preserve"><value>Play from selection</value></data>
+  <data name="Rec_Stop.Text" xml:space="preserve"><value>Stop</value></data>
+  <data name="Rec_PlaybackStarting" xml:space="preserve"><value>Starting playback…</value></data>
+  <data name="Rec_PlaybackProgress" xml:space="preserve"><value>Playing {0} / {1}  ·  {2}</value></data>
+  <data name="Rec_LoopOf" xml:space="preserve"><value>loop {0} of {1}</value></data>
+  <data name="Rec_LoopInfinite" xml:space="preserve"><value>loop {0} (forever)</value></data>
+  <data name="Rec_PlaybackDone" xml:space="preserve"><value>Playback finished.</value></data>
+  <data name="Rec_PlaybackStopped" xml:space="preserve"><value>Playback stopped.</value></data>
+  <data name="Rec_PlaybackFailed" xml:space="preserve"><value>Playback failed: {0}</value></data>
+  <data name="Rec_Busy" xml:space="preserve"><value>Recording or playback is in progress.</value></data>
+  <data name="Rec_Empty" xml:space="preserve"><value>The recording has no gestures.</value></data>
+  <data name="Rec_OrientationWarning" xml:space="preserve"><value>The recording was made in another orientation; coordinates are scaled and may be inaccurate.</value></data>
 </root>

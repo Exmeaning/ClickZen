@@ -96,6 +96,9 @@ public sealed partial class MirrorView : UserControl
     /// <summary>Raised for every pointer event forwarded to the device (device pixels, monotonic ms).</summary>
     public event EventHandler<RawTouchEvent>? TouchForwarded;
 
+    /// <summary>Raised for every key sent through <see cref="SendKeyAsync"/> (toolbar, right/middle click).</summary>
+    public event EventHandler<int>? KeyForwarded;
+
     /// <summary>Raised while hovering, with device coordinates and pixel colour (null when outside the picture).</summary>
     public event EventHandler<MirrorPoint?>? HoverChanged;
 
@@ -459,7 +462,16 @@ public sealed partial class MirrorView : UserControl
     }
 
     /// <summary>Sends a key press to the device (used by the toolbar and right/middle click).</summary>
-    public Task SendKeyAsync(int keyCode) => _session is null ? Task.CompletedTask : Guard(_session.Injector.KeyAsync(keyCode, CancellationToken.None));
+    public Task SendKeyAsync(int keyCode)
+    {
+        if (_session is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        KeyForwarded?.Invoke(this, keyCode);
+        return Guard(_session.Injector.KeyAsync(keyCode, CancellationToken.None));
+    }
 
     private async Task Guard(Task t)
     {

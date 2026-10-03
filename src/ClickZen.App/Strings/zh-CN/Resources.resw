@@ -14,6 +14,8 @@
   <data name="Nav_Settings" xml:space="preserve"><value>设置</value></data>
   <data name="Status_EngineIdle" xml:space="preserve"><value>自动化：空闲</value></data>
   <data name="Status_RecordingIdle" xml:space="preserve"><value>录制：空闲</value></data>
+  <data name="Status_RecordingActive" xml:space="preserve"><value>录制：进行中</value></data>
+  <data name="Status_RecordingPlaying" xml:space="preserve"><value>录制：回放第 {0} 项（第 {1} 轮）</value></data>
   <data name="Status_SyncOff" xml:space="preserve"><value>同步服务：未启用</value></data>
   <data name="Page_Devices_Title.Text" xml:space="preserve"><value>设备</value></data>
   <data name="Page_Devices_Description.Text" xml:space="preserve"><value>管理 USB、无线设备和模拟器窗口。</value></data>
@@ -150,4 +152,81 @@
   <data name="Mirror_NoFrame" xml:space="preserve"><value>还没有画面。</value></data>
   <data name="Mirror_ScreenshotSaved" xml:space="preserve"><value>截图已保存：{0}</value></data>
   <data name="Mirror_ScreenshotCopied" xml:space="preserve"><value>截图已复制到剪贴板。</value></data>
+  <data name="Rec_StartRecording" xml:space="preserve"><value>开始录制</value></data>
+  <data name="Rec_StopRecording" xml:space="preserve"><value>停止录制</value></data>
+  <data name="Rec_RecordOnDevice.ToolTipService.ToolTip" xml:space="preserve"><value>在手机上录制：直接在设备屏幕上操作</value></data>
+  <data name="Rec_RecordOnDeviceHint" xml:space="preserve"><value>正在录制设备上的触控。完成后点击“停止录制”。</value></data>
+  <data name="Rec_RecordingOnDevice" xml:space="preserve"><value>设备端录制中</value></data>
+  <data name="Rec_DeviceCaptureUnavailable" xml:space="preserve"><value>当前设备不支持设备端录制。</value></data>
+  <data name="Rec_DeviceInfo" xml:space="preserve"><value>{0}  ·  设备 {1}×{2}</value></data>
+  <data name="Rec_Untitled" xml:space="preserve"><value>未命名录制</value></data>
+  <data name="Rec_DocSummary" xml:space="preserve"><value>{0} 个手势  ·  时长 {1}  ·  屏幕 {2}</value></data>
+  <data name="Rec_New.Label" xml:space="preserve"><value>新建</value></data>
+  <data name="Rec_New.ToolTipService.ToolTip" xml:space="preserve"><value>新建录制</value></data>
+  <data name="Rec_Open.Label" xml:space="preserve"><value>打开</value></data>
+  <data name="Rec_Open.ToolTipService.ToolTip" xml:space="preserve"><value>打开 .czrec 录制文件</value></data>
+  <data name="Rec_Save.Label" xml:space="preserve"><value>保存</value></data>
+  <data name="Rec_Save.ToolTipService.ToolTip" xml:space="preserve"><value>保存（Ctrl+S）</value></data>
+  <data name="Rec_SaveAs.Label" xml:space="preserve"><value>另存为</value></data>
+  <data name="Rec_SaveAs.ToolTipService.ToolTip" xml:space="preserve"><value>另存为…</value></data>
+  <data name="Rec_FileType" xml:space="preserve"><value>ClickZen 录制</value></data>
+  <data name="Rec_Saved" xml:space="preserve"><value>录制已保存：{0}</value></data>
+  <data name="Rec_SaveFailed" xml:space="preserve"><value>保存失败：{0}</value></data>
+  <data name="Rec_Opened" xml:space="preserve"><value>已打开 {0}</value></data>
+  <data name="Rec_OpenFailed" xml:space="preserve"><value>无法打开录制文件：{0}</value></data>
+  <data name="Rec_UnsavedTitle" xml:space="preserve"><value>保存更改？</value></data>
+  <data name="Rec_UnsavedMessage" xml:space="preserve"><value>“{0}”有未保存的更改。</value></data>
+  <data name="Rec_SaveChanges" xml:space="preserve"><value>保存</value></data>
+  <data name="Rec_DontSave" xml:space="preserve"><value>不保存</value></data>
+  <data name="Rec_EmptyTimeline.Text" xml:space="preserve"><value>还没有手势。点击画面上方的“开始录制”，然后在投屏画面上操作。</value></data>
+  <data name="Rec_Kind_Tap" xml:space="preserve"><value>点击</value></data>
+  <data name="Rec_Kind_LongPress" xml:space="preserve"><value>长按</value></data>
+  <data name="Rec_Kind_Swipe" xml:space="preserve"><value>滑动</value></data>
+  <data name="Rec_Kind_MultiTouch" xml:space="preserve"><value>多指</value></data>
+  <data name="Rec_Kind_Key" xml:space="preserve"><value>按键</value></data>
+  <data name="Rec_Kind_Text" xml:space="preserve"><value>文本</value></data>
+  <data name="Rec_Fingers" xml:space="preserve"><value>{0} 指</value></data>
+  <data name="Rec_Key_Back" xml:space="preserve"><value>返回</value></data>
+  <data name="Rec_Key_Home" xml:space="preserve"><value>主页</value></data>
+  <data name="Rec_Key_Recents" xml:space="preserve"><value>最近任务</value></data>
+  <data name="Rec_Key_VolumeUp" xml:space="preserve"><value>音量加</value></data>
+  <data name="Rec_Key_VolumeDown" xml:space="preserve"><value>音量减</value></data>
+  <data name="Rec_Key_Power" xml:space="preserve"><value>电源键</value></data>
+  <data name="Rec_Key_Code" xml:space="preserve"><value>键码 {0}</value></data>
+  <data name="Rec_EditHeader.Text" xml:space="preserve"><value>编辑</value></data>
+  <data name="Rec_NoSelection" xml:space="preserve"><value>未选择</value></data>
+  <data name="Rec_SelectionCount" xml:space="preserve"><value>已选择 {0} 项</value></data>
+  <data name="Rec_StartTime.Header" xml:space="preserve"><value>开始时间（毫秒）</value></data>
+  <data name="Rec_SetStart.Content" xml:space="preserve"><value>设置</value></data>
+  <data name="Rec_TimeDelta.Header" xml:space="preserve"><value>时间偏移（毫秒，可为负）</value></data>
+  <data name="Rec_ShiftTime.Content" xml:space="preserve"><value>平移</value></data>
+  <data name="Rec_Ripple.Content" xml:space="preserve"><value>同时移动之后的所有手势</value></data>
+  <data name="Rec_X.Header" xml:space="preserve"><value>X</value></data>
+  <data name="Rec_Y.Header" xml:space="preserve"><value>Y</value></data>
+  <data name="Rec_PickPoint.ToolTipService.ToolTip" xml:space="preserve"><value>在画面上取点</value></data>
+  <data name="Rec_PickHint" xml:space="preserve"><value>在投屏画面上点击以设置坐标。</value></data>
+  <data name="Rec_MoveTo.Content" xml:space="preserve"><value>移到</value></data>
+  <data name="Rec_Dx.Header" xml:space="preserve"><value>X 偏移</value></data>
+  <data name="Rec_Dy.Header" xml:space="preserve"><value>Y 偏移</value></data>
+  <data name="Rec_Translate.Content" xml:space="preserve"><value>偏移</value></data>
+  <data name="Rec_Delete.Text" xml:space="preserve"><value>删除</value></data>
+  <data name="Rec_PlaybackHeader.Text" xml:space="preserve"><value>回放</value></data>
+  <data name="Rec_Speed.Header" xml:space="preserve"><value>速度</value></data>
+  <data name="Rec_Loops.Header" xml:space="preserve"><value>循环次数（0 = 无限）</value></data>
+  <data name="Rec_Randomize.Header" xml:space="preserve"><value>随机化</value></data>
+  <data name="Rec_Randomize.OnContent" xml:space="preserve"><value>开</value></data>
+  <data name="Rec_Randomize.OffContent" xml:space="preserve"><value>关</value></data>
+  <data name="Rec_Play.Text" xml:space="preserve"><value>回放</value></data>
+  <data name="Rec_PlayFromSelection.Text" xml:space="preserve"><value>从选择处回放</value></data>
+  <data name="Rec_Stop.Text" xml:space="preserve"><value>停止</value></data>
+  <data name="Rec_PlaybackStarting" xml:space="preserve"><value>正在开始回放…</value></data>
+  <data name="Rec_PlaybackProgress" xml:space="preserve"><value>正在回放 {0} / {1}  ·  {2}</value></data>
+  <data name="Rec_LoopOf" xml:space="preserve"><value>第 {0} / {1} 轮</value></data>
+  <data name="Rec_LoopInfinite" xml:space="preserve"><value>第 {0} 轮（无限）</value></data>
+  <data name="Rec_PlaybackDone" xml:space="preserve"><value>回放完成。</value></data>
+  <data name="Rec_PlaybackStopped" xml:space="preserve"><value>回放已停止。</value></data>
+  <data name="Rec_PlaybackFailed" xml:space="preserve"><value>回放失败：{0}</value></data>
+  <data name="Rec_Busy" xml:space="preserve"><value>正在录制或回放。</value></data>
+  <data name="Rec_Empty" xml:space="preserve"><value>录制中没有手势。</value></data>
+  <data name="Rec_OrientationWarning" xml:space="preserve"><value>录制时的屏幕方向与当前不同，坐标会按比例缩放，结果可能不准确。</value></data>
 </root>

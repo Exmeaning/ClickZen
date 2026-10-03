@@ -147,6 +147,29 @@ public sealed class RecordingDocumentTests
         Assert.Equal(1000, back.DurationMs);
     }
 
+    [Theory]
+    [InlineData("{\"formatVersion\":99,\"gestures\":[]}")]
+    [InlineData("{\"gestures\":null}")]
+    [InlineData("{\"gestures\":[{\"kind\":\"tap\",\"startMs\":0,\"fingers\":[]}]}")]
+    public void Invalid_json_recordings_are_rejected(string json)
+    {
+        Assert.Throws<InvalidDataException>(() => RecordingDocument.FromJson(json));
+    }
+
+    [Fact]
+    public void Decreasing_point_times_are_rejected()
+    {
+        var doc = new RecordingDocument
+        {
+            Gestures = [new Gesture
+            {
+                Kind = GestureKind.Swipe,
+                StartMs = 0,
+                Fingers = [new FingerStroke([new TimedPoint(1, 2, 100), new TimedPoint(3, 4, 50)])],
+            }],
+        };
+        Assert.Throws<InvalidDataException>(() => RecordingDocument.FromJson(doc.ToJson()));
+    }
     [Fact]
     public void Newer_format_is_rejected()
     {

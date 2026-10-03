@@ -15,6 +15,7 @@ public sealed partial class MainWindow : Window
 {
     private readonly ILocalizer _loc;
     private readonly DeviceHub _hub;
+    private readonly RecordingService _recording;
     private readonly DispatcherTimer _statusTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private DeviceEntry? _observed;
     private bool _syncingSwitcher;
@@ -23,6 +24,7 @@ public sealed partial class MainWindow : Window
     {
         _loc = services.GetRequiredService<ILocalizer>();
         _hub = services.GetRequiredService<DeviceHub>();
+        _recording = services.GetRequiredService<RecordingService>();
         InitializeComponent();
 
         Title = AppInfo.Name;
@@ -42,7 +44,8 @@ public sealed partial class MainWindow : Window
         BuildNavigation();
         StatusVersion.Text = $"{AppInfo.Name} {AppInfo.Version}";
         StatusEngine.Text = _loc["Status_EngineIdle"];
-        StatusRecording.Text = _loc["Status_RecordingIdle"];
+        UpdateRecordingStatus();
+        _recording.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(UpdateRecordingStatus);
         StatusSync.Text = _loc["Status_SyncOff"];
 
         DeviceSwitcher.ItemsSource = _hub.Devices;
@@ -57,6 +60,15 @@ public sealed partial class MainWindow : Window
     }
 
     public Frame Frame => ContentFrame;
+
+    private void UpdateRecordingStatus()
+    {
+        StatusRecording.Text = _recording.IsRecording
+            ? _loc["Status_RecordingActive"]
+            : _recording.IsPlaying && _recording.PlaybackIndex >= 0
+                ? _loc.Format("Status_RecordingPlaying", _recording.PlaybackIndex + 1, _recording.PlaybackLoop)
+                : _loc["Status_RecordingIdle"];
+    }
 
     /// <summary>Shows a message at the top of the content area.</summary>
     public void ShowInfo(string message, InfoBarSeverity severity = InfoBarSeverity.Informational, string? title = null)

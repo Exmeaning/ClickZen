@@ -62,6 +62,8 @@ public partial class App : Application
         sc.AddSingleton<AutoConnector>();
         sc.AddSingleton<IScrcpyTransport, AdbScrcpyTransport>();
         sc.AddSingleton<DeviceHub>();
+        sc.AddSingleton<RecordingService>();
+        sc.AddSingleton<IDeviceTouchCapture, GeteventTouchCapture>();
         sc.AddTransient<ClickZen.App.ViewModels.DevicesViewModel>();
         sc.AddTransient<ClickZen.App.ViewModels.LogsViewModel>();
 
@@ -122,6 +124,11 @@ public partial class App : Application
         if (Environment.GetCommandLineArgs().Contains("--selftest-input", StringComparer.OrdinalIgnoreCase))
         {
             _ = new InputSelfTest(_window, _services, _log).RunAsync();
+        }
+
+        if (Environment.GetCommandLineArgs().Contains("--selftest-recording", StringComparer.OrdinalIgnoreCase))
+        {
+            _ = new RecordingSelfTest(_window, _services, _log).RunAsync();
         }
 
         // Developer convenience: `ClickZen.exe --page mirror` opens a page directly.

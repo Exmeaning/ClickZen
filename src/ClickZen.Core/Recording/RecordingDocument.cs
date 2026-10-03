@@ -34,12 +34,59 @@ public sealed class RecordingDocument
             throw new InvalidDataException($"Recording format {doc.FormatVersion} is newer than supported ({CurrentFormatVersion}).");
         }
 
-        doc.Gestures = doc.Gestures.OrderBy(g => g.StartMs).ToList();
-        return doc;
+        return Validate(doc);
     }
 
     public static RecordingDocument FromJson(string json) =>
-        JsonSerializer.Deserialize<RecordingDocument>(json, Options) ?? throw new InvalidDataException("Empty recording.");
+        Validate(JsonSerializer.Deserialize<RecordingDocument>(json, Options) ?? throw new InvalidDataException("Empty recording."));
+
+    private static RecordingDocument Validate(RecordingDocument doc)
+    {
+        if (doc.FormatVersion != CurrentFormatVersion)
+        {
+            throw new InvalidDataException($"Unsupported recording format {doc.FormatVersion}.");
+        }
+
+        if (doc.Gestures is null || doc.ScreenSize.Width < 0 || doc.ScreenSize.Height < 0)
+        {
+            throw new InvalidDataException("Invalid recording metadata.");
+        }
+
+        foreach (var g in doc.Gestures)
+        {
+            if (g is null || g.StartMs < 0 || !Enum.IsDefined(g.Kind) || g.Fingers is null)
+            {
+                throw new InvalidDataException("Invalid recorded gesture.");
+            }
+
+            if (g.Kind is GestureKind.Tap or GestureKind.LongPress or GestureKind.Swipe or GestureKind.MultiTouch && g.Fingers.Count == 0)
+            {
+                throw new InvalidDataException("Touch gesture has no fingers.");
+            }
+
+            foreach (var finger in g.Fingers)
+            {
+                if (finger is null || finger.Points is null || finger.Points.Count == 0)
+                {
+                    throw new InvalidDataException("Finger stroke has no points.");
+                }
+
+                var last = -1;
+                foreach (var p in finger.Points)
+                {
+                    if (!double.IsFinite(p.X) || !double.IsFinite(p.Y) || p.OffsetMs < last || p.OffsetMs < 0)
+                    {
+                        throw new InvalidDataException("Invalid stroke coordinates or timing.");
+                    }
+
+                    last = p.OffsetMs;
+                }
+            }
+        }
+
+        doc.Gestures = doc.Gestures.OrderBy(g => g.StartMs).ToList();
+        return doc;
+    }
 
     public string ToJson() => JsonSerializer.Serialize(this, Options);
 

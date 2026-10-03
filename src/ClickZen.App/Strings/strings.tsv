@@ -124,3 +124,31 @@ Logs_Cancel.Content	停止	Stop
 Logs_ClearTerminal.ToolTipService.ToolTip	清空终端	Clear terminal
 Logs_NoDevice	没有当前设备。请先在“设备”页连接设备。	No current device. Connect one on the Devices page first.
 Logs_Cancelled	（已停止）	(stopped)
+# ---- Mirror page ----
+Mirror_Back.ToolTipService.ToolTip	返回（或在画面上点右键）	Back (or right-click the screen)
+Mirror_Home.ToolTipService.ToolTip	主页（或在画面上点中键）	Home (or middle-click the screen)
+Mirror_Recents.ToolTipService.ToolTip	最近任务	Recent apps
+Mirror_VolumeUp.ToolTipService.ToolTip	音量加	Volume up
+Mirror_VolumeDown.ToolTipService.ToolTip	音量减	Volume down
+Mirror_Power.ToolTipService.ToolTip	电源键	Power
+Mirror_Rotate.ToolTipService.ToolTip	旋转屏幕	Rotate screen
+Mirror_ScreenOff.ToolTipService.ToolTip	关闭手机屏幕（继续投屏）	Turn device screen off (keep mirroring)
+Mirror_Pick.ToolTipService.ToolTip	取点：点击画面复制设备坐标	Pick: click the screen to copy device coordinates
+Mirror_Screenshot.ToolTipService.ToolTip	截图	Screenshot
+Mirror_ScreenshotSave.Text	保存到文件	Save to file
+Mirror_ScreenshotCopy.Text	复制到剪贴板	Copy to clipboard
+Mirror_PasteText.ToolTipService.ToolTip	把电脑剪贴板粘贴到手机	Paste the PC clipboard into the device
+Mirror_PopOut.ToolTipService.ToolTip	在独立窗口中打开	Open in a separate window
+Mirror_NoDevice	没有当前设备。请在“设备”页连接设备。	No current device. Connect one on the Devices page.
+Mirror_NotStarted	当前设备未在投屏。请在“设备”页点击“开始投屏”。	The current device is not mirroring. Click "Start mirroring" on the Devices page.
+Mirror_WaitingForVideo	等待画面…	Waiting for video…
+Mirror_Reconnecting	正在重新连接：{0}	Reconnecting: {0}
+Mirror_Failed	投屏失败：{0}	Mirroring failed: {0}
+Mirror_Info	{0}  ·  设备 {1}×{2}  ·  画面 {3}×{4}  ·  {5} fps	{0}  ·  device {1}×{2}  ·  video {3}×{4}  ·  {5} fps
+Mirror_PickHint	取点模式：在画面上点击以复制设备坐标。再次点击取点按钮退出。	Pick mode: click the screen to copy device coordinates. Click the pick button again to exit.
+Mirror_PointCopied	已复制坐标 {0}	Copied coordinates {0}
+Mirror_ScreenOffHint	手机屏幕已关闭，投屏和控制仍然有效。	The device screen is off; mirroring and control keep working.
+Mirror_ClipboardEmpty	剪贴板中没有文本。	The clipboard has no text.
+Mirror_NoFrame	还没有画面。	No picture yet.
+Mirror_ScreenshotSaved	截图已保存：{0}	Screenshot saved: {0}
+Mirror_ScreenshotCopied	截图已复制到剪贴板。	Screenshot copied to the clipboard.

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="ClickZen.App.Shell.MirrorWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:ClickZen.App.Controls">
+    <Grid x:Name="Root">
+        <controls:MirrorView x:Name="Mirror" Margin="4" />
+    </Grid>
+</Window>

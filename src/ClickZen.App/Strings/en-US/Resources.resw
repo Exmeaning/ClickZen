@@ -123,4 +123,31 @@
   <data name="Logs_ClearTerminal.ToolTipService.ToolTip" xml:space="preserve"><value>Clear terminal</value></data>
   <data name="Logs_NoDevice" xml:space="preserve"><value>No current device. Connect one on the Devices page first.</value></data>
   <data name="Logs_Cancelled" xml:space="preserve"><value>(stopped)</value></data>
+  <data name="Mirror_Back.ToolTipService.ToolTip" xml:space="preserve"><value>Back (or right-click the screen)</value></data>
+  <data name="Mirror_Home.ToolTipService.ToolTip" xml:space="preserve"><value>Home (or middle-click the screen)</value></data>
+  <data name="Mirror_Recents.ToolTipService.ToolTip" xml:space="preserve"><value>Recent apps</value></data>
+  <data name="Mirror_VolumeUp.ToolTipService.ToolTip" xml:space="preserve"><value>Volume up</value></data>
+  <data name="Mirror_VolumeDown.ToolTipService.ToolTip" xml:space="preserve"><value>Volume down</value></data>
+  <data name="Mirror_Power.ToolTipService.ToolTip" xml:space="preserve"><value>Power</value></data>
+  <data name="Mirror_Rotate.ToolTipService.ToolTip" xml:space="preserve"><value>Rotate screen</value></data>
+  <data name="Mirror_ScreenOff.ToolTipService.ToolTip" xml:space="preserve"><value>Turn device screen off (keep mirroring)</value></data>
+  <data name="Mirror_Pick.ToolTipService.ToolTip" xml:space="preserve"><value>Pick: click the screen to copy device coordinates</value></data>
+  <data name="Mirror_Screenshot.ToolTipService.ToolTip" xml:space="preserve"><value>Screenshot</value></data>
+  <data name="Mirror_ScreenshotSave.Text" xml:space="preserve"><value>Save to file</value></data>
+  <data name="Mirror_ScreenshotCopy.Text" xml:space="preserve"><value>Copy to clipboard</value></data>
+  <data name="Mirror_PasteText.ToolTipService.ToolTip" xml:space="preserve"><value>Paste the PC clipboard into the device</value></data>
+  <data name="Mirror_PopOut.ToolTipService.ToolTip" xml:space="preserve"><value>Open in a separate window</value></data>
+  <data name="Mirror_NoDevice" xml:space="preserve"><value>No current device. Connect one on the Devices page.</value></data>
+  <data name="Mirror_NotStarted" xml:space="preserve"><value>The current device is not mirroring. Click "Start mirroring" on the Devices page.</value></data>
+  <data name="Mirror_WaitingForVideo" xml:space="preserve"><value>Waiting for video…</value></data>
+  <data name="Mirror_Reconnecting" xml:space="preserve"><value>Reconnecting: {0}</value></data>
+  <data name="Mirror_Failed" xml:space="preserve"><value>Mirroring failed: {0}</value></data>
+  <data name="Mirror_Info" xml:space="preserve"><value>{0}  ·  device {1}×{2}  ·  video {3}×{4}  ·  {5} fps</value></data>
+  <data name="Mirror_PickHint" xml:space="preserve"><value>Pick mode: click the screen to copy device coordinates. Click the pick button again to exit.</value></data>
+  <data name="Mirror_PointCopied" xml:space="preserve"><value>Copied coordinates {0}</value></data>
+  <data name="Mirror_ScreenOffHint" xml:space="preserve"><value>The device screen is off; mirroring and control keep working.</value></data>
+  <data name="Mirror_ClipboardEmpty" xml:space="preserve"><value>The clipboard has no text.</value></data>
+  <data name="Mirror_NoFrame" xml:space="preserve"><value>No picture yet.</value></data>
+  <data name="Mirror_ScreenshotSaved" xml:space="preserve"><value>Screenshot saved: {0}</value></data>
+  <data name="Mirror_ScreenshotCopied" xml:space="preserve"><value>Screenshot copied to the clipboard.</value></data>
 </root>

@@ -123,4 +123,31 @@
   <data name="Logs_ClearTerminal.ToolTipService.ToolTip" xml:space="preserve"><value>清空终端</value></data>
   <data name="Logs_NoDevice" xml:space="preserve"><value>没有当前设备。请先在“设备”页连接设备。</value></data>
   <data name="Logs_Cancelled" xml:space="preserve"><value>（已停止）</value></data>
+  <data name="Mirror_Back.ToolTipService.ToolTip" xml:space="preserve"><value>返回（或在画面上点右键）</value></data>
+  <data name="Mirror_Home.ToolTipService.ToolTip" xml:space="preserve"><value>主页（或在画面上点中键）</value></data>
+  <data name="Mirror_Recents.ToolTipService.ToolTip" xml:space="preserve"><value>最近任务</value></data>
+  <data name="Mirror_VolumeUp.ToolTipService.ToolTip" xml:space="preserve"><value>音量加</value></data>
+  <data name="Mirror_VolumeDown.ToolTipService.ToolTip" xml:space="preserve"><value>音量减</value></data>
+  <data name="Mirror_Power.ToolTipService.ToolTip" xml:space="preserve"><value>电源键</value></data>
+  <data name="Mirror_Rotate.ToolTipService.ToolTip" xml:space="preserve"><value>旋转屏幕</value></data>
+  <data name="Mirror_ScreenOff.ToolTipService.ToolTip" xml:space="preserve"><value>关闭手机屏幕（继续投屏）</value></data>
+  <data name="Mirror_Pick.ToolTipService.ToolTip" xml:space="preserve"><value>取点：点击画面复制设备坐标</value></data>
+  <data name="Mirror_Screenshot.ToolTipService.ToolTip" xml:space="preserve"><value>截图</value></data>
+  <data name="Mirror_ScreenshotSave.Text" xml:space="preserve"><value>保存到文件</value></data>
+  <data name="Mirror_ScreenshotCopy.Text" xml:space="preserve"><value>复制到剪贴板</value></data>
+  <data name="Mirror_PasteText.ToolTipService.ToolTip" xml:space="preserve"><value>把电脑剪贴板粘贴到手机</value></data>
+  <data name="Mirror_PopOut.ToolTipService.ToolTip" xml:space="preserve"><value>在独立窗口中打开</value></data>
+  <data name="Mirror_NoDevice" xml:space="preserve"><value>没有当前设备。请在“设备”页连接设备。</value></data>
+  <data name="Mirror_NotStarted" xml:space="preserve"><value>当前设备未在投屏。请在“设备”页点击“开始投屏”。</value></data>
+  <data name="Mirror_WaitingForVideo" xml:space="preserve"><value>等待画面…</value></data>
+  <data name="Mirror_Reconnecting" xml:space="preserve"><value>正在重新连接：{0}</value></data>
+  <data name="Mirror_Failed" xml:space="preserve"><value>投屏失败：{0}</value></data>
+  <data name="Mirror_Info" xml:space="preserve"><value>{0}  ·  设备 {1}×{2}  ·  画面 {3}×{4}  ·  {5} fps</value></data>
+  <data name="Mirror_PickHint" xml:space="preserve"><value>取点模式：在画面上点击以复制设备坐标。再次点击取点按钮退出。</value></data>
+  <data name="Mirror_PointCopied" xml:space="preserve"><value>已复制坐标 {0}</value></data>
+  <data name="Mirror_ScreenOffHint" xml:space="preserve"><value>手机屏幕已关闭，投屏和控制仍然有效。</value></data>
+  <data name="Mirror_ClipboardEmpty" xml:space="preserve"><value>剪贴板中没有文本。</value></data>
+  <data name="Mirror_NoFrame" xml:space="preserve"><value>还没有画面。</value></data>
+  <data name="Mirror_ScreenshotSaved" xml:space="preserve"><value>截图已保存：{0}</value></data>
+  <data name="Mirror_ScreenshotCopied" xml:space="preserve"><value>截图已复制到剪贴板。</value></data>
 </root>

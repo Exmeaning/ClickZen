@@ -118,6 +118,19 @@ public partial class App : Application
         }
 
         _ = StartDevicesAsync();
+
+        if (Environment.GetCommandLineArgs().Contains("--selftest-input", StringComparer.OrdinalIgnoreCase))
+        {
+            _ = new InputSelfTest(_window, _services, _log).RunAsync();
+        }
+
+        // Developer convenience: `ClickZen.exe --page mirror` opens a page directly.
+        var cli = Environment.GetCommandLineArgs();
+        var pageIndex = Array.FindIndex(cli, a => string.Equals(a, "--page", StringComparison.OrdinalIgnoreCase));
+        if (pageIndex >= 0 && pageIndex + 1 < cli.Length)
+        {
+            _window.NavigateTo(cli[pageIndex + 1].ToLowerInvariant());
+        }
     }
 
     public static bool IsSmokeTest { get; } = Environment.GetCommandLineArgs().Contains("--smoke", StringComparer.OrdinalIgnoreCase);

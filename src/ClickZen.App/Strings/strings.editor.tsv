@@ -1,0 +1,217 @@
+# key	zh-CN	en-US
+# Task editor control (Controls/TaskEditor*). Merged into Resources.resw by gen_resw.py.
+# ---- XAML (x:Uid) ----
+Editor_Placeholder.Text	选择左侧的任务进行编辑	Select a task on the left to edit it
+Editor_BasicHeader.Text	基本信息	Basics
+Editor_BasicHint.Text	冷却从任务执行完成后开始计时；优先级高的任务在同一轮中先判断；运行次数上限为 0 表示不限。	Cooldown starts when the task finishes; higher priority tasks are checked first within a round; a run limit of 0 means unlimited.
+Editor_TaskEnabled.OnContent	已启用	Enabled
+Editor_TaskEnabled.OffContent	已停用	Disabled
+Editor_TaskName.Header	任务名称	Task name
+Editor_TaskName.PlaceholderText	例如：领取每日奖励	e.g. Collect daily reward
+Editor_Cooldown.Header	冷却 (ms)	Cooldown (ms)
+Editor_Priority.Header	优先级	Priority
+Editor_RunLimit.Header	运行次数上限	Run limit
+Editor_PreconditionHeader.Text	前置条件	Precondition
+Editor_PreconditionHint.Text	每一轮先判断前置条件，满足后才会依次判断下面的规则。留空表示总是满足。	Checked first every round; the rules below are only considered when it holds. Empty means always.
+Editor_RulesHeader.Text	规则	Rules
+Editor_RulesHint.Text	规则按顺序判断：条件满足时执行对应动作。勾选“匹配后停止”可跳过本轮剩余规则。	Rules are checked in order; when a rule's conditions hold its actions run. "Stop after match" skips the remaining rules this round.
+# ---- General ----
+Editor_ExpandAll	展开所有规则	Expand all rules
+Editor_CollapseAll	全部折叠	Collapse all
+Editor_EnabledTip	启用 / 停用	Enable / disable
+Editor_MoveUp	上移	Move up
+Editor_MoveDown	下移	Move down
+Editor_More	更多操作	More
+Editor_Duplicate	复制一份	Duplicate
+Editor_Delete	删除	Delete
+Editor_CopyOf	{0} 副本	{0} copy
+Editor_NotSet	（未设置）	(not set)
+Editor_Err_Host	操作失败：{0}	Operation failed: {0}
+# ---- Coordinates ----
+Editor_X	X	X
+Editor_Y	Y	Y
+Editor_W	宽	Width
+Editor_H	高	Height
+Editor_Point	坐标	Point
+Editor_Area	区域	Area
+Editor_Offset	偏移 (dx, dy)	Offset (dx, dy)
+Editor_FallbackPoint	未匹配时使用的坐标	Fallback point when nothing matched
+Editor_PickPoint	在画面上取点	Pick a point on the picture
+Editor_PickArea	在画面上框选	Select an area on the picture
+Editor_ClearArea	清除区域（全屏）	Clear area (whole screen)
+Editor_Target	目标位置	Target
+Editor_Target_Point	固定坐标	Fixed point
+Editor_Target_LastMatch	最近一次图像匹配位置	Last image match
+Editor_Target_RandomInArea	区域内随机位置	Random point in area
+Editor_Target_LastMatchHint	使用本规则（或前置条件）中最近一次图像匹配的中心；没有匹配时退回到下面的坐标。	Uses the centre of the latest image match in this rule (or the precondition); falls back to the point below.
+Editor_Target_LastMatchShort	匹配位置	match
+Editor_Target_RandomShort	随机于 {0}	random in {0}
+# ---- Condition groups ----
+Editor_AddCondition	添加条件	Add condition
+Editor_AddSubgroup	添加子组	Add subgroup
+Editor_DeleteGroup	删除子组	Delete subgroup
+Editor_LogicTip	组内条件的组合方式	How the conditions in this group combine
+Editor_Logic_All	全部	All
+Editor_Logic_Any	任一	Any
+Editor_Logic_None	都不	None
+Editor_LogicLong_All	全部满足 (All)	All of (All)
+Editor_LogicLong_Any	任一满足 (Any)	Any of (Any)
+Editor_LogicLong_None	都不满足 (None)	None of (None)
+Editor_LogicHint_All	下列条件全部为真时成立	True when every item below is true
+Editor_LogicHint_Any	下列条件任一为真时成立	True when at least one item below is true
+Editor_LogicHint_None	下列条件都为假时成立	True when no item below is true
+Editor_GroupEmptyPass	空组：总是成立	Empty: always true
+Editor_GroupEmptyAny	空组：“任一”模式下永远不成立	Empty: never true in "Any" mode
+Editor_Sum_Group	{0}（{1} 项）	{0} ({1} items)
+Editor_Sum_GroupEmpty	{0}（空）	{0} (empty)
+# ---- Conditions ----
+Editor_Cond_Image	图像	Image
+Editor_Cond_Color	颜色	Colour
+Editor_Cond_Expression	表达式	Expression
+Editor_Cond_Elapsed	时间	Elapsed time
+Editor_Label	备注名	Label
+Editor_LabelPlaceholder	可选，显示在列表中	Optional, shown in the list
+Editor_Template	模板	Template
+Editor_NoTemplate	（未选择模板）	(no template)
+Editor_TemplateItem	{0}（{1}×{2}）	{0} ({1}×{2})
+Editor_TemplateMissing	缺失的模板：{0}	Missing template: {0}
+Editor_CaptureTemplate	截取新模板	Capture template
+Editor_SearchArea	搜索区域	Search area
+Editor_WholeScreen	全屏	whole screen
+Editor_WholeScreenHint	区域为空时搜索整个屏幕（较慢）。	An empty area searches the whole screen (slower).
+Editor_Threshold	相似度阈值	Similarity threshold
+Editor_Grayscale	灰度匹配	Grayscale
+Editor_MultiScale	多尺度	Multi-scale
+Editor_Expect	期望	Expect
+Editor_ExpectFound	存在	Found
+Editor_ExpectAbsent	不存在	Not found
+Editor_ExpectMatch	颜色匹配	Colour matches
+Editor_ExpectNoMatch	颜色不匹配	Colour does not match
+Editor_Color	颜色	Colour
+Editor_Tolerance	容差 (0–255)	Tolerance (0–255)
+Editor_ColorHint	颜色按 #RRGGBB 输入；容差是每个通道允许的最大差值。可先在投屏页的取点模式中查看像素颜色。	Enter the colour as #RRGGBB; tolerance is the maximum difference per channel. The Mirror page's pick mode shows pixel colours.
+Editor_Expression	表达式	Expression
+Editor_ExpressionHint	支持算术、比较、逻辑 (&& || !)、字符串和函数 rand/min/max/abs/round/len 等；内置变量如 $match.x、$elapsed。	Supports arithmetic, comparison, logic (&& || !), strings and functions such as rand/min/max/abs/round/len; built-ins like $match.x and $elapsed.
+Editor_ElapsedSince	起点	Since
+Editor_Since_TaskLastRun	本任务上次运行	This task last ran
+Editor_Since_SchemeStart	方案启动	Scheme start
+Editor_AtLeastMs	至少经过 (ms)	At least (ms)
+Editor_Test	测试	Test
+Editor_TestTip	在当前画面上执行一次判断，并在工作台显示结果	Evaluate once on the current picture and show the result on the workbench
+Editor_Test_Matched	成立	Matched
+Editor_Test_NotMatched	不成立	Not matched
+Editor_Test_Score	分数 {0}	score {0}
+Editor_Test_Distance	差值 {0}	difference {0}
+Editor_Test_At	位置 {0}	at {0}
+Editor_Test_NeedTemplate	请先选择或截取模板。	Choose or capture a template first.
+Editor_Test_Unavailable	当前无法测试（没有画面或正在进行其他操作）。	Cannot test right now (no picture, or another operation is in progress).
+Editor_Sum_Image	找到 {0}（≥ {1}，{2}）	find {0} (≥ {1}, {2})
+Editor_Sum_ImageAbsent	未找到 {0}（≥ {1}，{2}）	{0} absent (≥ {1}, {2})
+Editor_Sum_Color	({0}) 为 {1} ±{2}	({0}) is {1} ±{2}
+Editor_Sum_ColorNot	({0}) 不是 {1} ±{2}	({0}) is not {1} ±{2}
+Editor_Sum_Expression	{0}	{0}
+Editor_Sum_ElapsedTask	距上次运行 ≥ {0}	≥ {0} since last run
+Editor_Sum_ElapsedStart	距方案启动 ≥ {0}	≥ {0} since start
+# ---- Validation ----
+Editor_Err_Expression	表达式错误：{0}	Expression error: {0}
+Editor_Err_EmptyExpression	表达式不能为空。	The expression cannot be empty.
+Editor_Err_Placeholder	占位符 {{{0}}} 有误：{1}	Placeholder {{{0}}} is invalid: {1}
+Editor_Err_EmptyPlaceholder	第 {0} 个字符处的占位符 {{}} 为空。	Empty placeholder {{}} at character {0}.
+Editor_Err_Unclosed	第 {0} 个字符处的 {{ 没有闭合，将按原样输出（字面量花括号请写 {{{{ 和 }}}}）。	The {{ at character {0} is not closed and will be output as is (write {{{{ and }}}} for literal braces).
+Editor_Err_Color	颜色格式应为 #RRGGBB。	Colour must be #RRGGBB.
+Editor_Err_KeyCode	请选择一个按键，或输入 0–1000 之间的键码。	Choose a key or enter a key code between 0 and 1000.
+Editor_Warn_Undeclared	未声明的变量（按 0 处理）：{0}	Undeclared variables (read as 0): {0}
+Editor_PlaceholderHint	用 {表达式} 插入变量值，例如 {count + 1}；字面量花括号写 {{ 和 }}。	Insert values with {expression}, e.g. {count + 1}; write {{ and }} for literal braces.
+# ---- Rules ----
+Editor_AddRule	添加规则	Add rule
+Editor_NoRules	还没有规则。添加一条规则，设置条件和要执行的动作。	No rules yet. Add a rule with conditions and the actions to run.
+Editor_RuleN	规则 {0}	Rule {0}
+Editor_RuleName	规则名称	Rule name
+Editor_When	当	When
+Editor_WhenHint	条件成立时执行下面的动作；留空表示总是执行。	The actions below run when this holds; empty means always.
+Editor_Then	执行	Then
+Editor_Pick	执行方式	Execution
+Editor_Pick_Sequential	按顺序执行全部动作	Run all actions in order
+Editor_Pick_RandomOne	按权重随机执行一个分支	Run one branch chosen by weight
+Editor_StopAfterMatch	匹配后停止	Stop after match
+Editor_StopAfterMatchTip	本规则执行后，跳过本任务在这一轮剩余的规则	After this rule runs, skip the task's remaining rules this round
+Editor_SequentialHint	动作按顺序执行。	Actions run in order.
+Editor_RandomHint	每次触发时按权重随机选出一个分支执行。权重为 0 的分支不会被选中。	Each time the rule fires one branch is picked at random by weight. Branches with weight 0 are never picked.
+Editor_Sum_Always	总是	always
+Editor_Sum_RuleConditions	{0} 个条件	{0} conditions
+Editor_Sum_RuleActions	{0} 个动作	{0} actions
+Editor_Sum_RuleBranches	随机 {0} 个分支	random of {0} branches
+Editor_AddBranch	添加分支	Add branch
+Editor_BranchN	分支 {0}	Branch {0}
+Editor_BranchName	分支名称	Branch name
+Editor_Weight	权重	Weight
+Editor_WeightTip	被选中的概率与权重成正比	The chance of being picked is proportional to the weight
+Editor_Sum_Branch	{0}  ·  权重 {1}（{2}）  ·  {3} 个动作	{0}  ·  weight {1} ({2})  ·  {3} actions
+# ---- Actions ----
+Editor_AddAction	添加动作	Add action
+Editor_NoActions	还没有动作。	No actions yet.
+Editor_Act_Tap	点击	Tap
+Editor_Act_LongPress	长按	Long press
+Editor_Act_Swipe	滑动	Swipe
+Editor_Act_Key	按键	Key
+Editor_Act_Text	输入文本	Type text
+Editor_Act_Wait	等待	Wait
+Editor_Act_PlayRecording	播放录制	Play recording
+Editor_Act_SetVariable	设置变量	Set variable
+Editor_Act_AdbShell	ADB 命令	ADB shell
+Editor_Act_Log	写日志	Log
+Editor_Act_Stop	停止	Stop
+Editor_TapCount	次数	Count
+Editor_IntervalMs	间隔 (ms)	Interval (ms)
+Editor_DurationMs	时长 (ms)	Duration (ms)
+Editor_SwipeFrom	起点	From
+Editor_SwipeTo	终点	To
+Editor_Key	按键	Key
+Editor_KeyPlaceholder	选择或输入键码	Choose or type a key code
+Editor_KeyHint	可直接输入 Android 键码数字，例如 61 (Tab)。	You can type an Android key code, e.g. 61 (Tab).
+Editor_Key_Back	返回	Back
+Editor_Key_Home	主页	Home
+Editor_Key_AppSwitch	最近任务	Recent apps
+Editor_Key_Power	电源	Power
+Editor_Key_VolumeUp	音量 +	Volume up
+Editor_Key_VolumeDown	音量 -	Volume down
+Editor_Key_Enter	回车	Enter
+Editor_Key_Delete	删除	Delete
+Editor_Text	文本	Text
+Editor_MinMs	最短 (ms)	Minimum (ms)
+Editor_MaxMs	最长 (ms)	Maximum (ms)
+Editor_WaitHint	最长大于最短时，在两者之间随机等待；否则固定等待最短时长。	When the maximum is greater than the minimum a random wait in between is used; otherwise the minimum.
+Editor_Recording	录制	Recording
+Editor_RecordingPlaceholder	方案内的录制，或相对方案文件的路径	Embedded recording, or a path relative to the scheme file
+Editor_RecordingHint	下拉列表中是方案内嵌的录制；也可以输入相对于方案文件的 .czrec 路径。	The list shows recordings embedded in the scheme; you can also type a .czrec path relative to the scheme file.
+Editor_Speed	速度	Speed
+Editor_Loops	循环次数	Loops
+Editor_Variable	变量	Variable
+Editor_VariablePlaceholder	变量名	Variable name
+Editor_ValueExpression	新值（表达式）	New value (expression)
+Editor_Command	命令	Command
+Editor_AsRoot	以 su 执行	Run as root (su)
+Editor_OutputVariable	输出保存到变量	Save output to variable
+Editor_OutputVariablePlaceholder	可选	Optional
+Editor_Message	消息	Message
+Editor_StopScope	停止范围	Scope
+Editor_Stop_Task	停用本任务（本次运行内）	Disable this task (for this run)
+Editor_Stop_Scheme	停止整个方案	Stop the whole scheme
+Editor_DelayAfter	执行后等待 (ms)	Delay after (ms)
+Editor_DelayDefault	默认 {0}	Default {0}
+Editor_Sum_Tap	{0}	{0}
+Editor_Sum_TapN	{0} × {1}	{0} × {1}
+Editor_Sum_LongPress	{0}，{1} ms	{0}, {1} ms
+Editor_Sum_Swipe	{0} → {1}，{2} ms	{0} → {1}, {2} ms
+Editor_Sum_Key	{0}	{0}
+Editor_Sum_Text	{0}	{0}
+Editor_Sum_Wait	{0} ms	{0} ms
+Editor_Sum_WaitRange	{0}–{1} ms	{0}–{1} ms
+Editor_Sum_PlayRecording	{0}，{1}×，{2} 次	{0}, {1}×, {2} loops
+Editor_Sum_SetVariable	{0} = {1}	{0} = {1}
+Editor_Sum_AdbShell	{0}	{0}
+Editor_Sum_AdbShellRoot	su: {0}	su: {0}
+Editor_Sum_Log	{0}	{0}
+Editor_Sum_StopTask	停用本任务	disable this task
+Editor_Sum_StopScheme	停止方案	stop the scheme
+Editor_Sum_Delay	之后等待 {0} ms	then wait {0} ms

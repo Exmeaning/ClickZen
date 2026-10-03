@@ -64,6 +64,9 @@ public partial class App : Application
         sc.AddSingleton<DeviceHub>();
         sc.AddSingleton<RecordingService>();
         sc.AddSingleton<IDeviceTouchCapture, GeteventTouchCapture>();
+        sc.AddSingleton(_ => new ClickZen.Core.Variables.VariableStore());
+        sc.AddSingleton<VariableSyncService>();
+        sc.AddSingleton<AutomationService>();
         sc.AddTransient<ClickZen.App.ViewModels.DevicesViewModel>();
         sc.AddTransient<ClickZen.App.ViewModels.LogsViewModel>();
 
@@ -120,6 +123,7 @@ public partial class App : Application
         }
 
         _ = StartDevicesAsync();
+        _ = _services.GetRequiredService<VariableSyncService>().InitializeAsync(_window.DispatcherQueue);
 
         if (Environment.GetCommandLineArgs().Contains("--selftest-input", StringComparer.OrdinalIgnoreCase))
         {
@@ -129,6 +133,11 @@ public partial class App : Application
         if (Environment.GetCommandLineArgs().Contains("--selftest-recording", StringComparer.OrdinalIgnoreCase))
         {
             _ = new RecordingSelfTest(_window, _services, _log).RunAsync();
+        }
+
+        if (Environment.GetCommandLineArgs().Contains("--selftest-automation", StringComparer.OrdinalIgnoreCase))
+        {
+            _ = new AutomationSelfTest(_window, _services, _log).RunAsync();
         }
 
         // Developer convenience: `ClickZen.exe --page mirror` opens a page directly.
@@ -158,6 +167,8 @@ public partial class App : Application
     {
         try
         {
+            await _services.GetRequiredService<AutomationService>().StopAsync();
+            await _services.GetRequiredService<VariableSyncService>().DisposeAsync();
             await _services.GetRequiredService<DeviceHub>().DisposeAsync();
         }
         catch (Exception ex)

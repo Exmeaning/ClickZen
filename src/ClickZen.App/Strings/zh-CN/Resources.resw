@@ -229,4 +229,317 @@
   <data name="Rec_Busy" xml:space="preserve"><value>正在录制或回放。</value></data>
   <data name="Rec_Empty" xml:space="preserve"><value>录制中没有手势。</value></data>
   <data name="Rec_OrientationWarning" xml:space="preserve"><value>录制时的屏幕方向与当前不同，坐标会按比例缩放，结果可能不准确。</value></data>
+  <data name="Status_EngineRunning" xml:space="preserve"><value>自动化：运行中（{0}，{1} 台设备）</value></data>
+  <data name="Auto_New.Label" xml:space="preserve"><value>新建</value></data>
+  <data name="Auto_New.ToolTipService.ToolTip" xml:space="preserve"><value>新建方案</value></data>
+  <data name="Auto_Open.Label" xml:space="preserve"><value>打开</value></data>
+  <data name="Auto_Open.ToolTipService.ToolTip" xml:space="preserve"><value>打开 .czscheme 方案（Ctrl+O）</value></data>
+  <data name="Auto_Save.Label" xml:space="preserve"><value>保存</value></data>
+  <data name="Auto_Save.ToolTipService.ToolTip" xml:space="preserve"><value>保存（Ctrl+S）</value></data>
+  <data name="Auto_SaveAs.Label" xml:space="preserve"><value>另存为</value></data>
+  <data name="Auto_SaveAs.ToolTipService.ToolTip" xml:space="preserve"><value>另存为新的方案文件</value></data>
+  <data name="Auto_ImportTasks.Label" xml:space="preserve"><value>导入任务</value></data>
+  <data name="Auto_ImportTasks.ToolTipService.ToolTip" xml:space="preserve"><value>把另一个方案文件中的任务（及其模板）加入当前方案</value></data>
+  <data name="Auto_ExportTask.Label" xml:space="preserve"><value>导出任务</value></data>
+  <data name="Auto_ExportTask.ToolTipService.ToolTip" xml:space="preserve"><value>把选中的任务及其引用的模板导出为单独的方案文件</value></data>
+  <data name="Auto_FileType" xml:space="preserve"><value>ClickZen 方案</value></data>
+  <data name="Auto_Untitled" xml:space="preserve"><value>未命名方案</value></data>
+  <data name="Auto_NotSaved" xml:space="preserve"><value>未保存到文件</value></data>
+  <data name="Auto_DocSummary" xml:space="preserve"><value>{0} 个任务 · {1} 个模板 · 参考分辨率 {2} · {3}</value></data>
+  <data name="Auto_SchemeName.Header" xml:space="preserve"><value>方案名称</value></data>
+  <data name="Auto_SchemeName.PlaceholderText" xml:space="preserve"><value>未命名方案</value></data>
+  <data name="Auto_UnsavedTitle" xml:space="preserve"><value>保存更改？</value></data>
+  <data name="Auto_UnsavedMessage" xml:space="preserve"><value>方案“{0}”有未保存的更改。</value></data>
+  <data name="Auto_SaveChanges" xml:space="preserve"><value>保存</value></data>
+  <data name="Auto_DontSave" xml:space="preserve"><value>不保存</value></data>
+  <data name="Auto_Opened" xml:space="preserve"><value>已打开 {0}</value></data>
+  <data name="Auto_OpenFailed" xml:space="preserve"><value>无法打开方案：{0}</value></data>
+  <data name="Auto_Saved" xml:space="preserve"><value>已保存到 {0}</value></data>
+  <data name="Auto_SaveFailed" xml:space="preserve"><value>保存失败：{0}</value></data>
+  <data name="Auto_Imported" xml:space="preserve"><value>已导入 {0} 个任务、{1} 个模板。</value></data>
+  <data name="Auto_ImportRescaled" xml:space="preserve"><value>参考分辨率不同，坐标和模板已按比例换算。</value></data>
+  <data name="Auto_ImportFailed" xml:space="preserve"><value>导入失败：{0}</value></data>
+  <data name="Auto_ImportOrientation" xml:space="preserve"><value>该方案的屏幕方向与当前方案不同，无法导入。</value></data>
+  <data name="Auto_Exported" xml:space="preserve"><value>已把任务“{0}”导出到 {1}</value></data>
+  <data name="Auto_StopFirst" xml:space="preserve"><value>请先停止正在运行的方案。</value></data>
+  <data name="Auto_TasksHeader.Text" xml:space="preserve"><value>任务</value></data>
+  <data name="Auto_AddTask.ToolTipService.ToolTip" xml:space="preserve"><value>新建任务</value></data>
+  <data name="Auto_DuplicateTask.ToolTipService.ToolTip" xml:space="preserve"><value>复制任务</value></data>
+  <data name="Auto_DeleteTask.ToolTipService.ToolTip" xml:space="preserve"><value>删除任务（Delete）</value></data>
+  <data name="Auto_TaskEnabled.ToolTipService.ToolTip" xml:space="preserve"><value>启用此任务</value></data>
+  <data name="Auto_NoTasks.Text" xml:space="preserve"><value>还没有任务。点击 + 新建一个任务，再在中间的编辑器里添加规则。</value></data>
+  <data name="Auto_NoTaskSelected.Text" xml:space="preserve"><value>在左侧选择一个任务进行编辑。</value></data>
+  <data name="Auto_NewTaskName" xml:space="preserve"><value>新任务</value></data>
+  <data name="Auto_UnnamedTask" xml:space="preserve"><value>（未命名任务）</value></data>
+  <data name="Auto_CopyOf" xml:space="preserve"><value>{0} 副本</value></data>
+  <data name="Auto_TaskSummary" xml:space="preserve"><value>{0} 条规则 · 冷却 {1} 秒</value></data>
+  <data name="Auto_DeleteTaskTitle" xml:space="preserve"><value>删除任务？</value></data>
+  <data name="Auto_DeleteTaskMessage" xml:space="preserve"><value>任务“{0}”及其所有规则将被删除。</value></data>
+  <data name="Auto_Delete" xml:space="preserve"><value>删除</value></data>
+  <data name="Auto_TemplatesHeader.Text" xml:space="preserve"><value>模板</value></data>
+  <data name="Auto_CaptureTemplate.ToolTipService.ToolTip" xml:space="preserve"><value>在画面上框选并截取模板</value></data>
+  <data name="Auto_RenameTemplate.ToolTipService.ToolTip" xml:space="preserve"><value>重命名模板（或双击）</value></data>
+  <data name="Auto_DeleteTemplate.ToolTipService.ToolTip" xml:space="preserve"><value>删除模板</value></data>
+  <data name="Auto_NoTemplates.Text" xml:space="preserve"><value>还没有模板。点击截取按钮，在右侧画面上框选一块区域。</value></data>
+  <data name="Auto_TemplateUnused" xml:space="preserve"><value>未使用</value></data>
+  <data name="Auto_TemplateUsedBy" xml:space="preserve"><value>被 {0} 个任务使用</value></data>
+  <data name="Auto_TemplateDefaultName" xml:space="preserve"><value>模板</value></data>
+  <data name="Auto_NameTemplateTitle" xml:space="preserve"><value>模板名称</value></data>
+  <data name="Auto_RenameTemplateTitle" xml:space="preserve"><value>重命名模板</value></data>
+  <data name="Auto_TemplateCaptured" xml:space="preserve"><value>已截取模板“{0}”（{1}×{2}）</value></data>
+  <data name="Auto_TemplateTooSmall" xml:space="preserve"><value>选区太小，至少需要 4×4 像素。</value></data>
+  <data name="Auto_TemplateFailed" xml:space="preserve"><value>无法截取模板：{0}</value></data>
+  <data name="Auto_DeleteTemplateTitle" xml:space="preserve"><value>删除模板？</value></data>
+  <data name="Auto_DeleteTemplateMessage" xml:space="preserve"><value>模板“{0}”将被删除。</value></data>
+  <data name="Auto_DeleteTemplateInUse" xml:space="preserve"><value>模板“{0}”正被 {1} 个任务使用（{2}）。删除后这些图像条件将找不到模板，始终视为“未找到”。仍要删除吗？</value></data>
+  <data name="Auto_OrientationAuthoring" xml:space="preserve"><value>方案的参考分辨率是 {0}，而设备当前为 {1}（方向不同）。请把设备旋转到与方案一致的方向后再取点。</value></data>
+  <data name="Auto_OrientationMismatch" xml:space="preserve"><value>设备方向与方案不同，测试结果可能不准确。</value></data>
+  <data name="Auto_OrientationRunWarning" xml:space="preserve"><value>设备方向与方案的参考分辨率不同，坐标将被拉伸。</value></data>
+  <data name="Auto_ClearTest.ToolTipService.ToolTip" xml:space="preserve"><value>清除测试结果</value></data>
+  <data name="Auto_TestNoPicture" xml:space="preserve"><value>没有画面。请先让当前设备开始投屏。</value></data>
+  <data name="Auto_TestTemplateMissing" xml:space="preserve"><value>条件引用的模板不存在。</value></data>
+  <data name="Auto_TestAreaOutside" xml:space="preserve"><value>搜索区域在画面之外。</value></data>
+  <data name="Auto_TestFound" xml:space="preserve"><value>找到，置信度 {0}（阈值 {1}）</value></data>
+  <data name="Auto_TestNotFound" xml:space="preserve"><value>未找到，最高置信度 {0}（阈值 {1}）</value></data>
+  <data name="Auto_TestColor" xml:space="preserve"><value>实际颜色 {0}，期望 {1}，差值 {2}（容差 {3}）</value></data>
+  <data name="Auto_TestBadColor" xml:space="preserve"><value>颜色“{0}”无效，应为 #RRGGBB。</value></data>
+  <data name="Auto_TestPointOutside" xml:space="preserve"><value>该点在画面之外。</value></data>
+  <data name="Auto_TestConditionTrue" xml:space="preserve"><value>条件成立</value></data>
+  <data name="Auto_TestConditionFalse" xml:space="preserve"><value>条件不成立</value></data>
+  <data name="Auto_TestUnsupported" xml:space="preserve"><value>只有图像和颜色条件可以在画面上测试。</value></data>
+  <data name="Auto_Run" xml:space="preserve"><value>运行</value></data>
+  <data name="Auto_Stop" xml:space="preserve"><value>停止</value></data>
+  <data name="Auto_Step.Text" xml:space="preserve"><value>单步</value></data>
+  <data name="Auto_IntervalLabel.Text" xml:space="preserve"><value>检测间隔 (ms)</value></data>
+  <data name="Auto_LogToggle.Text" xml:space="preserve"><value>运行日志</value></data>
+  <data name="Auto_ClearLog.ToolTipService.ToolTip" xml:space="preserve"><value>清空运行日志</value></data>
+  <data name="Auto_TargetCurrent" xml:space="preserve"><value>当前设备</value></data>
+  <data name="Auto_TargetCount" xml:space="preserve"><value>{0} 台设备</value></data>
+  <data name="Auto_TargetNotMirroring" xml:space="preserve"><value>{0}（未投屏）</value></data>
+  <data name="Auto_NoTarget" xml:space="preserve"><value>没有可运行的设备。请先连接设备并开始投屏。</value></data>
+  <data name="Auto_DeviceNotMirroring" xml:space="preserve"><value>设备未在投屏，无法取得画面。</value></data>
+  <data name="Auto_NothingToRun" xml:space="preserve"><value>方案中没有任务。</value></data>
+  <data name="Auto_Ready" xml:space="preserve"><value>就绪</value></data>
+  <data name="Auto_Stepping" xml:space="preserve"><value>正在执行一轮…</value></data>
+  <data name="Auto_StepDone" xml:space="preserve"><value>单步完成（第 {0} 轮）</value></data>
+  <data name="Auto_RunStatus" xml:space="preserve"><value>运行中：{0} 台设备 · {1} 轮 · 最近触发：{2}</value></data>
+  <data name="Auto_RunFinished" xml:space="preserve"><value>已停止：{0} 轮 · 最近触发：{1}</value></data>
+  <data name="Workbench_Freeze.ToolTipService.ToolTip" xml:space="preserve"><value>冻结画面</value></data>
+  <data name="Workbench_Refresh.ToolTipService.ToolTip" xml:space="preserve"><value>刷新为最新画面</value></data>
+  <data name="Workbench_CancelPick.ToolTipService.ToolTip" xml:space="preserve"><value>取消（Esc）</value></data>
+  <data name="Workbench_NoPicture.Text" xml:space="preserve"><value>没有画面</value></data>
+  <data name="Workbench_ModeLive" xml:space="preserve"><value>实时画面</value></data>
+  <data name="Workbench_ModeFrozen" xml:space="preserve"><value>已冻结</value></data>
+  <data name="Workbench_ModePoint" xml:space="preserve"><value>单击画面取点（Esc 取消）</value></data>
+  <data name="Workbench_ModeArea" xml:space="preserve"><value>拖拽框选区域（Esc 取消）</value></data>
+  <data name="Workbench_PickPointHint" xml:space="preserve"><value>在右侧画面上单击要使用的位置。</value></data>
+  <data name="Workbench_PickAreaHint" xml:space="preserve"><value>在右侧画面上拖拽框选区域。</value></data>
+  <data name="Workbench_CaptureHint" xml:space="preserve"><value>在右侧画面上拖拽框选要截取为模板的区域。</value></data>
+  <data name="Editor_Placeholder.Text" xml:space="preserve"><value>选择左侧的任务进行编辑</value></data>
+  <data name="Editor_BasicHeader.Text" xml:space="preserve"><value>基本信息</value></data>
+  <data name="Editor_BasicHint.Text" xml:space="preserve"><value>冷却从任务执行完成后开始计时；优先级高的任务在同一轮中先判断；运行次数上限为 0 表示不限。</value></data>
+  <data name="Editor_TaskEnabled.OnContent" xml:space="preserve"><value>已启用</value></data>
+  <data name="Editor_TaskEnabled.OffContent" xml:space="preserve"><value>已停用</value></data>
+  <data name="Editor_TaskName.Header" xml:space="preserve"><value>任务名称</value></data>
+  <data name="Editor_TaskName.PlaceholderText" xml:space="preserve"><value>例如：领取每日奖励</value></data>
+  <data name="Editor_Cooldown.Header" xml:space="preserve"><value>冷却 (ms)</value></data>
+  <data name="Editor_Priority.Header" xml:space="preserve"><value>优先级</value></data>
+  <data name="Editor_RunLimit.Header" xml:space="preserve"><value>运行次数上限</value></data>
+  <data name="Editor_PreconditionHeader.Text" xml:space="preserve"><value>前置条件</value></data>
+  <data name="Editor_PreconditionHint.Text" xml:space="preserve"><value>每一轮先判断前置条件，满足后才会依次判断下面的规则。留空表示总是满足。</value></data>
+  <data name="Editor_RulesHeader.Text" xml:space="preserve"><value>规则</value></data>
+  <data name="Editor_RulesHint.Text" xml:space="preserve"><value>规则按顺序判断：条件满足时执行对应动作。勾选“匹配后停止”可跳过本轮剩余规则。</value></data>
+  <data name="Editor_ExpandAll" xml:space="preserve"><value>展开所有规则</value></data>
+  <data name="Editor_CollapseAll" xml:space="preserve"><value>全部折叠</value></data>
+  <data name="Editor_EnabledTip" xml:space="preserve"><value>启用 / 停用</value></data>
+  <data name="Editor_MoveUp" xml:space="preserve"><value>上移</value></data>
+  <data name="Editor_MoveDown" xml:space="preserve"><value>下移</value></data>
+  <data name="Editor_More" xml:space="preserve"><value>更多操作</value></data>
+  <data name="Editor_Duplicate" xml:space="preserve"><value>复制一份</value></data>
+  <data name="Editor_Delete" xml:space="preserve"><value>删除</value></data>
+  <data name="Editor_CopyOf" xml:space="preserve"><value>{0} 副本</value></data>
+  <data name="Editor_NotSet" xml:space="preserve"><value>（未设置）</value></data>
+  <data name="Editor_Err_Host" xml:space="preserve"><value>操作失败：{0}</value></data>
+  <data name="Editor_X" xml:space="preserve"><value>X</value></data>
+  <data name="Editor_Y" xml:space="preserve"><value>Y</value></data>
+  <data name="Editor_W" xml:space="preserve"><value>宽</value></data>
+  <data name="Editor_H" xml:space="preserve"><value>高</value></data>
+  <data name="Editor_Point" xml:space="preserve"><value>坐标</value></data>
+  <data name="Editor_Area" xml:space="preserve"><value>区域</value></data>
+  <data name="Editor_Offset" xml:space="preserve"><value>偏移 (dx, dy)</value></data>
+  <data name="Editor_FallbackPoint" xml:space="preserve"><value>未匹配时使用的坐标</value></data>
+  <data name="Editor_PickPoint" xml:space="preserve"><value>在画面上取点</value></data>
+  <data name="Editor_PickArea" xml:space="preserve"><value>在画面上框选</value></data>
+  <data name="Editor_ClearArea" xml:space="preserve"><value>清除区域（全屏）</value></data>
+  <data name="Editor_Target" xml:space="preserve"><value>目标位置</value></data>
+  <data name="Editor_Target_Point" xml:space="preserve"><value>固定坐标</value></data>
+  <data name="Editor_Target_LastMatch" xml:space="preserve"><value>最近一次图像匹配位置</value></data>
+  <data name="Editor_Target_RandomInArea" xml:space="preserve"><value>区域内随机位置</value></data>
+  <data name="Editor_Target_LastMatchHint" xml:space="preserve"><value>使用本规则（或前置条件）中最近一次图像匹配的中心；没有匹配时退回到下面的坐标。</value></data>
+  <data name="Editor_Target_LastMatchShort" xml:space="preserve"><value>匹配位置</value></data>
+  <data name="Editor_Target_RandomShort" xml:space="preserve"><value>随机于 {0}</value></data>
+  <data name="Editor_AddCondition" xml:space="preserve"><value>添加条件</value></data>
+  <data name="Editor_AddSubgroup" xml:space="preserve"><value>添加子组</value></data>
+  <data name="Editor_DeleteGroup" xml:space="preserve"><value>删除子组</value></data>
+  <data name="Editor_LogicTip" xml:space="preserve"><value>组内条件的组合方式</value></data>
+  <data name="Editor_Logic_All" xml:space="preserve"><value>全部</value></data>
+  <data name="Editor_Logic_Any" xml:space="preserve"><value>任一</value></data>
+  <data name="Editor_Logic_None" xml:space="preserve"><value>都不</value></data>
+  <data name="Editor_LogicLong_All" xml:space="preserve"><value>全部满足 (All)</value></data>
+  <data name="Editor_LogicLong_Any" xml:space="preserve"><value>任一满足 (Any)</value></data>
+  <data name="Editor_LogicLong_None" xml:space="preserve"><value>都不满足 (None)</value></data>
+  <data name="Editor_LogicHint_All" xml:space="preserve"><value>下列条件全部为真时成立</value></data>
+  <data name="Editor_LogicHint_Any" xml:space="preserve"><value>下列条件任一为真时成立</value></data>
+  <data name="Editor_LogicHint_None" xml:space="preserve"><value>下列条件都为假时成立</value></data>
+  <data name="Editor_GroupEmptyPass" xml:space="preserve"><value>空组：总是成立</value></data>
+  <data name="Editor_GroupEmptyAny" xml:space="preserve"><value>空组：“任一”模式下永远不成立</value></data>
+  <data name="Editor_Sum_Group" xml:space="preserve"><value>{0}（{1} 项）</value></data>
+  <data name="Editor_Sum_GroupEmpty" xml:space="preserve"><value>{0}（空）</value></data>
+  <data name="Editor_Cond_Image" xml:space="preserve"><value>图像</value></data>
+  <data name="Editor_Cond_Color" xml:space="preserve"><value>颜色</value></data>
+  <data name="Editor_Cond_Expression" xml:space="preserve"><value>表达式</value></data>
+  <data name="Editor_Cond_Elapsed" xml:space="preserve"><value>时间</value></data>
+  <data name="Editor_Label" xml:space="preserve"><value>备注名</value></data>
+  <data name="Editor_LabelPlaceholder" xml:space="preserve"><value>可选，显示在列表中</value></data>
+  <data name="Editor_Template" xml:space="preserve"><value>模板</value></data>
+  <data name="Editor_NoTemplate" xml:space="preserve"><value>（未选择模板）</value></data>
+  <data name="Editor_TemplateItem" xml:space="preserve"><value>{0}（{1}×{2}）</value></data>
+  <data name="Editor_TemplateMissing" xml:space="preserve"><value>缺失的模板：{0}</value></data>
+  <data name="Editor_CaptureTemplate" xml:space="preserve"><value>截取新模板</value></data>
+  <data name="Editor_SearchArea" xml:space="preserve"><value>搜索区域</value></data>
+  <data name="Editor_WholeScreen" xml:space="preserve"><value>全屏</value></data>
+  <data name="Editor_WholeScreenHint" xml:space="preserve"><value>区域为空时搜索整个屏幕（较慢）。</value></data>
+  <data name="Editor_Threshold" xml:space="preserve"><value>相似度阈值</value></data>
+  <data name="Editor_Grayscale" xml:space="preserve"><value>灰度匹配</value></data>
+  <data name="Editor_MultiScale" xml:space="preserve"><value>多尺度</value></data>
+  <data name="Editor_Expect" xml:space="preserve"><value>期望</value></data>
+  <data name="Editor_ExpectFound" xml:space="preserve"><value>存在</value></data>
+  <data name="Editor_ExpectAbsent" xml:space="preserve"><value>不存在</value></data>
+  <data name="Editor_ExpectMatch" xml:space="preserve"><value>颜色匹配</value></data>
+  <data name="Editor_ExpectNoMatch" xml:space="preserve"><value>颜色不匹配</value></data>
+  <data name="Editor_Color" xml:space="preserve"><value>颜色</value></data>
+  <data name="Editor_Tolerance" xml:space="preserve"><value>容差 (0–255)</value></data>
+  <data name="Editor_ColorHint" xml:space="preserve"><value>颜色按 #RRGGBB 输入；容差是每个通道允许的最大差值。可先在投屏页的取点模式中查看像素颜色。</value></data>
+  <data name="Editor_Expression" xml:space="preserve"><value>表达式</value></data>
+  <data name="Editor_ExpressionHint" xml:space="preserve"><value>支持算术、比较、逻辑 (&amp;&amp; || !)、字符串和函数 rand/min/max/abs/round/len 等；内置变量如 $match.x、$elapsed。</value></data>
+  <data name="Editor_ElapsedSince" xml:space="preserve"><value>起点</value></data>
+  <data name="Editor_Since_TaskLastRun" xml:space="preserve"><value>本任务上次运行</value></data>
+  <data name="Editor_Since_SchemeStart" xml:space="preserve"><value>方案启动</value></data>
+  <data name="Editor_AtLeastMs" xml:space="preserve"><value>至少经过 (ms)</value></data>
+  <data name="Editor_Test" xml:space="preserve"><value>测试</value></data>
+  <data name="Editor_TestTip" xml:space="preserve"><value>在当前画面上执行一次判断，并在工作台显示结果</value></data>
+  <data name="Editor_Test_Matched" xml:space="preserve"><value>成立</value></data>
+  <data name="Editor_Test_NotMatched" xml:space="preserve"><value>不成立</value></data>
+  <data name="Editor_Test_Score" xml:space="preserve"><value>分数 {0}</value></data>
+  <data name="Editor_Test_Distance" xml:space="preserve"><value>差值 {0}</value></data>
+  <data name="Editor_Test_At" xml:space="preserve"><value>位置 {0}</value></data>
+  <data name="Editor_Test_NeedTemplate" xml:space="preserve"><value>请先选择或截取模板。</value></data>
+  <data name="Editor_Test_Unavailable" xml:space="preserve"><value>当前无法测试（没有画面或正在进行其他操作）。</value></data>
+  <data name="Editor_Sum_Image" xml:space="preserve"><value>找到 {0}（≥ {1}，{2}）</value></data>
+  <data name="Editor_Sum_ImageAbsent" xml:space="preserve"><value>未找到 {0}（≥ {1}，{2}）</value></data>
+  <data name="Editor_Sum_Color" xml:space="preserve"><value>({0}) 为 {1} ±{2}</value></data>
+  <data name="Editor_Sum_ColorNot" xml:space="preserve"><value>({0}) 不是 {1} ±{2}</value></data>
+  <data name="Editor_Sum_Expression" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_ElapsedTask" xml:space="preserve"><value>距上次运行 ≥ {0}</value></data>
+  <data name="Editor_Sum_ElapsedStart" xml:space="preserve"><value>距方案启动 ≥ {0}</value></data>
+  <data name="Editor_Err_Expression" xml:space="preserve"><value>表达式错误：{0}</value></data>
+  <data name="Editor_Err_EmptyExpression" xml:space="preserve"><value>表达式不能为空。</value></data>
+  <data name="Editor_Err_Placeholder" xml:space="preserve"><value>占位符 {{{0}}} 有误：{1}</value></data>
+  <data name="Editor_Err_EmptyPlaceholder" xml:space="preserve"><value>第 {0} 个字符处的占位符 {{}} 为空。</value></data>
+  <data name="Editor_Err_Unclosed" xml:space="preserve"><value>第 {0} 个字符处的 {{ 没有闭合，将按原样输出（字面量花括号请写 {{{{ 和 }}}}）。</value></data>
+  <data name="Editor_Err_Color" xml:space="preserve"><value>颜色格式应为 #RRGGBB。</value></data>
+  <data name="Editor_Err_KeyCode" xml:space="preserve"><value>请选择一个按键，或输入 0–1000 之间的键码。</value></data>
+  <data name="Editor_Warn_Undeclared" xml:space="preserve"><value>未声明的变量（按 0 处理）：{0}</value></data>
+  <data name="Editor_PlaceholderHint" xml:space="preserve"><value>用 {表达式} 插入变量值，例如 {count + 1}；字面量花括号写 {{ 和 }}。</value></data>
+  <data name="Editor_AddRule" xml:space="preserve"><value>添加规则</value></data>
+  <data name="Editor_NoRules" xml:space="preserve"><value>还没有规则。添加一条规则，设置条件和要执行的动作。</value></data>
+  <data name="Editor_RuleN" xml:space="preserve"><value>规则 {0}</value></data>
+  <data name="Editor_RuleName" xml:space="preserve"><value>规则名称</value></data>
+  <data name="Editor_When" xml:space="preserve"><value>当</value></data>
+  <data name="Editor_WhenHint" xml:space="preserve"><value>条件成立时执行下面的动作；留空表示总是执行。</value></data>
+  <data name="Editor_Then" xml:space="preserve"><value>执行</value></data>
+  <data name="Editor_Pick" xml:space="preserve"><value>执行方式</value></data>
+  <data name="Editor_Pick_Sequential" xml:space="preserve"><value>按顺序执行全部动作</value></data>
+  <data name="Editor_Pick_RandomOne" xml:space="preserve"><value>按权重随机执行一个分支</value></data>
+  <data name="Editor_StopAfterMatch" xml:space="preserve"><value>匹配后停止</value></data>
+  <data name="Editor_StopAfterMatchTip" xml:space="preserve"><value>本规则执行后，跳过本任务在这一轮剩余的规则</value></data>
+  <data name="Editor_SequentialHint" xml:space="preserve"><value>动作按顺序执行。</value></data>
+  <data name="Editor_RandomHint" xml:space="preserve"><value>每次触发时按权重随机选出一个分支执行。权重为 0 的分支不会被选中。</value></data>
+  <data name="Editor_Sum_Always" xml:space="preserve"><value>总是</value></data>
+  <data name="Editor_Sum_RuleConditions" xml:space="preserve"><value>{0} 个条件</value></data>
+  <data name="Editor_Sum_RuleActions" xml:space="preserve"><value>{0} 个动作</value></data>
+  <data name="Editor_Sum_RuleBranches" xml:space="preserve"><value>随机 {0} 个分支</value></data>
+  <data name="Editor_AddBranch" xml:space="preserve"><value>添加分支</value></data>
+  <data name="Editor_BranchN" xml:space="preserve"><value>分支 {0}</value></data>
+  <data name="Editor_BranchName" xml:space="preserve"><value>分支名称</value></data>
+  <data name="Editor_Weight" xml:space="preserve"><value>权重</value></data>
+  <data name="Editor_WeightTip" xml:space="preserve"><value>被选中的概率与权重成正比</value></data>
+  <data name="Editor_Sum_Branch" xml:space="preserve"><value>{0}  ·  权重 {1}（{2}）  ·  {3} 个动作</value></data>
+  <data name="Editor_AddAction" xml:space="preserve"><value>添加动作</value></data>
+  <data name="Editor_NoActions" xml:space="preserve"><value>还没有动作。</value></data>
+  <data name="Editor_Act_Tap" xml:space="preserve"><value>点击</value></data>
+  <data name="Editor_Act_LongPress" xml:space="preserve"><value>长按</value></data>
+  <data name="Editor_Act_Swipe" xml:space="preserve"><value>滑动</value></data>
+  <data name="Editor_Act_Key" xml:space="preserve"><value>按键</value></data>
+  <data name="Editor_Act_Text" xml:space="preserve"><value>输入文本</value></data>
+  <data name="Editor_Act_Wait" xml:space="preserve"><value>等待</value></data>
+  <data name="Editor_Act_PlayRecording" xml:space="preserve"><value>播放录制</value></data>
+  <data name="Editor_Act_SetVariable" xml:space="preserve"><value>设置变量</value></data>
+  <data name="Editor_Act_AdbShell" xml:space="preserve"><value>ADB 命令</value></data>
+  <data name="Editor_Act_Log" xml:space="preserve"><value>写日志</value></data>
+  <data name="Editor_Act_Stop" xml:space="preserve"><value>停止</value></data>
+  <data name="Editor_TapCount" xml:space="preserve"><value>次数</value></data>
+  <data name="Editor_IntervalMs" xml:space="preserve"><value>间隔 (ms)</value></data>
+  <data name="Editor_DurationMs" xml:space="preserve"><value>时长 (ms)</value></data>
+  <data name="Editor_SwipeFrom" xml:space="preserve"><value>起点</value></data>
+  <data name="Editor_SwipeTo" xml:space="preserve"><value>终点</value></data>
+  <data name="Editor_Key" xml:space="preserve"><value>按键</value></data>
+  <data name="Editor_KeyPlaceholder" xml:space="preserve"><value>选择或输入键码</value></data>
+  <data name="Editor_KeyHint" xml:space="preserve"><value>可直接输入 Android 键码数字，例如 61 (Tab)。</value></data>
+  <data name="Editor_Key_Back" xml:space="preserve"><value>返回</value></data>
+  <data name="Editor_Key_Home" xml:space="preserve"><value>主页</value></data>
+  <data name="Editor_Key_AppSwitch" xml:space="preserve"><value>最近任务</value></data>
+  <data name="Editor_Key_Power" xml:space="preserve"><value>电源</value></data>
+  <data name="Editor_Key_VolumeUp" xml:space="preserve"><value>音量 +</value></data>
+  <data name="Editor_Key_VolumeDown" xml:space="preserve"><value>音量 -</value></data>
+  <data name="Editor_Key_Enter" xml:space="preserve"><value>回车</value></data>
+  <data name="Editor_Key_Delete" xml:space="preserve"><value>删除</value></data>
+  <data name="Editor_Text" xml:space="preserve"><value>文本</value></data>
+  <data name="Editor_MinMs" xml:space="preserve"><value>最短 (ms)</value></data>
+  <data name="Editor_MaxMs" xml:space="preserve"><value>最长 (ms)</value></data>
+  <data name="Editor_WaitHint" xml:space="preserve"><value>最长大于最短时，在两者之间随机等待；否则固定等待最短时长。</value></data>
+  <data name="Editor_Recording" xml:space="preserve"><value>录制</value></data>
+  <data name="Editor_RecordingPlaceholder" xml:space="preserve"><value>方案内的录制，或相对方案文件的路径</value></data>
+  <data name="Editor_RecordingHint" xml:space="preserve"><value>下拉列表中是方案内嵌的录制；也可以输入相对于方案文件的 .czrec 路径。</value></data>
+  <data name="Editor_Speed" xml:space="preserve"><value>速度</value></data>
+  <data name="Editor_Loops" xml:space="preserve"><value>循环次数</value></data>
+  <data name="Editor_Variable" xml:space="preserve"><value>变量</value></data>
+  <data name="Editor_VariablePlaceholder" xml:space="preserve"><value>变量名</value></data>
+  <data name="Editor_ValueExpression" xml:space="preserve"><value>新值（表达式）</value></data>
+  <data name="Editor_Command" xml:space="preserve"><value>命令</value></data>
+  <data name="Editor_AsRoot" xml:space="preserve"><value>以 su 执行</value></data>
+  <data name="Editor_OutputVariable" xml:space="preserve"><value>输出保存到变量</value></data>
+  <data name="Editor_OutputVariablePlaceholder" xml:space="preserve"><value>可选</value></data>
+  <data name="Editor_Message" xml:space="preserve"><value>消息</value></data>
+  <data name="Editor_StopScope" xml:space="preserve"><value>停止范围</value></data>
+  <data name="Editor_Stop_Task" xml:space="preserve"><value>停用本任务（本次运行内）</value></data>
+  <data name="Editor_Stop_Scheme" xml:space="preserve"><value>停止整个方案</value></data>
+  <data name="Editor_DelayAfter" xml:space="preserve"><value>执行后等待 (ms)</value></data>
+  <data name="Editor_DelayDefault" xml:space="preserve"><value>默认 {0}</value></data>
+  <data name="Editor_Sum_Tap" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_TapN" xml:space="preserve"><value>{0} × {1}</value></data>
+  <data name="Editor_Sum_LongPress" xml:space="preserve"><value>{0}，{1} ms</value></data>
+  <data name="Editor_Sum_Swipe" xml:space="preserve"><value>{0} → {1}，{2} ms</value></data>
+  <data name="Editor_Sum_Key" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_Text" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_Wait" xml:space="preserve"><value>{0} ms</value></data>
+  <data name="Editor_Sum_WaitRange" xml:space="preserve"><value>{0}–{1} ms</value></data>
+  <data name="Editor_Sum_PlayRecording" xml:space="preserve"><value>{0}，{1}×，{2} 次</value></data>
+  <data name="Editor_Sum_SetVariable" xml:space="preserve"><value>{0} = {1}</value></data>
+  <data name="Editor_Sum_AdbShell" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_AdbShellRoot" xml:space="preserve"><value>su: {0}</value></data>
+  <data name="Editor_Sum_Log" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_StopTask" xml:space="preserve"><value>停用本任务</value></data>
+  <data name="Editor_Sum_StopScheme" xml:space="preserve"><value>停止方案</value></data>
+  <data name="Editor_Sum_Delay" xml:space="preserve"><value>之后等待 {0} ms</value></data>
 </root>

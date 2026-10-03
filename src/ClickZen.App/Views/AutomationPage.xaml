@@ -2,11 +2,330 @@
 <Page
     x:Class="ClickZen.App.Views.AutomationPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer>
-        <StackPanel Padding="{StaticResource PagePadding}" Spacing="8">
-            <TextBlock x:Uid="Page_Automation_Title" Style="{StaticResource PageTitleTextBlockStyle}" />
-            <TextBlock x:Uid="Page_Automation_Description" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
-        </StackPanel>
-    </ScrollViewer>
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:ClickZen.App.Controls"
+    xmlns:ctk="using:CommunityToolkit.WinUI.Controls"
+    xmlns:svc="using:ClickZen.App.Services">
+
+    <Grid Padding="24,12,24,12" RowSpacing="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" MinHeight="260" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition x:Name="LogRow" Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ============================== Header: title, document, file commands -->
+        <Grid ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Uid="Page_Automation_Title" Style="{StaticResource PageTitleTextBlockStyle}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="0">
+                <TextBlock x:Name="DocTitle" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="DocSummary" Style="{StaticResource SecondaryCaptionTextBlockStyle}" TextTrimming="CharacterEllipsis"
+                           TextWrapping="NoWrap" />
+            </StackPanel>
+            <CommandBar Grid.Column="2" DefaultLabelPosition="Right" IsDynamicOverflowEnabled="True"
+                        Background="Transparent" VerticalAlignment="Center">
+                <AppBarButton x:Uid="Auto_New" Click="OnNewClick">
+                    <AppBarButton.Icon><FontIcon Glyph="&#xE8A5;" /></AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Uid="Auto_Open" Click="OnOpenClick">
+                    <AppBarButton.Icon><FontIcon Glyph="&#xE8E5;" /></AppBarButton.Icon>
+                    <AppBarButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="O" />
+                    </AppBarButton.KeyboardAccelerators>
+                </AppBarButton>
+                <AppBarButton x:Uid="Auto_Save" Click="OnSaveClick">
+                    <AppBarButton.Icon><FontIcon Glyph="&#xE74E;" /></AppBarButton.Icon>
+                    <AppBarButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="S" />
+                    </AppBarButton.KeyboardAccelerators>
+                </AppBarButton>
+                <AppBarButton x:Uid="Auto_SaveAs" Click="OnSaveAsClick">
+                    <AppBarButton.Icon><FontIcon Glyph="&#xE792;" /></AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarSeparator />
+                <AppBarButton x:Uid="Auto_ImportTasks" Click="OnImportClick">
+                    <AppBarButton.Icon><FontIcon Glyph="&#xE8B5;" /></AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="ExportButton" x:Uid="Auto_ExportTask" Click="OnExportClick">
+                    <AppBarButton.Icon><FontIcon Glyph="&#xEDE1;" /></AppBarButton.Icon>
+                </AppBarButton>
+            </CommandBar>
+        </Grid>
+
+        <!-- ============================== Three columns -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" MinWidth="230" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MinWidth="320" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="380" MinWidth="260" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: scheme, tasks, templates -->
+            <Grid RowSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="2*" MinHeight="120" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" MinHeight="90" />
+                </Grid.RowDefinitions>
+
+                <TextBox x:Name="SchemeNameBox" x:Uid="Auto_SchemeName" LostFocus="OnSchemeNameCommitted" KeyDown="OnSchemeNameKeyDown" />
+
+                <Grid Grid.Row="1" ColumnSpacing="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Uid="Auto_TasksHeader" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" x:Uid="Auto_AddTask" Padding="8,4" Click="OnAddTaskClick">
+                        <FontIcon Glyph="&#xE710;" FontSize="12" />
+                    </Button>
+                    <Button x:Name="DuplicateTaskButton" Grid.Column="2" x:Uid="Auto_DuplicateTask" Padding="8,4" Click="OnDuplicateTaskClick">
+                        <FontIcon Glyph="&#xE8C8;" FontSize="12" />
+                    </Button>
+                    <Button x:Name="DeleteTaskButton" Grid.Column="3" x:Uid="Auto_DeleteTask" Padding="8,4" Click="OnDeleteTaskClick">
+                        <FontIcon Glyph="&#xE74D;" FontSize="12" />
+                    </Button>
+                </Grid>
+
+                <Border Grid.Row="2" Style="{StaticResource CardBorderStyle}" Padding="0">
+                    <Grid>
+                        <ListView x:Name="TaskList" ItemsSource="{x:Bind Service.Tasks}" SelectionMode="Single"
+                                  CanReorderItems="True" CanDragItems="True" AllowDrop="True"
+                                  SelectionChanged="OnTaskSelectionChanged" KeyDown="OnTaskListKeyDown">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                                    <Setter Property="Padding" Value="8,2,8,2" />
+                                    <Setter Property="MinHeight" Value="44" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="svc:TaskItem">
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox IsChecked="{x:Bind IsEnabled, Mode=TwoWay}" MinWidth="0" Padding="0"
+                                                  VerticalAlignment="Center" x:Uid="Auto_TaskEnabled" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind Name, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{x:Bind Summary, Mode=OneWay}" Style="{StaticResource SecondaryCaptionTextBlockStyle}"
+                                                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <Border Grid.Column="2" VerticalAlignment="Center" CornerRadius="10" Padding="8,1"
+                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                Visibility="{x:Bind BadgeVisibility, Mode=OneWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="{x:Bind FireCount, Mode=OneWay}" FontSize="11"
+                                                           Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                                <TextBlock Text="{x:Bind LastFiredText, Mode=OneWay}" FontSize="11"
+                                                           Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <TextBlock x:Name="NoTasksText" x:Uid="Auto_NoTasks" TextWrapping="Wrap" TextAlignment="Center"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"
+                                   Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Row="3" ColumnSpacing="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Uid="Auto_TemplatesHeader" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" x:Uid="Auto_CaptureTemplate" Padding="8,4" Click="OnCaptureTemplateClick">
+                        <FontIcon Glyph="&#xF407;" FontSize="12" />
+                    </Button>
+                    <Button x:Name="RenameTemplateButton" Grid.Column="2" x:Uid="Auto_RenameTemplate" Padding="8,4" Click="OnRenameTemplateClick">
+                        <FontIcon Glyph="&#xE8AC;" FontSize="12" />
+                    </Button>
+                    <Button x:Name="DeleteTemplateButton" Grid.Column="3" x:Uid="Auto_DeleteTemplate" Padding="8,4" Click="OnDeleteTemplateClick">
+                        <FontIcon Glyph="&#xE74D;" FontSize="12" />
+                    </Button>
+                </Grid>
+
+                <Border Grid.Row="4" Style="{StaticResource CardBorderStyle}" Padding="0">
+                    <Grid>
+                        <ListView x:Name="TemplateList" ItemsSource="{x:Bind Service.Templates}" SelectionMode="Single"
+                                  SelectionChanged="OnTemplateSelectionChanged" DoubleTapped="OnTemplateDoubleTapped">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="svc:TemplateItem">
+                                    <Grid ColumnSpacing="8" Padding="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="40" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="40" Height="40" CornerRadius="4"
+                                                Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}">
+                                            <Image Source="{x:Bind Thumbnail}" Stretch="Uniform" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{x:Bind SizeText}" FontFamily="{StaticResource MonoFontFamily}"
+                                                           Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                                                <TextBlock Text="{x:Bind UsageText}" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <TextBlock x:Name="NoTemplatesText" x:Uid="Auto_NoTemplates" TextWrapping="Wrap" TextAlignment="Center"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"
+                                   Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <ctk:GridSplitter Grid.Column="1" Width="16" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+
+            <!-- Centre: task editor -->
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Padding="0">
+                <Grid>
+                    <ContentControl x:Name="EditorHost" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsTabStop="False" />
+                    <StackPanel x:Name="NoTaskSelected" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" MaxWidth="300">
+                        <FontIcon Glyph="&#xE945;" FontSize="32" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                        <TextBlock x:Name="NoTaskSelectedText" x:Uid="Auto_NoTaskSelected" TextAlignment="Center" TextWrapping="Wrap"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <ctk:GridSplitter Grid.Column="3" Width="16" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+
+            <!-- Right: workbench + live test -->
+            <Grid Grid.Column="4" RowSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <controls:Workbench x:Name="Bench" />
+                <Border x:Name="TestCard" Grid.Row="1" Style="{StaticResource CardBorderStyle}" Padding="10,8" Visibility="Collapsed">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <FontIcon x:Name="TestGlyph" Glyph="&#xE73E;" FontSize="14" VerticalAlignment="Center" />
+                        <TextBlock x:Name="TestText" Grid.Column="1" TextWrapping="Wrap" VerticalAlignment="Center"
+                                   Style="{StaticResource CaptionTextBlockStyle}" />
+                        <Button Grid.Column="2" x:Uid="Auto_ClearTest" Padding="6,3" Click="OnClearTestClick">
+                            <FontIcon Glyph="&#xE711;" FontSize="10" />
+                        </Button>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ============================== Run bar -->
+        <Border Grid.Row="2" Style="{StaticResource CardBorderStyle}" Padding="10,6">
+            <Grid ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="RunButton" Style="{StaticResource AccentButtonStyle}" Click="OnRunClick" MinWidth="96">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="F5" />
+                    </Button.KeyboardAccelerators>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon x:Name="RunGlyph" Glyph="&#xE768;" FontSize="14" />
+                        <TextBlock x:Name="RunText" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="StepButton" Grid.Column="1" Click="OnStepClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE893;" FontSize="14" />
+                        <TextBlock x:Uid="Auto_Step" />
+                    </StackPanel>
+                </Button>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock x:Uid="Auto_IntervalLabel" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" />
+                    <NumberBox x:Name="IntervalBox" Minimum="0" Maximum="600000" SmallChange="50" LargeChange="500" Width="120"
+                               SpinButtonPlacementMode="Compact" ValueChanged="OnIntervalChanged" />
+                </StackPanel>
+                <DropDownButton x:Name="TargetButton" Grid.Column="3">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8EA;" FontSize="14" />
+                        <TextBlock x:Name="TargetText" />
+                    </StackPanel>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout x:Name="TargetFlyout" Placement="Top" Opening="OnTargetFlyoutOpening" />
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+                <TextBlock x:Name="RunStatusText" Grid.Column="4" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                           Style="{StaticResource CaptionTextBlockStyle}" />
+                <ToggleButton x:Name="LogToggle" Grid.Column="5" Click="OnLogToggleClick" Padding="10,5">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE9D9;" FontSize="14" />
+                        <TextBlock x:Uid="Auto_LogToggle" />
+                    </StackPanel>
+                </ToggleButton>
+            </Grid>
+        </Border>
+
+        <!-- ============================== Run log (collapsible) -->
+        <Border x:Name="LogPanel" Grid.Row="3" Style="{StaticResource CardBorderStyle}" Padding="0" Height="200" Visibility="Collapsed">
+            <Grid>
+                <ListView x:Name="LogList" ItemsSource="{x:Bind Service.Log}" SelectionMode="Extended" Padding="0,4">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                            <Setter Property="MinHeight" Value="22" />
+                            <Setter Property="Padding" Value="10,0" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="svc:RunLogItem">
+                            <Grid ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{x:Bind TimeText}" FontFamily="{StaticResource MonoFontFamily}" FontSize="12"
+                                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                <FontIcon Grid.Column="1" Glyph="{x:Bind Glyph}" FontSize="12" Foreground="{x:Bind LevelBrush}" />
+                                <TextBlock Grid.Column="2" Text="{x:Bind Device}" FontSize="12" MaxWidth="160" TextTrimming="CharacterEllipsis"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Grid.Column="3" Text="{x:Bind Message}" FontSize="12" IsTextSelectionEnabled="True"
+                                           TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <Button x:Uid="Auto_ClearLog" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,10,0" Padding="8,4"
+                        Click="OnClearLogClick">
+                    <FontIcon Glyph="&#xE74D;" FontSize="12" />
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
 </Page>

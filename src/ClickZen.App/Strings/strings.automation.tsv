@@ -1,0 +1,115 @@
+# key	zh-CN	en-US
+# ---- Automation page (M6). Prefixes: Auto_, Workbench_, plus the engine status-bar text. ----
+Status_EngineRunning	自动化：运行中（{0}，{1} 台设备）	Automation: running ({0}, {1} device(s))
+# ---- Header / file commands ----
+Auto_New.Label	新建	New
+Auto_New.ToolTipService.ToolTip	新建方案	New scheme
+Auto_Open.Label	打开	Open
+Auto_Open.ToolTipService.ToolTip	打开 .czscheme 方案（Ctrl+O）	Open a .czscheme scheme (Ctrl+O)
+Auto_Save.Label	保存	Save
+Auto_Save.ToolTipService.ToolTip	保存（Ctrl+S）	Save (Ctrl+S)
+Auto_SaveAs.Label	另存为	Save as
+Auto_SaveAs.ToolTipService.ToolTip	另存为新的方案文件	Save to a new scheme file
+Auto_ImportTasks.Label	导入任务	Import tasks
+Auto_ImportTasks.ToolTipService.ToolTip	把另一个方案文件中的任务（及其模板）加入当前方案	Add the tasks (and their templates) of another scheme file to this scheme
+Auto_ExportTask.Label	导出任务	Export task
+Auto_ExportTask.ToolTipService.ToolTip	把选中的任务及其引用的模板导出为单独的方案文件	Export the selected task and the templates it uses as a separate scheme file
+Auto_FileType	ClickZen 方案	ClickZen scheme
+Auto_Untitled	未命名方案	Untitled scheme
+Auto_NotSaved	未保存到文件	Not saved to a file
+Auto_DocSummary	{0} 个任务 · {1} 个模板 · 参考分辨率 {2} · {3}	{0} task(s) · {1} template(s) · reference size {2} · {3}
+Auto_SchemeName.Header	方案名称	Scheme name
+Auto_SchemeName.PlaceholderText	未命名方案	Untitled scheme
+Auto_UnsavedTitle	保存更改？	Save changes?
+Auto_UnsavedMessage	方案“{0}”有未保存的更改。	Scheme "{0}" has unsaved changes.
+Auto_SaveChanges	保存	Save
+Auto_DontSave	不保存	Don't save
+Auto_Opened	已打开 {0}	Opened {0}
+Auto_OpenFailed	无法打开方案：{0}	Could not open the scheme: {0}
+Auto_Saved	已保存到 {0}	Saved to {0}
+Auto_SaveFailed	保存失败：{0}	Saving failed: {0}
+Auto_Imported	已导入 {0} 个任务、{1} 个模板。	Imported {0} task(s) and {1} template(s).
+Auto_ImportRescaled	参考分辨率不同，坐标和模板已按比例换算。	The reference sizes differ; coordinates and templates were rescaled.
+Auto_ImportFailed	导入失败：{0}	Import failed: {0}
+Auto_ImportOrientation	该方案的屏幕方向与当前方案不同，无法导入。	That scheme was made for the other screen orientation and cannot be imported.
+Auto_Exported	已把任务“{0}”导出到 {1}	Task "{0}" was exported to {1}
+Auto_StopFirst	请先停止正在运行的方案。	Stop the running scheme first.
+# ---- Tasks ----
+Auto_TasksHeader.Text	任务	Tasks
+Auto_AddTask.ToolTipService.ToolTip	新建任务	New task
+Auto_DuplicateTask.ToolTipService.ToolTip	复制任务	Duplicate task
+Auto_DeleteTask.ToolTipService.ToolTip	删除任务（Delete）	Delete task (Delete)
+Auto_TaskEnabled.ToolTipService.ToolTip	启用此任务	Enable this task
+Auto_NoTasks.Text	还没有任务。点击 + 新建一个任务，再在中间的编辑器里添加规则。	No tasks yet. Click + to create one, then add rules in the editor in the middle.
+Auto_NoTaskSelected.Text	在左侧选择一个任务进行编辑。	Select a task on the left to edit it.
+Auto_NewTaskName	新任务	New task
+Auto_UnnamedTask	（未命名任务）	(unnamed task)
+Auto_CopyOf	{0} 副本	{0} copy
+Auto_TaskSummary	{0} 条规则 · 冷却 {1} 秒	{0} rule(s) · cooldown {1} s
+Auto_DeleteTaskTitle	删除任务？	Delete task?
+Auto_DeleteTaskMessage	任务“{0}”及其所有规则将被删除。	Task "{0}" and all its rules will be deleted.
+Auto_Delete	删除	Delete
+# ---- Templates ----
+Auto_TemplatesHeader.Text	模板	Templates
+Auto_CaptureTemplate.ToolTipService.ToolTip	在画面上框选并截取模板	Drag a rectangle on the picture to capture a template
+Auto_RenameTemplate.ToolTipService.ToolTip	重命名模板（或双击）	Rename template (or double-click)
+Auto_DeleteTemplate.ToolTipService.ToolTip	删除模板	Delete template
+Auto_NoTemplates.Text	还没有模板。点击截取按钮，在右侧画面上框选一块区域。	No templates yet. Click the capture button and drag a rectangle on the picture.
+Auto_TemplateUnused	未使用	Unused
+Auto_TemplateUsedBy	被 {0} 个任务使用	Used by {0} task(s)
+Auto_TemplateDefaultName	模板	Template
+Auto_NameTemplateTitle	模板名称	Template name
+Auto_RenameTemplateTitle	重命名模板	Rename template
+Auto_TemplateCaptured	已截取模板“{0}”（{1}×{2}）	Captured template "{0}" ({1}×{2})
+Auto_TemplateTooSmall	选区太小，至少需要 4×4 像素。	The selection is too small (at least 4×4 pixels).
+Auto_TemplateFailed	无法截取模板：{0}	Could not capture the template: {0}
+Auto_DeleteTemplateTitle	删除模板？	Delete template?
+Auto_DeleteTemplateMessage	模板“{0}”将被删除。	Template "{0}" will be deleted.
+Auto_DeleteTemplateInUse	模板“{0}”正被 {1} 个任务使用（{2}）。删除后这些图像条件将找不到模板，始终视为“未找到”。仍要删除吗？	Template "{0}" is used by {1} task(s) ({2}). After deleting it those image conditions have no template and always count as "not found". Delete anyway?
+# ---- Coordinates / orientation ----
+Auto_OrientationAuthoring	方案的参考分辨率是 {0}，而设备当前为 {1}（方向不同）。请把设备旋转到与方案一致的方向后再取点。	The scheme's reference size is {0} but the device is now {1} (other orientation). Rotate the device to the scheme's orientation before picking.
+Auto_OrientationMismatch	设备方向与方案不同，测试结果可能不准确。	The device is in another orientation than the scheme; test results may be wrong.
+Auto_OrientationRunWarning	设备方向与方案的参考分辨率不同，坐标将被拉伸。	The device orientation differs from the scheme's reference size; coordinates will be stretched.
+# ---- Live test ----
+Auto_ClearTest.ToolTipService.ToolTip	清除测试结果	Clear test result
+Auto_TestNoPicture	没有画面。请先让当前设备开始投屏。	No picture. Start mirroring the current device first.
+Auto_TestTemplateMissing	条件引用的模板不存在。	The condition's template does not exist.
+Auto_TestAreaOutside	搜索区域在画面之外。	The search area is outside the picture.
+Auto_TestFound	找到，置信度 {0}（阈值 {1}）	Found, score {0} (threshold {1})
+Auto_TestNotFound	未找到，最高置信度 {0}（阈值 {1}）	Not found, best score {0} (threshold {1})
+Auto_TestColor	实际颜色 {0}，期望 {1}，差值 {2}（容差 {3}）	Actual {0}, expected {1}, difference {2} (tolerance {3})
+Auto_TestBadColor	颜色“{0}”无效，应为 #RRGGBB。	Colour "{0}" is invalid; use #RRGGBB.
+Auto_TestPointOutside	该点在画面之外。	The point is outside the picture.
+Auto_TestConditionTrue	条件成立	Condition holds
+Auto_TestConditionFalse	条件不成立	Condition does not hold
+Auto_TestUnsupported	只有图像和颜色条件可以在画面上测试。	Only image and colour conditions can be tested on the picture.
+# ---- Run bar ----
+Auto_Run	运行	Run
+Auto_Stop	停止	Stop
+Auto_Step.Text	单步	Step
+Auto_IntervalLabel.Text	检测间隔 (ms)	Interval (ms)
+Auto_LogToggle.Text	运行日志	Run log
+Auto_ClearLog.ToolTipService.ToolTip	清空运行日志	Clear the run log
+Auto_TargetCurrent	当前设备	Current device
+Auto_TargetCount	{0} 台设备	{0} devices
+Auto_TargetNotMirroring	{0}（未投屏）	{0} (not mirroring)
+Auto_NoTarget	没有可运行的设备。请先连接设备并开始投屏。	No device to run on. Connect a device and start mirroring first.
+Auto_DeviceNotMirroring	设备未在投屏，无法取得画面。	The device is not mirroring, so there is no picture.
+Auto_NothingToRun	方案中没有任务。	The scheme has no tasks.
+Auto_Ready	就绪	Ready
+Auto_Stepping	正在执行一轮…	Running one round…
+Auto_StepDone	单步完成（第 {0} 轮）	Step done (round {0})
+Auto_RunStatus	运行中：{0} 台设备 · {1} 轮 · 最近触发：{2}	Running: {0} device(s) · {1} round(s) · last fired: {2}
+Auto_RunFinished	已停止：{0} 轮 · 最近触发：{1}	Stopped: {0} round(s) · last fired: {1}
+# ---- Workbench ----
+Workbench_Freeze.ToolTipService.ToolTip	冻结画面	Freeze the picture
+Workbench_Refresh.ToolTipService.ToolTip	刷新为最新画面	Show the newest picture
+Workbench_CancelPick.ToolTipService.ToolTip	取消（Esc）	Cancel (Esc)
+Workbench_NoPicture.Text	没有画面	No picture
+Workbench_ModeLive	实时画面	Live picture
+Workbench_ModeFrozen	已冻结	Frozen
+Workbench_ModePoint	单击画面取点（Esc 取消）	Click the picture to pick a point (Esc to cancel)
+Workbench_ModeArea	拖拽框选区域（Esc 取消）	Drag to select an area (Esc to cancel)
+Workbench_PickPointHint	在右侧画面上单击要使用的位置。	Click the position on the picture on the right.
+Workbench_PickAreaHint	在右侧画面上拖拽框选区域。	Drag a rectangle on the picture on the right.
+Workbench_CaptureHint	在右侧画面上拖拽框选要截取为模板的区域。	Drag a rectangle around the part of the picture to capture as a template.

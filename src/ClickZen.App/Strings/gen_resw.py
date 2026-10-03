@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generates Strings/<lang>/Resources.resw for ClickZen.App from strings.tsv.
 
-strings.tsv columns: key<TAB>zh-CN<TAB>en-US
+strings.tsv (and any strings.*.tsv, merged in name order) columns: key<TAB>zh-CN<TAB>en-US
 Keys containing '.' are XAML x:Uid property keys (e.g. Page_Devices_Title.Text).
 Run: python src/ClickZen.App/Strings/gen_resw.py
 """
@@ -27,14 +27,16 @@ HEADER = """<?xml version="1.0" encoding="utf-8"?>
 
 def main() -> int:
     rows = []
-    with open(HERE / "strings.tsv", encoding="utf-8", newline="") as f:
-        for i, row in enumerate(csv.reader(f, delimiter="\t", quoting=csv.QUOTE_NONE), start=1):
-            if not row or row[0].startswith("#") or not row[0].strip():
-                continue
-            if len(row) != 3:
-                print(f"strings.tsv:{i}: expected 3 columns, got {len(row)}", file=sys.stderr)
-                return 1
-            rows.append(row)
+    sources = [HERE / "strings.tsv"] + sorted(HERE.glob("strings.*.tsv"))
+    for src in sources:
+        with open(src, encoding="utf-8", newline="") as f:
+            for i, row in enumerate(csv.reader(f, delimiter="\t", quoting=csv.QUOTE_NONE), start=1):
+                if not row or row[0].startswith("#") or not row[0].strip():
+                    continue
+                if len(row) != 3:
+                    print(f"{src.name}:{i}: expected 3 columns, got {len(row)}", file=sys.stderr)
+                    return 1
+                rows.append(row)
 
     keys = [r[0] for r in rows]
     dupes = {k for k in keys if keys.count(k) > 1}

@@ -16,6 +16,7 @@ public sealed partial class MainWindow : Window
     private readonly ILocalizer _loc;
     private readonly DeviceHub _hub;
     private readonly RecordingService _recording;
+    private readonly AutomationService _automation;
     private readonly DispatcherTimer _statusTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private DeviceEntry? _observed;
     private bool _syncingSwitcher;
@@ -25,6 +26,7 @@ public sealed partial class MainWindow : Window
         _loc = services.GetRequiredService<ILocalizer>();
         _hub = services.GetRequiredService<DeviceHub>();
         _recording = services.GetRequiredService<RecordingService>();
+        _automation = services.GetRequiredService<AutomationService>();
         InitializeComponent();
 
         Title = AppInfo.Name;
@@ -43,7 +45,14 @@ public sealed partial class MainWindow : Window
 
         BuildNavigation();
         StatusVersion.Text = $"{AppInfo.Name} {AppInfo.Version}";
-        StatusEngine.Text = _loc["Status_EngineIdle"];
+        StatusEngine.Text = _automation.StatusText;
+        _automation.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(AutomationService.StatusText) or nameof(AutomationService.IsRunning))
+            {
+                DispatcherQueue.TryEnqueue(() => StatusEngine.Text = _automation.StatusText);
+            }
+        };
         UpdateRecordingStatus();
         _recording.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(UpdateRecordingStatus);
         StatusSync.Text = _loc["Status_SyncOff"];

@@ -229,4 +229,317 @@
   <data name="Rec_Busy" xml:space="preserve"><value>Recording or playback is in progress.</value></data>
   <data name="Rec_Empty" xml:space="preserve"><value>The recording has no gestures.</value></data>
   <data name="Rec_OrientationWarning" xml:space="preserve"><value>The recording was made in another orientation; coordinates are scaled and may be inaccurate.</value></data>
+  <data name="Status_EngineRunning" xml:space="preserve"><value>Automation: running ({0}, {1} device(s))</value></data>
+  <data name="Auto_New.Label" xml:space="preserve"><value>New</value></data>
+  <data name="Auto_New.ToolTipService.ToolTip" xml:space="preserve"><value>New scheme</value></data>
+  <data name="Auto_Open.Label" xml:space="preserve"><value>Open</value></data>
+  <data name="Auto_Open.ToolTipService.ToolTip" xml:space="preserve"><value>Open a .czscheme scheme (Ctrl+O)</value></data>
+  <data name="Auto_Save.Label" xml:space="preserve"><value>Save</value></data>
+  <data name="Auto_Save.ToolTipService.ToolTip" xml:space="preserve"><value>Save (Ctrl+S)</value></data>
+  <data name="Auto_SaveAs.Label" xml:space="preserve"><value>Save as</value></data>
+  <data name="Auto_SaveAs.ToolTipService.ToolTip" xml:space="preserve"><value>Save to a new scheme file</value></data>
+  <data name="Auto_ImportTasks.Label" xml:space="preserve"><value>Import tasks</value></data>
+  <data name="Auto_ImportTasks.ToolTipService.ToolTip" xml:space="preserve"><value>Add the tasks (and their templates) of another scheme file to this scheme</value></data>
+  <data name="Auto_ExportTask.Label" xml:space="preserve"><value>Export task</value></data>
+  <data name="Auto_ExportTask.ToolTipService.ToolTip" xml:space="preserve"><value>Export the selected task and the templates it uses as a separate scheme file</value></data>
+  <data name="Auto_FileType" xml:space="preserve"><value>ClickZen scheme</value></data>
+  <data name="Auto_Untitled" xml:space="preserve"><value>Untitled scheme</value></data>
+  <data name="Auto_NotSaved" xml:space="preserve"><value>Not saved to a file</value></data>
+  <data name="Auto_DocSummary" xml:space="preserve"><value>{0} task(s) · {1} template(s) · reference size {2} · {3}</value></data>
+  <data name="Auto_SchemeName.Header" xml:space="preserve"><value>Scheme name</value></data>
+  <data name="Auto_SchemeName.PlaceholderText" xml:space="preserve"><value>Untitled scheme</value></data>
+  <data name="Auto_UnsavedTitle" xml:space="preserve"><value>Save changes?</value></data>
+  <data name="Auto_UnsavedMessage" xml:space="preserve"><value>Scheme "{0}" has unsaved changes.</value></data>
+  <data name="Auto_SaveChanges" xml:space="preserve"><value>Save</value></data>
+  <data name="Auto_DontSave" xml:space="preserve"><value>Don't save</value></data>
+  <data name="Auto_Opened" xml:space="preserve"><value>Opened {0}</value></data>
+  <data name="Auto_OpenFailed" xml:space="preserve"><value>Could not open the scheme: {0}</value></data>
+  <data name="Auto_Saved" xml:space="preserve"><value>Saved to {0}</value></data>
+  <data name="Auto_SaveFailed" xml:space="preserve"><value>Saving failed: {0}</value></data>
+  <data name="Auto_Imported" xml:space="preserve"><value>Imported {0} task(s) and {1} template(s).</value></data>
+  <data name="Auto_ImportRescaled" xml:space="preserve"><value>The reference sizes differ; coordinates and templates were rescaled.</value></data>
+  <data name="Auto_ImportFailed" xml:space="preserve"><value>Import failed: {0}</value></data>
+  <data name="Auto_ImportOrientation" xml:space="preserve"><value>That scheme was made for the other screen orientation and cannot be imported.</value></data>
+  <data name="Auto_Exported" xml:space="preserve"><value>Task "{0}" was exported to {1}</value></data>
+  <data name="Auto_StopFirst" xml:space="preserve"><value>Stop the running scheme first.</value></data>
+  <data name="Auto_TasksHeader.Text" xml:space="preserve"><value>Tasks</value></data>
+  <data name="Auto_AddTask.ToolTipService.ToolTip" xml:space="preserve"><value>New task</value></data>
+  <data name="Auto_DuplicateTask.ToolTipService.ToolTip" xml:space="preserve"><value>Duplicate task</value></data>
+  <data name="Auto_DeleteTask.ToolTipService.ToolTip" xml:space="preserve"><value>Delete task (Delete)</value></data>
+  <data name="Auto_TaskEnabled.ToolTipService.ToolTip" xml:space="preserve"><value>Enable this task</value></data>
+  <data name="Auto_NoTasks.Text" xml:space="preserve"><value>No tasks yet. Click + to create one, then add rules in the editor in the middle.</value></data>
+  <data name="Auto_NoTaskSelected.Text" xml:space="preserve"><value>Select a task on the left to edit it.</value></data>
+  <data name="Auto_NewTaskName" xml:space="preserve"><value>New task</value></data>
+  <data name="Auto_UnnamedTask" xml:space="preserve"><value>(unnamed task)</value></data>
+  <data name="Auto_CopyOf" xml:space="preserve"><value>{0} copy</value></data>
+  <data name="Auto_TaskSummary" xml:space="preserve"><value>{0} rule(s) · cooldown {1} s</value></data>
+  <data name="Auto_DeleteTaskTitle" xml:space="preserve"><value>Delete task?</value></data>
+  <data name="Auto_DeleteTaskMessage" xml:space="preserve"><value>Task "{0}" and all its rules will be deleted.</value></data>
+  <data name="Auto_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Auto_TemplatesHeader.Text" xml:space="preserve"><value>Templates</value></data>
+  <data name="Auto_CaptureTemplate.ToolTipService.ToolTip" xml:space="preserve"><value>Drag a rectangle on the picture to capture a template</value></data>
+  <data name="Auto_RenameTemplate.ToolTipService.ToolTip" xml:space="preserve"><value>Rename template (or double-click)</value></data>
+  <data name="Auto_DeleteTemplate.ToolTipService.ToolTip" xml:space="preserve"><value>Delete template</value></data>
+  <data name="Auto_NoTemplates.Text" xml:space="preserve"><value>No templates yet. Click the capture button and drag a rectangle on the picture.</value></data>
+  <data name="Auto_TemplateUnused" xml:space="preserve"><value>Unused</value></data>
+  <data name="Auto_TemplateUsedBy" xml:space="preserve"><value>Used by {0} task(s)</value></data>
+  <data name="Auto_TemplateDefaultName" xml:space="preserve"><value>Template</value></data>
+  <data name="Auto_NameTemplateTitle" xml:space="preserve"><value>Template name</value></data>
+  <data name="Auto_RenameTemplateTitle" xml:space="preserve"><value>Rename template</value></data>
+  <data name="Auto_TemplateCaptured" xml:space="preserve"><value>Captured template "{0}" ({1}×{2})</value></data>
+  <data name="Auto_TemplateTooSmall" xml:space="preserve"><value>The selection is too small (at least 4×4 pixels).</value></data>
+  <data name="Auto_TemplateFailed" xml:space="preserve"><value>Could not capture the template: {0}</value></data>
+  <data name="Auto_DeleteTemplateTitle" xml:space="preserve"><value>Delete template?</value></data>
+  <data name="Auto_DeleteTemplateMessage" xml:space="preserve"><value>Template "{0}" will be deleted.</value></data>
+  <data name="Auto_DeleteTemplateInUse" xml:space="preserve"><value>Template "{0}" is used by {1} task(s) ({2}). After deleting it those image conditions have no template and always count as "not found". Delete anyway?</value></data>
+  <data name="Auto_OrientationAuthoring" xml:space="preserve"><value>The scheme's reference size is {0} but the device is now {1} (other orientation). Rotate the device to the scheme's orientation before picking.</value></data>
+  <data name="Auto_OrientationMismatch" xml:space="preserve"><value>The device is in another orientation than the scheme; test results may be wrong.</value></data>
+  <data name="Auto_OrientationRunWarning" xml:space="preserve"><value>The device orientation differs from the scheme's reference size; coordinates will be stretched.</value></data>
+  <data name="Auto_ClearTest.ToolTipService.ToolTip" xml:space="preserve"><value>Clear test result</value></data>
+  <data name="Auto_TestNoPicture" xml:space="preserve"><value>No picture. Start mirroring the current device first.</value></data>
+  <data name="Auto_TestTemplateMissing" xml:space="preserve"><value>The condition's template does not exist.</value></data>
+  <data name="Auto_TestAreaOutside" xml:space="preserve"><value>The search area is outside the picture.</value></data>
+  <data name="Auto_TestFound" xml:space="preserve"><value>Found, score {0} (threshold {1})</value></data>
+  <data name="Auto_TestNotFound" xml:space="preserve"><value>Not found, best score {0} (threshold {1})</value></data>
+  <data name="Auto_TestColor" xml:space="preserve"><value>Actual {0}, expected {1}, difference {2} (tolerance {3})</value></data>
+  <data name="Auto_TestBadColor" xml:space="preserve"><value>Colour "{0}" is invalid; use #RRGGBB.</value></data>
+  <data name="Auto_TestPointOutside" xml:space="preserve"><value>The point is outside the picture.</value></data>
+  <data name="Auto_TestConditionTrue" xml:space="preserve"><value>Condition holds</value></data>
+  <data name="Auto_TestConditionFalse" xml:space="preserve"><value>Condition does not hold</value></data>
+  <data name="Auto_TestUnsupported" xml:space="preserve"><value>Only image and colour conditions can be tested on the picture.</value></data>
+  <data name="Auto_Run" xml:space="preserve"><value>Run</value></data>
+  <data name="Auto_Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Auto_Step.Text" xml:space="preserve"><value>Step</value></data>
+  <data name="Auto_IntervalLabel.Text" xml:space="preserve"><value>Interval (ms)</value></data>
+  <data name="Auto_LogToggle.Text" xml:space="preserve"><value>Run log</value></data>
+  <data name="Auto_ClearLog.ToolTipService.ToolTip" xml:space="preserve"><value>Clear the run log</value></data>
+  <data name="Auto_TargetCurrent" xml:space="preserve"><value>Current device</value></data>
+  <data name="Auto_TargetCount" xml:space="preserve"><value>{0} devices</value></data>
+  <data name="Auto_TargetNotMirroring" xml:space="preserve"><value>{0} (not mirroring)</value></data>
+  <data name="Auto_NoTarget" xml:space="preserve"><value>No device to run on. Connect a device and start mirroring first.</value></data>
+  <data name="Auto_DeviceNotMirroring" xml:space="preserve"><value>The device is not mirroring, so there is no picture.</value></data>
+  <data name="Auto_NothingToRun" xml:space="preserve"><value>The scheme has no tasks.</value></data>
+  <data name="Auto_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Auto_Stepping" xml:space="preserve"><value>Running one round…</value></data>
+  <data name="Auto_StepDone" xml:space="preserve"><value>Step done (round {0})</value></data>
+  <data name="Auto_RunStatus" xml:space="preserve"><value>Running: {0} device(s) · {1} round(s) · last fired: {2}</value></data>
+  <data name="Auto_RunFinished" xml:space="preserve"><value>Stopped: {0} round(s) · last fired: {1}</value></data>
+  <data name="Workbench_Freeze.ToolTipService.ToolTip" xml:space="preserve"><value>Freeze the picture</value></data>
+  <data name="Workbench_Refresh.ToolTipService.ToolTip" xml:space="preserve"><value>Show the newest picture</value></data>
+  <data name="Workbench_CancelPick.ToolTipService.ToolTip" xml:space="preserve"><value>Cancel (Esc)</value></data>
+  <data name="Workbench_NoPicture.Text" xml:space="preserve"><value>No picture</value></data>
+  <data name="Workbench_ModeLive" xml:space="preserve"><value>Live picture</value></data>
+  <data name="Workbench_ModeFrozen" xml:space="preserve"><value>Frozen</value></data>
+  <data name="Workbench_ModePoint" xml:space="preserve"><value>Click the picture to pick a point (Esc to cancel)</value></data>
+  <data name="Workbench_ModeArea" xml:space="preserve"><value>Drag to select an area (Esc to cancel)</value></data>
+  <data name="Workbench_PickPointHint" xml:space="preserve"><value>Click the position on the picture on the right.</value></data>
+  <data name="Workbench_PickAreaHint" xml:space="preserve"><value>Drag a rectangle on the picture on the right.</value></data>
+  <data name="Workbench_CaptureHint" xml:space="preserve"><value>Drag a rectangle around the part of the picture to capture as a template.</value></data>
+  <data name="Editor_Placeholder.Text" xml:space="preserve"><value>Select a task on the left to edit it</value></data>
+  <data name="Editor_BasicHeader.Text" xml:space="preserve"><value>Basics</value></data>
+  <data name="Editor_BasicHint.Text" xml:space="preserve"><value>Cooldown starts when the task finishes; higher priority tasks are checked first within a round; a run limit of 0 means unlimited.</value></data>
+  <data name="Editor_TaskEnabled.OnContent" xml:space="preserve"><value>Enabled</value></data>
+  <data name="Editor_TaskEnabled.OffContent" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Editor_TaskName.Header" xml:space="preserve"><value>Task name</value></data>
+  <data name="Editor_TaskName.PlaceholderText" xml:space="preserve"><value>e.g. Collect daily reward</value></data>
+  <data name="Editor_Cooldown.Header" xml:space="preserve"><value>Cooldown (ms)</value></data>
+  <data name="Editor_Priority.Header" xml:space="preserve"><value>Priority</value></data>
+  <data name="Editor_RunLimit.Header" xml:space="preserve"><value>Run limit</value></data>
+  <data name="Editor_PreconditionHeader.Text" xml:space="preserve"><value>Precondition</value></data>
+  <data name="Editor_PreconditionHint.Text" xml:space="preserve"><value>Checked first every round; the rules below are only considered when it holds. Empty means always.</value></data>
+  <data name="Editor_RulesHeader.Text" xml:space="preserve"><value>Rules</value></data>
+  <data name="Editor_RulesHint.Text" xml:space="preserve"><value>Rules are checked in order; when a rule's conditions hold its actions run. "Stop after match" skips the remaining rules this round.</value></data>
+  <data name="Editor_ExpandAll" xml:space="preserve"><value>Expand all rules</value></data>
+  <data name="Editor_CollapseAll" xml:space="preserve"><value>Collapse all</value></data>
+  <data name="Editor_EnabledTip" xml:space="preserve"><value>Enable / disable</value></data>
+  <data name="Editor_MoveUp" xml:space="preserve"><value>Move up</value></data>
+  <data name="Editor_MoveDown" xml:space="preserve"><value>Move down</value></data>
+  <data name="Editor_More" xml:space="preserve"><value>More</value></data>
+  <data name="Editor_Duplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="Editor_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Editor_CopyOf" xml:space="preserve"><value>{0} copy</value></data>
+  <data name="Editor_NotSet" xml:space="preserve"><value>(not set)</value></data>
+  <data name="Editor_Err_Host" xml:space="preserve"><value>Operation failed: {0}</value></data>
+  <data name="Editor_X" xml:space="preserve"><value>X</value></data>
+  <data name="Editor_Y" xml:space="preserve"><value>Y</value></data>
+  <data name="Editor_W" xml:space="preserve"><value>Width</value></data>
+  <data name="Editor_H" xml:space="preserve"><value>Height</value></data>
+  <data name="Editor_Point" xml:space="preserve"><value>Point</value></data>
+  <data name="Editor_Area" xml:space="preserve"><value>Area</value></data>
+  <data name="Editor_Offset" xml:space="preserve"><value>Offset (dx, dy)</value></data>
+  <data name="Editor_FallbackPoint" xml:space="preserve"><value>Fallback point when nothing matched</value></data>
+  <data name="Editor_PickPoint" xml:space="preserve"><value>Pick a point on the picture</value></data>
+  <data name="Editor_PickArea" xml:space="preserve"><value>Select an area on the picture</value></data>
+  <data name="Editor_ClearArea" xml:space="preserve"><value>Clear area (whole screen)</value></data>
+  <data name="Editor_Target" xml:space="preserve"><value>Target</value></data>
+  <data name="Editor_Target_Point" xml:space="preserve"><value>Fixed point</value></data>
+  <data name="Editor_Target_LastMatch" xml:space="preserve"><value>Last image match</value></data>
+  <data name="Editor_Target_RandomInArea" xml:space="preserve"><value>Random point in area</value></data>
+  <data name="Editor_Target_LastMatchHint" xml:space="preserve"><value>Uses the centre of the latest image match in this rule (or the precondition); falls back to the point below.</value></data>
+  <data name="Editor_Target_LastMatchShort" xml:space="preserve"><value>match</value></data>
+  <data name="Editor_Target_RandomShort" xml:space="preserve"><value>random in {0}</value></data>
+  <data name="Editor_AddCondition" xml:space="preserve"><value>Add condition</value></data>
+  <data name="Editor_AddSubgroup" xml:space="preserve"><value>Add subgroup</value></data>
+  <data name="Editor_DeleteGroup" xml:space="preserve"><value>Delete subgroup</value></data>
+  <data name="Editor_LogicTip" xml:space="preserve"><value>How the conditions in this group combine</value></data>
+  <data name="Editor_Logic_All" xml:space="preserve"><value>All</value></data>
+  <data name="Editor_Logic_Any" xml:space="preserve"><value>Any</value></data>
+  <data name="Editor_Logic_None" xml:space="preserve"><value>None</value></data>
+  <data name="Editor_LogicLong_All" xml:space="preserve"><value>All of (All)</value></data>
+  <data name="Editor_LogicLong_Any" xml:space="preserve"><value>Any of (Any)</value></data>
+  <data name="Editor_LogicLong_None" xml:space="preserve"><value>None of (None)</value></data>
+  <data name="Editor_LogicHint_All" xml:space="preserve"><value>True when every item below is true</value></data>
+  <data name="Editor_LogicHint_Any" xml:space="preserve"><value>True when at least one item below is true</value></data>
+  <data name="Editor_LogicHint_None" xml:space="preserve"><value>True when no item below is true</value></data>
+  <data name="Editor_GroupEmptyPass" xml:space="preserve"><value>Empty: always true</value></data>
+  <data name="Editor_GroupEmptyAny" xml:space="preserve"><value>Empty: never true in "Any" mode</value></data>
+  <data name="Editor_Sum_Group" xml:space="preserve"><value>{0} ({1} items)</value></data>
+  <data name="Editor_Sum_GroupEmpty" xml:space="preserve"><value>{0} (empty)</value></data>
+  <data name="Editor_Cond_Image" xml:space="preserve"><value>Image</value></data>
+  <data name="Editor_Cond_Color" xml:space="preserve"><value>Colour</value></data>
+  <data name="Editor_Cond_Expression" xml:space="preserve"><value>Expression</value></data>
+  <data name="Editor_Cond_Elapsed" xml:space="preserve"><value>Elapsed time</value></data>
+  <data name="Editor_Label" xml:space="preserve"><value>Label</value></data>
+  <data name="Editor_LabelPlaceholder" xml:space="preserve"><value>Optional, shown in the list</value></data>
+  <data name="Editor_Template" xml:space="preserve"><value>Template</value></data>
+  <data name="Editor_NoTemplate" xml:space="preserve"><value>(no template)</value></data>
+  <data name="Editor_TemplateItem" xml:space="preserve"><value>{0} ({1}×{2})</value></data>
+  <data name="Editor_TemplateMissing" xml:space="preserve"><value>Missing template: {0}</value></data>
+  <data name="Editor_CaptureTemplate" xml:space="preserve"><value>Capture template</value></data>
+  <data name="Editor_SearchArea" xml:space="preserve"><value>Search area</value></data>
+  <data name="Editor_WholeScreen" xml:space="preserve"><value>whole screen</value></data>
+  <data name="Editor_WholeScreenHint" xml:space="preserve"><value>An empty area searches the whole screen (slower).</value></data>
+  <data name="Editor_Threshold" xml:space="preserve"><value>Similarity threshold</value></data>
+  <data name="Editor_Grayscale" xml:space="preserve"><value>Grayscale</value></data>
+  <data name="Editor_MultiScale" xml:space="preserve"><value>Multi-scale</value></data>
+  <data name="Editor_Expect" xml:space="preserve"><value>Expect</value></data>
+  <data name="Editor_ExpectFound" xml:space="preserve"><value>Found</value></data>
+  <data name="Editor_ExpectAbsent" xml:space="preserve"><value>Not found</value></data>
+  <data name="Editor_ExpectMatch" xml:space="preserve"><value>Colour matches</value></data>
+  <data name="Editor_ExpectNoMatch" xml:space="preserve"><value>Colour does not match</value></data>
+  <data name="Editor_Color" xml:space="preserve"><value>Colour</value></data>
+  <data name="Editor_Tolerance" xml:space="preserve"><value>Tolerance (0–255)</value></data>
+  <data name="Editor_ColorHint" xml:space="preserve"><value>Enter the colour as #RRGGBB; tolerance is the maximum difference per channel. The Mirror page's pick mode shows pixel colours.</value></data>
+  <data name="Editor_Expression" xml:space="preserve"><value>Expression</value></data>
+  <data name="Editor_ExpressionHint" xml:space="preserve"><value>Supports arithmetic, comparison, logic (&amp;&amp; || !), strings and functions such as rand/min/max/abs/round/len; built-ins like $match.x and $elapsed.</value></data>
+  <data name="Editor_ElapsedSince" xml:space="preserve"><value>Since</value></data>
+  <data name="Editor_Since_TaskLastRun" xml:space="preserve"><value>This task last ran</value></data>
+  <data name="Editor_Since_SchemeStart" xml:space="preserve"><value>Scheme start</value></data>
+  <data name="Editor_AtLeastMs" xml:space="preserve"><value>At least (ms)</value></data>
+  <data name="Editor_Test" xml:space="preserve"><value>Test</value></data>
+  <data name="Editor_TestTip" xml:space="preserve"><value>Evaluate once on the current picture and show the result on the workbench</value></data>
+  <data name="Editor_Test_Matched" xml:space="preserve"><value>Matched</value></data>
+  <data name="Editor_Test_NotMatched" xml:space="preserve"><value>Not matched</value></data>
+  <data name="Editor_Test_Score" xml:space="preserve"><value>score {0}</value></data>
+  <data name="Editor_Test_Distance" xml:space="preserve"><value>difference {0}</value></data>
+  <data name="Editor_Test_At" xml:space="preserve"><value>at {0}</value></data>
+  <data name="Editor_Test_NeedTemplate" xml:space="preserve"><value>Choose or capture a template first.</value></data>
+  <data name="Editor_Test_Unavailable" xml:space="preserve"><value>Cannot test right now (no picture, or another operation is in progress).</value></data>
+  <data name="Editor_Sum_Image" xml:space="preserve"><value>find {0} (≥ {1}, {2})</value></data>
+  <data name="Editor_Sum_ImageAbsent" xml:space="preserve"><value>{0} absent (≥ {1}, {2})</value></data>
+  <data name="Editor_Sum_Color" xml:space="preserve"><value>({0}) is {1} ±{2}</value></data>
+  <data name="Editor_Sum_ColorNot" xml:space="preserve"><value>({0}) is not {1} ±{2}</value></data>
+  <data name="Editor_Sum_Expression" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_ElapsedTask" xml:space="preserve"><value>≥ {0} since last run</value></data>
+  <data name="Editor_Sum_ElapsedStart" xml:space="preserve"><value>≥ {0} since start</value></data>
+  <data name="Editor_Err_Expression" xml:space="preserve"><value>Expression error: {0}</value></data>
+  <data name="Editor_Err_EmptyExpression" xml:space="preserve"><value>The expression cannot be empty.</value></data>
+  <data name="Editor_Err_Placeholder" xml:space="preserve"><value>Placeholder {{{0}}} is invalid: {1}</value></data>
+  <data name="Editor_Err_EmptyPlaceholder" xml:space="preserve"><value>Empty placeholder {{}} at character {0}.</value></data>
+  <data name="Editor_Err_Unclosed" xml:space="preserve"><value>The {{ at character {0} is not closed and will be output as is (write {{{{ and }}}} for literal braces).</value></data>
+  <data name="Editor_Err_Color" xml:space="preserve"><value>Colour must be #RRGGBB.</value></data>
+  <data name="Editor_Err_KeyCode" xml:space="preserve"><value>Choose a key or enter a key code between 0 and 1000.</value></data>
+  <data name="Editor_Warn_Undeclared" xml:space="preserve"><value>Undeclared variables (read as 0): {0}</value></data>
+  <data name="Editor_PlaceholderHint" xml:space="preserve"><value>Insert values with {expression}, e.g. {count + 1}; write {{ and }} for literal braces.</value></data>
+  <data name="Editor_AddRule" xml:space="preserve"><value>Add rule</value></data>
+  <data name="Editor_NoRules" xml:space="preserve"><value>No rules yet. Add a rule with conditions and the actions to run.</value></data>
+  <data name="Editor_RuleN" xml:space="preserve"><value>Rule {0}</value></data>
+  <data name="Editor_RuleName" xml:space="preserve"><value>Rule name</value></data>
+  <data name="Editor_When" xml:space="preserve"><value>When</value></data>
+  <data name="Editor_WhenHint" xml:space="preserve"><value>The actions below run when this holds; empty means always.</value></data>
+  <data name="Editor_Then" xml:space="preserve"><value>Then</value></data>
+  <data name="Editor_Pick" xml:space="preserve"><value>Execution</value></data>
+  <data name="Editor_Pick_Sequential" xml:space="preserve"><value>Run all actions in order</value></data>
+  <data name="Editor_Pick_RandomOne" xml:space="preserve"><value>Run one branch chosen by weight</value></data>
+  <data name="Editor_StopAfterMatch" xml:space="preserve"><value>Stop after match</value></data>
+  <data name="Editor_StopAfterMatchTip" xml:space="preserve"><value>After this rule runs, skip the task's remaining rules this round</value></data>
+  <data name="Editor_SequentialHint" xml:space="preserve"><value>Actions run in order.</value></data>
+  <data name="Editor_RandomHint" xml:space="preserve"><value>Each time the rule fires one branch is picked at random by weight. Branches with weight 0 are never picked.</value></data>
+  <data name="Editor_Sum_Always" xml:space="preserve"><value>always</value></data>
+  <data name="Editor_Sum_RuleConditions" xml:space="preserve"><value>{0} conditions</value></data>
+  <data name="Editor_Sum_RuleActions" xml:space="preserve"><value>{0} actions</value></data>
+  <data name="Editor_Sum_RuleBranches" xml:space="preserve"><value>random of {0} branches</value></data>
+  <data name="Editor_AddBranch" xml:space="preserve"><value>Add branch</value></data>
+  <data name="Editor_BranchN" xml:space="preserve"><value>Branch {0}</value></data>
+  <data name="Editor_BranchName" xml:space="preserve"><value>Branch name</value></data>
+  <data name="Editor_Weight" xml:space="preserve"><value>Weight</value></data>
+  <data name="Editor_WeightTip" xml:space="preserve"><value>The chance of being picked is proportional to the weight</value></data>
+  <data name="Editor_Sum_Branch" xml:space="preserve"><value>{0}  ·  weight {1} ({2})  ·  {3} actions</value></data>
+  <data name="Editor_AddAction" xml:space="preserve"><value>Add action</value></data>
+  <data name="Editor_NoActions" xml:space="preserve"><value>No actions yet.</value></data>
+  <data name="Editor_Act_Tap" xml:space="preserve"><value>Tap</value></data>
+  <data name="Editor_Act_LongPress" xml:space="preserve"><value>Long press</value></data>
+  <data name="Editor_Act_Swipe" xml:space="preserve"><value>Swipe</value></data>
+  <data name="Editor_Act_Key" xml:space="preserve"><value>Key</value></data>
+  <data name="Editor_Act_Text" xml:space="preserve"><value>Type text</value></data>
+  <data name="Editor_Act_Wait" xml:space="preserve"><value>Wait</value></data>
+  <data name="Editor_Act_PlayRecording" xml:space="preserve"><value>Play recording</value></data>
+  <data name="Editor_Act_SetVariable" xml:space="preserve"><value>Set variable</value></data>
+  <data name="Editor_Act_AdbShell" xml:space="preserve"><value>ADB shell</value></data>
+  <data name="Editor_Act_Log" xml:space="preserve"><value>Log</value></data>
+  <data name="Editor_Act_Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Editor_TapCount" xml:space="preserve"><value>Count</value></data>
+  <data name="Editor_IntervalMs" xml:space="preserve"><value>Interval (ms)</value></data>
+  <data name="Editor_DurationMs" xml:space="preserve"><value>Duration (ms)</value></data>
+  <data name="Editor_SwipeFrom" xml:space="preserve"><value>From</value></data>
+  <data name="Editor_SwipeTo" xml:space="preserve"><value>To</value></data>
+  <data name="Editor_Key" xml:space="preserve"><value>Key</value></data>
+  <data name="Editor_KeyPlaceholder" xml:space="preserve"><value>Choose or type a key code</value></data>
+  <data name="Editor_KeyHint" xml:space="preserve"><value>You can type an Android key code, e.g. 61 (Tab).</value></data>
+  <data name="Editor_Key_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Editor_Key_Home" xml:space="preserve"><value>Home</value></data>
+  <data name="Editor_Key_AppSwitch" xml:space="preserve"><value>Recent apps</value></data>
+  <data name="Editor_Key_Power" xml:space="preserve"><value>Power</value></data>
+  <data name="Editor_Key_VolumeUp" xml:space="preserve"><value>Volume up</value></data>
+  <data name="Editor_Key_VolumeDown" xml:space="preserve"><value>Volume down</value></data>
+  <data name="Editor_Key_Enter" xml:space="preserve"><value>Enter</value></data>
+  <data name="Editor_Key_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Editor_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="Editor_MinMs" xml:space="preserve"><value>Minimum (ms)</value></data>
+  <data name="Editor_MaxMs" xml:space="preserve"><value>Maximum (ms)</value></data>
+  <data name="Editor_WaitHint" xml:space="preserve"><value>When the maximum is greater than the minimum a random wait in between is used; otherwise the minimum.</value></data>
+  <data name="Editor_Recording" xml:space="preserve"><value>Recording</value></data>
+  <data name="Editor_RecordingPlaceholder" xml:space="preserve"><value>Embedded recording, or a path relative to the scheme file</value></data>
+  <data name="Editor_RecordingHint" xml:space="preserve"><value>The list shows recordings embedded in the scheme; you can also type a .czrec path relative to the scheme file.</value></data>
+  <data name="Editor_Speed" xml:space="preserve"><value>Speed</value></data>
+  <data name="Editor_Loops" xml:space="preserve"><value>Loops</value></data>
+  <data name="Editor_Variable" xml:space="preserve"><value>Variable</value></data>
+  <data name="Editor_VariablePlaceholder" xml:space="preserve"><value>Variable name</value></data>
+  <data name="Editor_ValueExpression" xml:space="preserve"><value>New value (expression)</value></data>
+  <data name="Editor_Command" xml:space="preserve"><value>Command</value></data>
+  <data name="Editor_AsRoot" xml:space="preserve"><value>Run as root (su)</value></data>
+  <data name="Editor_OutputVariable" xml:space="preserve"><value>Save output to variable</value></data>
+  <data name="Editor_OutputVariablePlaceholder" xml:space="preserve"><value>Optional</value></data>
+  <data name="Editor_Message" xml:space="preserve"><value>Message</value></data>
+  <data name="Editor_StopScope" xml:space="preserve"><value>Scope</value></data>
+  <data name="Editor_Stop_Task" xml:space="preserve"><value>Disable this task (for this run)</value></data>
+  <data name="Editor_Stop_Scheme" xml:space="preserve"><value>Stop the whole scheme</value></data>
+  <data name="Editor_DelayAfter" xml:space="preserve"><value>Delay after (ms)</value></data>
+  <data name="Editor_DelayDefault" xml:space="preserve"><value>Default {0}</value></data>
+  <data name="Editor_Sum_Tap" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_TapN" xml:space="preserve"><value>{0} × {1}</value></data>
+  <data name="Editor_Sum_LongPress" xml:space="preserve"><value>{0}, {1} ms</value></data>
+  <data name="Editor_Sum_Swipe" xml:space="preserve"><value>{0} → {1}, {2} ms</value></data>
+  <data name="Editor_Sum_Key" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_Text" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_Wait" xml:space="preserve"><value>{0} ms</value></data>
+  <data name="Editor_Sum_WaitRange" xml:space="preserve"><value>{0}–{1} ms</value></data>
+  <data name="Editor_Sum_PlayRecording" xml:space="preserve"><value>{0}, {1}×, {2} loops</value></data>
+  <data name="Editor_Sum_SetVariable" xml:space="preserve"><value>{0} = {1}</value></data>
+  <data name="Editor_Sum_AdbShell" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_AdbShellRoot" xml:space="preserve"><value>su: {0}</value></data>
+  <data name="Editor_Sum_Log" xml:space="preserve"><value>{0}</value></data>
+  <data name="Editor_Sum_StopTask" xml:space="preserve"><value>disable this task</value></data>
+  <data name="Editor_Sum_StopScheme" xml:space="preserve"><value>stop the scheme</value></data>
+  <data name="Editor_Sum_Delay" xml:space="preserve"><value>then wait {0} ms</value></data>
 </root>

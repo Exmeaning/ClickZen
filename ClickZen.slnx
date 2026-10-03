@@ -12,6 +12,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/ClickZen.Core.Tests/ClickZen.Core.Tests.csproj" />
     <Project Path="tests/ClickZen.Device.Tests/ClickZen.Device.Tests.csproj" />
+    <Project Path="tests/ClickZen.Platform.Tests/ClickZen.Platform.Tests.csproj" />
     <Project Path="tests/ClickZen.Vision.Tests/ClickZen.Vision.Tests.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">

@@ -1,0 +1,24 @@
+add device 1: /dev/input/event4
+  name:     "gpio-keys"
+  events:
+    KEY (0001): 0072  0073  0074
+  input props:
+    <none>
+add device 2: /dev/input/event2
+  name:     "fts_ts"
+  events:
+    KEY (0001): 0145  014a
+    ABS (0003): 002f  : value 0, min 0, max 9, fuzz 0, flat 0, resolution 0
+                0030  : value 0, min 0, max 255, fuzz 0, flat 0, resolution 0
+                0035  : value 0, min 0, max 10799, fuzz 0, flat 0, resolution 0
+                0036  : value 0, min 0, max 23999, fuzz 0, flat 0, resolution 0
+                0039  : value 0, min 0, max 65535, fuzz 0, flat 0, resolution 0
+                003a  : value 0, min 0, max 255, fuzz 0, flat 0, resolution 0
+  input props:
+    INPUT_PROP_DIRECT
+add device 3: /dev/input/event5
+  name:     "uinput-goodix"
+  events:
+    KEY (0001): 0118
+  input props:
+    <none>

@@ -137,6 +137,39 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         Ui(() => Sync(_watcher.Devices));
     }
 
+    /// <summary>
+    /// The input backend for a device, following the user's preference with automatic fallback:
+    /// scrcpy control channel when connected, otherwise <c>adb shell input</c>; Root uses sendevent
+    /// when a touchscreen was detected (falls back to adb input as root).
+    /// </summary>
+    public async Task<ClickZen.Core.Input.ITouchInjector> GetInjectorAsync(DeviceEntry entry, CancellationToken ct = default)
+    {
+        var pref = _settings.Current.Devices.InputMethod;
+        if (pref == InputMethodPreference.Root)
+        {
+            var touch = await ClickZen.Device.Input.RootSendeventInjector.DetectTouchscreenAsync(_adb, entry.Serial, ct);
+            if (touch is not null)
+            {
+                return new ClickZen.Device.Input.RootSendeventInjector(
+                    (cmd, c) => _adb.RootShellAsync(entry.Serial, cmd, c), touch,
+                    () => entry.Info.PhysicalSize,
+                    () => entry.Session is { } s && !s.VideoSize.IsEmpty && s.VideoSize.IsLandscape != entry.Info.PhysicalSize.IsLandscape
+                        ? ClickZen.Core.Geometry.DisplayRotation.Rotation90
+                        : ClickZen.Core.Geometry.DisplayRotation.Rotation0);
+            }
+
+            _log.LogWarning("No touchscreen found for root input on {Serial}; using adb input as root", entry.Serial);
+            return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: true);
+        }
+
+        if (pref == InputMethodPreference.Scrcpy && entry.Session is { IsControlAvailable: true } session)
+        {
+            return session.Injector;
+        }
+
+        return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel);
+    }
+
     /// <summary>Starts the scrcpy session for a device (no-op if already running).</summary>
     public async Task ConnectAsync(DeviceEntry entry, CancellationToken ct = default)
     {

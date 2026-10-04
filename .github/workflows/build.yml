@@ -5,7 +5,15 @@ on:
     branches: [ master, main, csharp-rewrite ]
     tags: [ 'v*' ]
   pull_request:
+  release:
+    types: [published]
   workflow_dispatch:
+
+# A tag push creates a release; publishing a release in GitHub's UI builds its tag too.
+# Serialize runs for the same ref rather than cancelling an in-progress asset upload.
+concurrency:
+  group: clickzen-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -21,6 +29,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -30,9 +40,18 @@ jobs:
       - name: Version from tag
         id: ver
         shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if ("${{ github.ref_type }}" -eq "tag") { $v = "${{ github.ref_name }}".TrimStart('v') } else { $v = "2.0.0-ci.${{ github.run_number }}" }
+          $tag = if ($env:RELEASE_TAG) { $env:RELEASE_TAG } elseif ($env:REF_TYPE -eq 'tag') { $env:REF_NAME } else { '' }
+          if ($tag) {
+            if ($tag -notmatch '^v?\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw "Invalid release tag: $tag" }
+            $v = $tag.TrimStart('v')
+          } else { $v = "2.0.0-ci.${{ github.run_number }}" }
           "version=$v" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
 
       - name: Cache NuGet and third-party binaries
         uses: actions/cache@v4
@@ -112,8 +131,10 @@ jobs:
           retention-days: 14
 
       - name: Release
-        if: github.ref_type == 'tag'
+        if: steps.ver.outputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.ver.outputs.tag }}
           files: dist/*
+          fail_on_unmatched_files: true
           generate_release_notes: true

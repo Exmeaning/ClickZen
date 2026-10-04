@@ -1,8 +1,12 @@
-# ClickZen
+<p align="center">
+  <img src="docs/images/clickzen.png" alt="ClickZen 2" width="740" />
+</p>
+
+# ClickZen 2
 
 基于 ADB 与 scrcpy 的 Android 自动化控制工具：应用内投屏、触控录制回放、图像识别自动化、变量与网络同步，支持真机、无线设备和主流模拟器。
 
-> 2.0 版本使用 C# / WinUI 3 完全重写，不再兼容 1.x（Python）的配置、方案和录制格式。旧版本代码保留在 `master` 分支和 `1.6.3` 等历史标签中，后续会提供迁移工具。
+> 2.0 版本使用 C# / WinUI 3 完全重写，现已取代旧 Python 版成为主线。**不兼容 1.x 的配置、方案和录制格式**，请保留旧数据备份。旧版仅保留在历史标签与历史 Release 中，不再作为主线维护。
 
 需要 Windows 桌面自动化？试试 [ClickYen](https://github.com/Exmeaning/ClickYen)。
 
@@ -39,7 +43,19 @@ adb、scrcpy-server 和 FFmpeg 均已随程序附带，无需另外安装。
 3. 在「录制」页操作并保存 `.czrec`，或在「自动化」页创建方案并运行。
 4. 变量页可以启用变量同步服务；协议与示例见 [变量同步协议](docs/variable-sync-protocol.md)。
 
-截图与演示素材将在后续版本补充。
+## 界面预览
+
+### 自动化工作台
+
+![自动化工作台](docs/images/automation.png)
+
+### 录制与回放
+
+![录制与回放](docs/images/recording.png)
+
+### 设置
+
+![设置页](docs/images/settings.png)
 
 
 ### 模拟器窗口模式

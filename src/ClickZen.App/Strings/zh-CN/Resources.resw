@@ -542,6 +542,82 @@
   <data name="Editor_Sum_StopTask" xml:space="preserve"><value>停用本任务</value></data>
   <data name="Editor_Sum_StopScheme" xml:space="preserve"><value>停止方案</value></data>
   <data name="Editor_Sum_Delay" xml:space="preserve"><value>之后等待 {0} ms</value></data>
+  <data name="Settings_Group_Appearance" xml:space="preserve"><value>外观</value></data>
+  <data name="Settings_Group_Devices" xml:space="preserve"><value>设备默认值</value></data>
+  <data name="Settings_Group_Mirror" xml:space="preserve"><value>投屏</value></data>
+  <data name="Settings_Group_Automation" xml:space="preserve"><value>自动化默认值</value></data>
+  <data name="Settings_Group_Recording" xml:space="preserve"><value>录制</value></data>
+  <data name="Settings_Group_Sync" xml:space="preserve"><value>变量同步</value></data>
+  <data name="Settings_Group_Tools" xml:space="preserve"><value>工具</value></data>
+  <data name="Settings_Group_General" xml:space="preserve"><value>常规</value></data>
+  <data name="Settings_Appearance_Theme" xml:space="preserve"><value>主题</value></data>
+  <data name="Settings_Appearance_Language" xml:space="preserve"><value>语言</value></data>
+  <data name="Settings_Devices_AutoConnectSaved" xml:space="preserve"><value>自动连接已保存设备</value></data>
+  <data name="Settings_Devices_AutoReconnect" xml:space="preserve"><value>断线自动重连</value></data>
+  <data name="Settings_Devices_MaxSize" xml:space="preserve"><value>最长边（0 为原始分辨率）</value></data>
+  <data name="Settings_Devices_VideoBitRateMbps" xml:space="preserve"><value>码率（Mbps）</value></data>
+  <data name="Settings_Devices_MaxFps" xml:space="preserve"><value>最大帧率</value></data>
+  <data name="Settings_Devices_InputMethod" xml:space="preserve"><value>输入方式</value></data>
+  <data name="Settings_Mirror_HighQualityScaling" xml:space="preserve"><value>高质量缩放</value></data>
+  <data name="Settings_Mirror_ShowTouches" xml:space="preserve"><value>显示触点</value></data>
+  <data name="Settings_Mirror_StayAwake" xml:space="preserve"><value>保持常亮</value></data>
+  <data name="Settings_Mirror_OpenMirrorOnConnect" xml:space="preserve"><value>连接后打开投屏</value></data>
+  <data name="Settings_Automation_DefaultCheckIntervalMs" xml:space="preserve"><value>检测间隔（ms）</value></data>
+  <data name="Settings_Automation_DefaultPositionJitterDp" xml:space="preserve"><value>位置随机偏移（dp）</value></data>
+  <data name="Settings_Automation_DefaultDelayJitterPercent" xml:space="preserve"><value>延迟随机化（%）</value></data>
+  <data name="Settings_Automation_DefaultDurationJitterPercent" xml:space="preserve"><value>时长随机化（%）</value></data>
+  <data name="Settings_Automation_ClearVariablesOnStop" xml:space="preserve"><value>停止时清空变量</value></data>
+  <data name="Settings_Recording_SwipeThresholdDp" xml:space="preserve"><value>滑动阈值（dp）</value></data>
+  <data name="Settings_Recording_LongPressThresholdMs" xml:space="preserve"><value>长按阈值（ms）</value></data>
+  <data name="Settings_Recording_KeepFullTrajectory" xml:space="preserve"><value>保存完整轨迹</value></data>
+  <data name="Settings_Recording_DefaultPlaybackSpeed" xml:space="preserve"><value>默认回放速度</value></data>
+  <data name="Settings_Sync_MaxClients" xml:space="preserve"><value>最大连接数</value></data>
+  <data name="Settings_Tools_CustomAdbPath" xml:space="preserve"><value>自定义 adb 路径</value></data>
+  <data name="Settings_General_ConfirmOnExit" xml:space="preserve"><value>退出时确认</value></data>
+  <data name="Settings_General_MinimizeToTray" xml:space="preserve"><value>关闭或最小化到托盘</value></data>
+  <data name="Settings_General_CheckForUpdates" xml:space="preserve"><value>启动时检查更新</value></data>
+  <data name="Settings_General_LogLevel" xml:space="preserve"><value>日志级别</value></data>
+  <data name="Settings_Enum_ThemePreference_System" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="Settings_Enum_ThemePreference_Light" xml:space="preserve"><value>浅色</value></data>
+  <data name="Settings_Enum_ThemePreference_Dark" xml:space="preserve"><value>深色</value></data>
+  <data name="Settings_Enum_LanguagePreference_System" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="Settings_Enum_LanguagePreference_ZhHans" xml:space="preserve"><value>简体中文</value></data>
+  <data name="Settings_Enum_LanguagePreference_English" xml:space="preserve"><value>English</value></data>
+  <data name="Settings_Enum_InputMethodPreference_Scrcpy" xml:space="preserve"><value>scrcpy</value></data>
+  <data name="Settings_Enum_InputMethodPreference_Adb" xml:space="preserve"><value>adb</value></data>
+  <data name="Settings_Enum_InputMethodPreference_Root" xml:space="preserve"><value>Root</value></data>
+  <data name="Settings_Enum_LogLevelPreference_Debug" xml:space="preserve"><value>调试</value></data>
+  <data name="Settings_Enum_LogLevelPreference_Information" xml:space="preserve"><value>信息</value></data>
+  <data name="Settings_Enum_LogLevelPreference_Warning" xml:space="preserve"><value>警告</value></data>
+  <data name="Settings_ResetDescription" xml:space="preserve"><value>恢复此组默认值</value></data>
+  <data name="Settings_Reset" xml:space="preserve"><value>恢复默认</value></data>
+  <data name="Settings_On" xml:space="preserve"><value>开</value></data>
+  <data name="Settings_Off" xml:space="preserve"><value>关</value></data>
+  <data name="Settings_OpenVariables" xml:space="preserve"><value>打开变量页</value></data>
+  <data name="Settings_SyncLink" xml:space="preserve"><value>启用、端口与访问令牌在变量页管理</value></data>
+  <data name="Settings_ServerVersion" xml:space="preserve"><value>随包 scrcpy-server 版本</value></data>
+  <data name="Settings_Browse" xml:space="preserve"><value>浏览</value></data>
+  <data name="Settings_BundledAdb" xml:space="preserve"><value>留空使用随包 adb</value></data>
+  <data name="Settings_AdbDescription" xml:space="preserve"><value>用于下次启动 ADB 服务；现有兼容服务会继续复用。</value></data>
+  <data name="Settings_RestartRequired" xml:space="preserve"><value>语言设置已保存，重启应用后生效。</value></data>
+  <data name="Settings_About" xml:space="preserve"><value>关于</value></data>
+  <data name="Settings_Version" xml:space="preserve"><value>版本 {0}</value></data>
+  <data name="Settings_GitHub" xml:space="preserve"><value>GitHub 仓库</value></data>
+  <data name="Settings_Notices" xml:space="preserve"><value>第三方声明</value></data>
+  <data name="Settings_OpenLink" xml:space="preserve"><value>查看</value></data>
+  <data name="Settings_CheckNow" xml:space="preserve"><value>检查更新</value></data>
+  <data name="Settings_OpenLogs" xml:space="preserve"><value>打开日志文件夹</value></data>
+  <data name="Settings_OpenData" xml:space="preserve"><value>打开数据文件夹</value></data>
+  <data name="Settings_OpenFolder" xml:space="preserve"><value>打开文件夹</value></data>
+  <data name="Settings_UpdateAvailable" xml:space="preserve"><value>发现新版本 {0}</value></data>
+  <data name="Settings_ViewRelease" xml:space="preserve"><value>查看发布</value></data>
+  <data name="Settings_UpToDate" xml:space="preserve"><value>当前已是最新版本。</value></data>
+  <data name="Settings_UpdateFailed" xml:space="preserve"><value>无法检查更新，请稍后重试。</value></data>
+  <data name="Settings_TrayShow" xml:space="preserve"><value>显示 ClickZen</value></data>
+  <data name="Settings_Exit" xml:space="preserve"><value>退出</value></data>
+  <data name="Settings_ExitTitle" xml:space="preserve"><value>退出 ClickZen？</value></data>
+  <data name="Settings_ExitMessage" xml:space="preserve"><value>未保存的更改将丢失，运行中的方案、录制和回放将停止。</value></data>
+  <data name="Settings_CommandFailed" xml:space="preserve"><value>命令失败：{0}</value></data>
   <data name="Vars_SchemeLabel.Text" xml:space="preserve"><value>方案：</value></data>
   <data name="Vars_ViewPicker.Header" xml:space="preserve"><value>显示数值来自</value></data>
   <data name="Vars_ViewGlobal" xml:space="preserve"><value>全局变量</value></data>

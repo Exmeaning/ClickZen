@@ -542,6 +542,82 @@
   <data name="Editor_Sum_StopTask" xml:space="preserve"><value>disable this task</value></data>
   <data name="Editor_Sum_StopScheme" xml:space="preserve"><value>stop the scheme</value></data>
   <data name="Editor_Sum_Delay" xml:space="preserve"><value>then wait {0} ms</value></data>
+  <data name="Settings_Group_Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Settings_Group_Devices" xml:space="preserve"><value>Device defaults</value></data>
+  <data name="Settings_Group_Mirror" xml:space="preserve"><value>Mirror</value></data>
+  <data name="Settings_Group_Automation" xml:space="preserve"><value>Automation defaults</value></data>
+  <data name="Settings_Group_Recording" xml:space="preserve"><value>Recording</value></data>
+  <data name="Settings_Group_Sync" xml:space="preserve"><value>Variable sync</value></data>
+  <data name="Settings_Group_Tools" xml:space="preserve"><value>Tools</value></data>
+  <data name="Settings_Group_General" xml:space="preserve"><value>General</value></data>
+  <data name="Settings_Appearance_Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="Settings_Appearance_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings_Devices_AutoConnectSaved" xml:space="preserve"><value>Auto-connect saved devices</value></data>
+  <data name="Settings_Devices_AutoReconnect" xml:space="preserve"><value>Auto-reconnect</value></data>
+  <data name="Settings_Devices_MaxSize" xml:space="preserve"><value>Maximum edge (0 for native resolution)</value></data>
+  <data name="Settings_Devices_VideoBitRateMbps" xml:space="preserve"><value>Bit rate (Mbps)</value></data>
+  <data name="Settings_Devices_MaxFps" xml:space="preserve"><value>Maximum FPS</value></data>
+  <data name="Settings_Devices_InputMethod" xml:space="preserve"><value>Input method</value></data>
+  <data name="Settings_Mirror_HighQualityScaling" xml:space="preserve"><value>High-quality scaling</value></data>
+  <data name="Settings_Mirror_ShowTouches" xml:space="preserve"><value>Show touches</value></data>
+  <data name="Settings_Mirror_StayAwake" xml:space="preserve"><value>Stay awake</value></data>
+  <data name="Settings_Mirror_OpenMirrorOnConnect" xml:space="preserve"><value>Open mirror on connection</value></data>
+  <data name="Settings_Automation_DefaultCheckIntervalMs" xml:space="preserve"><value>Check interval (ms)</value></data>
+  <data name="Settings_Automation_DefaultPositionJitterDp" xml:space="preserve"><value>Position jitter (dp)</value></data>
+  <data name="Settings_Automation_DefaultDelayJitterPercent" xml:space="preserve"><value>Delay jitter (%)</value></data>
+  <data name="Settings_Automation_DefaultDurationJitterPercent" xml:space="preserve"><value>Duration jitter (%)</value></data>
+  <data name="Settings_Automation_ClearVariablesOnStop" xml:space="preserve"><value>Clear variables on stop</value></data>
+  <data name="Settings_Recording_SwipeThresholdDp" xml:space="preserve"><value>Swipe threshold (dp)</value></data>
+  <data name="Settings_Recording_LongPressThresholdMs" xml:space="preserve"><value>Long-press threshold (ms)</value></data>
+  <data name="Settings_Recording_KeepFullTrajectory" xml:space="preserve"><value>Keep full trajectory</value></data>
+  <data name="Settings_Recording_DefaultPlaybackSpeed" xml:space="preserve"><value>Default playback speed</value></data>
+  <data name="Settings_Sync_MaxClients" xml:space="preserve"><value>Maximum clients</value></data>
+  <data name="Settings_Tools_CustomAdbPath" xml:space="preserve"><value>Custom adb path</value></data>
+  <data name="Settings_General_ConfirmOnExit" xml:space="preserve"><value>Confirm on exit</value></data>
+  <data name="Settings_General_MinimizeToTray" xml:space="preserve"><value>Close or minimize to tray</value></data>
+  <data name="Settings_General_CheckForUpdates" xml:space="preserve"><value>Check for updates at startup</value></data>
+  <data name="Settings_General_LogLevel" xml:space="preserve"><value>Log level</value></data>
+  <data name="Settings_Enum_ThemePreference_System" xml:space="preserve"><value>System</value></data>
+  <data name="Settings_Enum_ThemePreference_Light" xml:space="preserve"><value>Light</value></data>
+  <data name="Settings_Enum_ThemePreference_Dark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Settings_Enum_LanguagePreference_System" xml:space="preserve"><value>System</value></data>
+  <data name="Settings_Enum_LanguagePreference_ZhHans" xml:space="preserve"><value>Simplified Chinese</value></data>
+  <data name="Settings_Enum_LanguagePreference_English" xml:space="preserve"><value>English</value></data>
+  <data name="Settings_Enum_InputMethodPreference_Scrcpy" xml:space="preserve"><value>scrcpy</value></data>
+  <data name="Settings_Enum_InputMethodPreference_Adb" xml:space="preserve"><value>adb</value></data>
+  <data name="Settings_Enum_InputMethodPreference_Root" xml:space="preserve"><value>Root</value></data>
+  <data name="Settings_Enum_LogLevelPreference_Debug" xml:space="preserve"><value>Debug</value></data>
+  <data name="Settings_Enum_LogLevelPreference_Information" xml:space="preserve"><value>Information</value></data>
+  <data name="Settings_Enum_LogLevelPreference_Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="Settings_ResetDescription" xml:space="preserve"><value>Restore defaults for this group</value></data>
+  <data name="Settings_Reset" xml:space="preserve"><value>Restore defaults</value></data>
+  <data name="Settings_On" xml:space="preserve"><value>On</value></data>
+  <data name="Settings_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Settings_OpenVariables" xml:space="preserve"><value>Open variables</value></data>
+  <data name="Settings_SyncLink" xml:space="preserve"><value>Manage enablement, port and access token on the Variables page</value></data>
+  <data name="Settings_ServerVersion" xml:space="preserve"><value>Bundled scrcpy-server version</value></data>
+  <data name="Settings_Browse" xml:space="preserve"><value>Browse</value></data>
+  <data name="Settings_BundledAdb" xml:space="preserve"><value>Empty to use bundled adb</value></data>
+  <data name="Settings_AdbDescription" xml:space="preserve"><value>Used next time the ADB server starts; compatible running servers are reused.</value></data>
+  <data name="Settings_RestartRequired" xml:space="preserve"><value>Language saved. Restart the app to apply.</value></data>
+  <data name="Settings_About" xml:space="preserve"><value>About</value></data>
+  <data name="Settings_Version" xml:space="preserve"><value>Version {0}</value></data>
+  <data name="Settings_GitHub" xml:space="preserve"><value>GitHub repository</value></data>
+  <data name="Settings_Notices" xml:space="preserve"><value>Third-party notices</value></data>
+  <data name="Settings_OpenLink" xml:space="preserve"><value>View</value></data>
+  <data name="Settings_CheckNow" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="Settings_OpenLogs" xml:space="preserve"><value>Open logs folder</value></data>
+  <data name="Settings_OpenData" xml:space="preserve"><value>Open data folder</value></data>
+  <data name="Settings_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="Settings_UpdateAvailable" xml:space="preserve"><value>New version {0} is available</value></data>
+  <data name="Settings_ViewRelease" xml:space="preserve"><value>View release</value></data>
+  <data name="Settings_UpToDate" xml:space="preserve"><value>You are up to date.</value></data>
+  <data name="Settings_UpdateFailed" xml:space="preserve"><value>Could not check for updates. Try again later.</value></data>
+  <data name="Settings_TrayShow" xml:space="preserve"><value>Show ClickZen</value></data>
+  <data name="Settings_Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="Settings_ExitTitle" xml:space="preserve"><value>Exit ClickZen?</value></data>
+  <data name="Settings_ExitMessage" xml:space="preserve"><value>Unsaved changes will be lost. Running automation, recording and playback will stop.</value></data>
+  <data name="Settings_CommandFailed" xml:space="preserve"><value>Command failed: {0}</value></data>
   <data name="Vars_SchemeLabel.Text" xml:space="preserve"><value>Scheme: </value></data>
   <data name="Vars_ViewPicker.Header" xml:space="preserve"><value>Show values from</value></data>
   <data name="Vars_ViewGlobal" xml:space="preserve"><value>Global variables</value></data>

@@ -315,6 +315,21 @@ public sealed partial class RecordingPage : Page
 
     // ------------------------------------------------------------------ recording
 
+    public void ToggleRecording()
+    {
+        OnRecordClick(this, new RoutedEventArgs());
+    }
+
+    public async Task TogglePlaybackAsync()
+    {
+        if (Recorder.IsPlaying) Recorder.StopPlayback();
+        else await PlayAsync(0);
+    }
+
+    public Task SaveDocumentAsync() => SaveAsync(saveAs: false);
+
+    public Task OpenDocumentAsync() => OpenAsync();
+
     private void OnRecordClick(object sender, RoutedEventArgs e)
     {
         if (Recorder.IsRecording)
@@ -540,7 +555,9 @@ public sealed partial class RecordingPage : Page
         Recorder.New();
     }
 
-    private async void OnOpenClick(object sender, RoutedEventArgs e)
+    private async void OnOpenClick(object sender, RoutedEventArgs e) => await OpenAsync();
+
+    private async Task OpenAsync()
     {
         if (Recorder.IsPlaying || !await ConfirmDiscardAsync())
         {

@@ -101,9 +101,6 @@
                     </AppBarButton>
                     <AppBarButton x:Uid="Rec_Save" Click="OnSaveClick">
                         <AppBarButton.Icon><FontIcon Glyph="&#xE74E;" /></AppBarButton.Icon>
-                        <AppBarButton.KeyboardAccelerators>
-                            <KeyboardAccelerator Modifiers="Control" Key="S" />
-                        </AppBarButton.KeyboardAccelerators>
                     </AppBarButton>
                     <AppBarButton x:Uid="Rec_SaveAs" Click="OnSaveAsClick">
                         <AppBarButton.Icon><FontIcon Glyph="&#xE792;" /></AppBarButton.Icon>

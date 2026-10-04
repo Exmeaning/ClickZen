@@ -1,0 +1,77 @@
+# key	zh-CN	en-US
+Settings_Group_Appearance	外观	Appearance
+Settings_Group_Devices	设备默认值	Device defaults
+Settings_Group_Mirror	投屏	Mirror
+Settings_Group_Automation	自动化默认值	Automation defaults
+Settings_Group_Recording	录制	Recording
+Settings_Group_Sync	变量同步	Variable sync
+Settings_Group_Tools	工具	Tools
+Settings_Group_General	常规	General
+Settings_Appearance_Theme	主题	Theme
+Settings_Appearance_Language	语言	Language
+Settings_Devices_AutoConnectSaved	自动连接已保存设备	Auto-connect saved devices
+Settings_Devices_AutoReconnect	断线自动重连	Auto-reconnect
+Settings_Devices_MaxSize	最长边（0 为原始分辨率）	Maximum edge (0 for native resolution)
+Settings_Devices_VideoBitRateMbps	码率（Mbps）	Bit rate (Mbps)
+Settings_Devices_MaxFps	最大帧率	Maximum FPS
+Settings_Devices_InputMethod	输入方式	Input method
+Settings_Mirror_HighQualityScaling	高质量缩放	High-quality scaling
+Settings_Mirror_ShowTouches	显示触点	Show touches
+Settings_Mirror_StayAwake	保持常亮	Stay awake
+Settings_Mirror_OpenMirrorOnConnect	连接后打开投屏	Open mirror on connection
+Settings_Automation_DefaultCheckIntervalMs	检测间隔（ms）	Check interval (ms)
+Settings_Automation_DefaultPositionJitterDp	位置随机偏移（dp）	Position jitter (dp)
+Settings_Automation_DefaultDelayJitterPercent	延迟随机化（%）	Delay jitter (%)
+Settings_Automation_DefaultDurationJitterPercent	时长随机化（%）	Duration jitter (%)
+Settings_Automation_ClearVariablesOnStop	停止时清空变量	Clear variables on stop
+Settings_Recording_SwipeThresholdDp	滑动阈值（dp）	Swipe threshold (dp)
+Settings_Recording_LongPressThresholdMs	长按阈值（ms）	Long-press threshold (ms)
+Settings_Recording_KeepFullTrajectory	保存完整轨迹	Keep full trajectory
+Settings_Recording_DefaultPlaybackSpeed	默认回放速度	Default playback speed
+Settings_Sync_MaxClients	最大连接数	Maximum clients
+Settings_Tools_CustomAdbPath	自定义 adb 路径	Custom adb path
+Settings_General_ConfirmOnExit	退出时确认	Confirm on exit
+Settings_General_MinimizeToTray	关闭或最小化到托盘	Close or minimize to tray
+Settings_General_CheckForUpdates	启动时检查更新	Check for updates at startup
+Settings_General_LogLevel	日志级别	Log level
+Settings_Enum_ThemePreference_System	跟随系统	System
+Settings_Enum_ThemePreference_Light	浅色	Light
+Settings_Enum_ThemePreference_Dark	深色	Dark
+Settings_Enum_LanguagePreference_System	跟随系统	System
+Settings_Enum_LanguagePreference_ZhHans	简体中文	Simplified Chinese
+Settings_Enum_LanguagePreference_English	English	English
+Settings_Enum_InputMethodPreference_Scrcpy	scrcpy	scrcpy
+Settings_Enum_InputMethodPreference_Adb	adb	adb
+Settings_Enum_InputMethodPreference_Root	Root	Root
+Settings_Enum_LogLevelPreference_Debug	调试	Debug
+Settings_Enum_LogLevelPreference_Information	信息	Information
+Settings_Enum_LogLevelPreference_Warning	警告	Warning
+Settings_ResetDescription	恢复此组默认值	Restore defaults for this group
+Settings_Reset	恢复默认	Restore defaults
+Settings_On	开	On
+Settings_Off	关	Off
+Settings_OpenVariables	打开变量页	Open variables
+Settings_SyncLink	启用、端口与访问令牌在变量页管理	Manage enablement, port and access token on the Variables page
+Settings_ServerVersion	随包 scrcpy-server 版本	Bundled scrcpy-server version
+Settings_Browse	浏览	Browse
+Settings_BundledAdb	留空使用随包 adb	Empty to use bundled adb
+Settings_AdbDescription	用于下次启动 ADB 服务；现有兼容服务会继续复用。	Used next time the ADB server starts; compatible running servers are reused.
+Settings_RestartRequired	语言设置已保存，重启应用后生效。	Language saved. Restart the app to apply.
+Settings_About	关于	About
+Settings_Version	版本 {0}	Version {0}
+Settings_GitHub	GitHub 仓库	GitHub repository
+Settings_Notices	第三方声明	Third-party notices
+Settings_OpenLink	查看	View
+Settings_CheckNow	检查更新	Check for updates
+Settings_OpenLogs	打开日志文件夹	Open logs folder
+Settings_OpenData	打开数据文件夹	Open data folder
+Settings_OpenFolder	打开文件夹	Open folder
+Settings_UpdateAvailable	发现新版本 {0}	New version {0} is available
+Settings_ViewRelease	查看发布	View release
+Settings_UpToDate	当前已是最新版本。	You are up to date.
+Settings_UpdateFailed	无法检查更新，请稍后重试。	Could not check for updates. Try again later.
+Settings_TrayShow	显示 ClickZen	Show ClickZen
+Settings_Exit	退出	Exit
+Settings_ExitTitle	退出 ClickZen？	Exit ClickZen?
+Settings_ExitMessage	未保存的更改将丢失，运行中的方案、录制和回放将停止。	Unsaved changes will be lost. Running automation, recording and playback will stop.
+Settings_CommandFailed	命令失败：{0}	Command failed: {0}

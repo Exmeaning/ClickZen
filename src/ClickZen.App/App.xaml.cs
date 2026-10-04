@@ -31,8 +31,9 @@ public partial class App : Application
         paths.EnsureCreated();
 
         var memorySink = new InMemoryLogSink();
+        var levelSwitch = new Serilog.Core.LoggingLevelSwitch();
         var serilog = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.ControlledBy(levelSwitch)
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .Enrich.FromLogContext()
             .WriteTo.Async(a => a.File(
@@ -51,6 +52,7 @@ public partial class App : Application
         sc.AddSingleton<CrashReporter>();
         sc.AddSingleton<SettingsService>();
         sc.AddSingleton<ThemeService>();
+        sc.AddSingleton<UpdateService>();
         sc.AddSingleton<ILocalizer, Localizer>();
         sc.AddSingleton(new BundledTools());
 
@@ -77,7 +79,24 @@ public partial class App : Application
 
         _log = _services.GetRequiredService<ILogger<App>>();
         _crash = _services.GetRequiredService<CrashReporter>();
-        Localizer.ApplyLanguage(_services.GetRequiredService<SettingsService>().Current.Appearance.Language);
+        var settings = _services.GetRequiredService<SettingsService>();
+        void ApplyLogLevel() => levelSwitch.MinimumLevel = settings.Current.General.LogLevel switch
+        {
+            LogLevelPreference.Debug => LogEventLevel.Debug,
+            LogLevelPreference.Warning => LogEventLevel.Warning,
+            _ => LogEventLevel.Information,
+        };
+        ApplyLogLevel();
+        settings.Changed += (_, _) => ApplyLogLevel();
+        var cli = Environment.GetCommandLineArgs();
+        var languageIndex = Array.FindIndex(cli, a => a.Equals("--lang", StringComparison.OrdinalIgnoreCase));
+        var language = languageIndex >= 0 && languageIndex + 1 < cli.Length ? cli[languageIndex + 1] : "";
+        Localizer.ApplyLanguage(language switch
+        {
+            "en-US" => LanguagePreference.English,
+            "zh-CN" => LanguagePreference.ZhHans,
+            _ => settings.Current.Appearance.Language,
+        });
 
         UnhandledException += OnUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
@@ -123,6 +142,10 @@ public partial class App : Application
             return;
         }
 
+        if (!IsSelfCheck && _services.GetRequiredService<SettingsService>().Current.General.CheckForUpdates)
+        {
+            _ = _services.GetRequiredService<UpdateService>().CheckAsync(_window, false);
+        }
         _ = StartDevicesAsync();
         _ = _services.GetRequiredService<VariableSyncService>().InitializeAsync(_window.DispatcherQueue);
 
@@ -162,6 +185,8 @@ public partial class App : Application
 
     public static bool IsSmokeTest { get; } = Environment.GetCommandLineArgs().Contains("--smoke", StringComparer.OrdinalIgnoreCase);
 
+    public static bool IsSelfCheck { get; } = IsSmokeTest || Environment.GetCommandLineArgs().Any(a => a.StartsWith("--selftest-", StringComparison.OrdinalIgnoreCase));
+
     private async Task StartDevicesAsync()
     {
         try
@@ -178,6 +203,9 @@ public partial class App : Application
     {
         try
         {
+            var recording = _services.GetRequiredService<RecordingService>();
+            recording.StopRecording();
+            recording.StopPlayback();
             await _services.GetRequiredService<AutomationService>().StopAsync();
             await _services.GetRequiredService<VariableSyncService>().DisposeAsync();
             await _services.GetRequiredService<DeviceHub>().DisposeAsync();

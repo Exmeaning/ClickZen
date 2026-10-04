@@ -35,15 +35,9 @@
                 </AppBarButton>
                 <AppBarButton x:Uid="Auto_Open" Click="OnOpenClick">
                     <AppBarButton.Icon><FontIcon Glyph="&#xE8E5;" /></AppBarButton.Icon>
-                    <AppBarButton.KeyboardAccelerators>
-                        <KeyboardAccelerator Modifiers="Control" Key="O" />
-                    </AppBarButton.KeyboardAccelerators>
                 </AppBarButton>
                 <AppBarButton x:Uid="Auto_Save" Click="OnSaveClick">
                     <AppBarButton.Icon><FontIcon Glyph="&#xE74E;" /></AppBarButton.Icon>
-                    <AppBarButton.KeyboardAccelerators>
-                        <KeyboardAccelerator Modifiers="Control" Key="S" />
-                    </AppBarButton.KeyboardAccelerators>
                 </AppBarButton>
                 <AppBarButton x:Uid="Auto_SaveAs" Click="OnSaveAsClick">
                     <AppBarButton.Icon><FontIcon Glyph="&#xE792;" /></AppBarButton.Icon>
@@ -252,9 +246,6 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Button x:Name="RunButton" Style="{StaticResource AccentButtonStyle}" Click="OnRunClick" MinWidth="96">
-                    <Button.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="F5" />
-                    </Button.KeyboardAccelerators>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon x:Name="RunGlyph" Glyph="&#xE768;" FontSize="14" />
                         <TextBlock x:Name="RunText" />

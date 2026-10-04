@@ -710,7 +710,6 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
 
     private async void OnRunClick(object sender, RoutedEventArgs e) => await ToggleRunAsync();
 
-    /// <summary>Starts the scheme on the target devices, or stops it when running.</summary>
     internal async Task ToggleRunAsync()
     {
         if (Service.IsRunning)
@@ -833,7 +832,13 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
         }
     }
 
-    private async void OnOpenClick(object sender, RoutedEventArgs e)
+    public Task SaveDocumentAsync() => SaveAsync(saveAs: false);
+
+    public Task OpenDocumentAsync() => OpenAsync();
+
+    private async void OnOpenClick(object sender, RoutedEventArgs e) => await OpenAsync();
+
+    private async Task OpenAsync()
     {
         if (Service.IsRunning)
         {

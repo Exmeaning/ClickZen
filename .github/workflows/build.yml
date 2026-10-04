@@ -56,14 +56,16 @@ jobs:
         shell: pwsh
         run: |
           $exe = "src/ClickZen.App/bin/Release/net10.0-windows10.0.19041.0/win-x64/ClickZen.exe"
-          $env:CLICKZEN_DATA_DIR = "$env:RUNNER_TEMP\cz-smoke"
-          $env:CLICKZEN_SMOKE_MARKER = "$env:RUNNER_TEMP\cz-smoke-marker.txt"
-          $p = Start-Process -FilePath $exe -ArgumentList "--smoke" -PassThru
-          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "Smoke test timed out" }
-          $marker = Get-Content $env:CLICKZEN_SMOKE_MARKER -ErrorAction SilentlyContinue
-          if ($p.ExitCode -ne 0 -or $marker -ne "ok") {
-            Get-ChildItem "$env:CLICKZEN_DATA_DIR\logs" -ErrorAction SilentlyContinue | Get-Content
-            throw "Smoke test failed (exit $($p.ExitCode), marker '$marker')"
+          foreach ($lang in @("zh-CN", "en-US")) {
+            $env:CLICKZEN_DATA_DIR = "$env:RUNNER_TEMP\cz-smoke-$lang"
+            $env:CLICKZEN_SMOKE_MARKER = "$env:RUNNER_TEMP\cz-smoke-$lang-marker.txt"
+            $p = Start-Process -FilePath $exe -ArgumentList "--smoke --lang $lang" -PassThru
+            if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "Smoke test timed out ($lang)" }
+            $marker = Get-Content $env:CLICKZEN_SMOKE_MARKER -ErrorAction SilentlyContinue
+            if ($p.ExitCode -ne 0 -or $marker -ne "ok") {
+              Get-ChildItem "$env:CLICKZEN_DATA_DIR\logs" -ErrorAction SilentlyContinue | Get-Content
+              throw "Smoke test failed ($lang, exit $($p.ExitCode), marker '$marker')"
+            }
           }
 
       - name: Publish (folder)
@@ -76,8 +78,22 @@ jobs:
         run: >
           dotnet publish src/ClickZen.App/ClickZen.App.csproj -c Release -r win-x64
           -p:Version=${{ steps.ver.outputs.version }}
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true
           -o artifacts/single
+
+      - name: Verify published outputs
+        shell: pwsh
+        run: |
+          foreach ($kind in @("folder", "single")) {
+            $clean = "$env:RUNNER_TEMP\cz-release-$kind"
+            New-Item -ItemType Directory -Force $clean | Out-Null
+            if ($kind -eq "folder") { Copy-Item "artifacts/folder/*" $clean -Recurse } else { Copy-Item "artifacts/single/ClickZen.exe" $clean }
+            $env:CLICKZEN_DATA_DIR = "$env:RUNNER_TEMP\cz-release-$kind-data"
+            $env:CLICKZEN_SMOKE_MARKER = "$env:RUNNER_TEMP\cz-release-$kind-marker.txt"
+            $p = Start-Process "$clean\ClickZen.exe" -WorkingDirectory $clean -ArgumentList "--smoke --lang en-US" -PassThru
+            if (-not $p.WaitForExit(300000)) { $p.Kill(); throw "Published $kind smoke timed out" }
+            if ($p.ExitCode -ne 0 -or (Get-Content $env:CLICKZEN_SMOKE_MARKER) -ne "ok") { throw "Published $kind smoke failed" }
+          }
 
       - name: Package
         shell: pwsh

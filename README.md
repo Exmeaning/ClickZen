@@ -32,6 +32,24 @@
 
 adb、scrcpy-server 和 FFmpeg 均已随程序附带，无需另外安装。
 
+## 快速上手
+
+1. 启动 ClickZen，连接 USB 或无线 Android 设备。
+2. 在「投屏」页确认画面；模拟器也可在设备页绑定为窗口模式。
+3. 在「录制」页操作并保存 `.czrec`，或在「自动化」页创建方案并运行。
+4. 变量页可以启用变量同步服务；协议与示例见 [变量同步协议](docs/variable-sync-protocol.md)。
+
+截图与演示素材将在后续版本补充。
+
+
+### 模拟器窗口模式
+
+在设备页选择「绑定模拟器窗口」，选择窗口并裁剪 Android 画面，关联 ADB 设备（可选），确认参考分辨率后保存档案。窗口画面采用 Windows.Graphics.Capture / PrintWindow 捕获；通过关联 ADB 可以使用 scrcpy、adb 或 Root 输入。没有关联 ADB 时使用窗口输入，受模拟器自身后台输入能力限制。档案会记住窗口匹配规则与裁剪范围。
+
+### 变量同步
+
+变量页管理变量声明、实时值、同步方向以及 TCP 服务端。设置端口并生成访问令牌，按需配置防火墙；令牌以 Windows DPAPI 加密保存。该协议不提供 TLS，不应直接暴露到公网。客户端示例、握手与消息格式见 [变量同步协议](docs/variable-sync-protocol.md)。
+
 ## 从源码构建
 
 前置条件：
@@ -49,9 +67,16 @@ dotnet run --project src/ClickZen.App -c Release
 
 冒烟测试（逐页导航、切换主题后自动退出，退出码 0 表示通过）：
 
-```bash
-CLICKZEN_DATA_DIR=%TEMP%\cz-smoke src\ClickZen.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\ClickZen.exe --smoke
+```powershell
+$env:CLICKZEN_DATA_DIR = "$env:TEMP\cz-smoke"
+& src\ClickZen.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\ClickZen.exe --smoke --lang en-US
 ```
+
+`--lang zh-CN` / `--lang en-US` 临时覆盖本次启动语言，不改用户设置。`--page mirror` 可直接导航到页面。冒烟不联网、不启动 ADB。
+
+设备自检参数：`--selftest-input`、`--selftest-recording`、`--selftest-automation`、`--selftest-window`、`--selftest-variables`。前四项需要在线 Android 设备或 Android Emulator；窗口自检需要可捕获的模拟器窗口。每次自检应指定全新的 `CLICKZEN_DATA_DIR`；通过退出 0，失败非零。自检不会检查更新。
+
+快捷键：F9 录制/停止，F10 回放/停止（录制页）；F5 运行/停止（自动化页）；Ctrl+S 保存、Ctrl+O 打开当前文档；Ctrl+Shift+S 保存当前设备截图；Ctrl+, 打开设置。设置即时保存，语言需重启，设备/自动化默认值用于下一次连接或新建方案。
 
 ### 项目结构
 

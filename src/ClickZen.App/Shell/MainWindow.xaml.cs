@@ -43,6 +43,7 @@ public sealed partial class MainWindow : Window
         ThemeService.ApplyBackdrop(this);
         services.GetRequiredService<ThemeService>().Register(this);
 
+        InitializeDesktopFeatures(services);
         BuildNavigation();
         StatusVersion.Text = $"{AppInfo.Name} {AppInfo.Version}";
         StatusEngine.Text = _automation.StatusText;
@@ -87,6 +88,7 @@ public sealed partial class MainWindow : Window
     /// <summary>Shows a message at the top of the content area.</summary>
     public void ShowInfo(string message, InfoBarSeverity severity = InfoBarSeverity.Informational, string? title = null)
     {
+        GlobalInfoBar.ActionButton = null;
         GlobalInfoBar.Title = title ?? "";
         GlobalInfoBar.Message = message;
         GlobalInfoBar.Severity = severity;

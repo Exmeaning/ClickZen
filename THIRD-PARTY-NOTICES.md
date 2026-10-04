@@ -19,14 +19,14 @@ Taken unmodified from the official scrcpy v4.1 Windows release
 | Package | License |
 |---|---|
 | Microsoft.WindowsAppSDK, Microsoft.Windows.SDK.BuildTools | Microsoft Software License Terms (redistributable) |
-| Microsoft.Graphics.Win2D | MIT |
+| Microsoft.Graphics.Win2D | MIT (the package metadata requests the Win2D Microsoft EULA; source is MIT) |
 | CommunityToolkit.Mvvm, CommunityToolkit.WinUI.* | MIT |
 | WinUIEx | MIT |
 | Microsoft.Extensions.* | MIT |
 | Serilog, Serilog.Extensions.Logging, Serilog.Sinks.File, Serilog.Sinks.Async | Apache License 2.0 |
 | AdvancedSharpAdbClient | Apache License 2.0 |
-| FFmpeg.AutoGen | GNU LGPL v3 |
+| FFmpeg.AutoGen 8.1.0 | MIT (verified from the package's LICENSE.txt; older versions used LGPL) |
 | OpenCvSharp4, OpenCvSharp4.runtime.win | Apache License 2.0 (OpenCV: Apache License 2.0) |
 | Microsoft.Windows.CsWin32 | MIT |
-| Vortice.Direct3D11, Vortice.DXGI | MIT |
+| Vortice.Direct3D11, Vortice.DXGI, Vortice.DirectX, Vortice.Mathematics, SharpGen.Runtime* | MIT |
 | xunit.v3 (tests only) | Apache License 2.0 |

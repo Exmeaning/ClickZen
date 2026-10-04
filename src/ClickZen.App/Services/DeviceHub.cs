@@ -1,10 +1,13 @@
 using System.Collections.ObjectModel;
+using ClickZen.Core.Automation;
 using ClickZen.Core.Devices;
+using ClickZen.Core.Geometry;
 using ClickZen.Core.Settings;
 using ClickZen.Device;
 using ClickZen.Device.Adb;
 using ClickZen.Device.Decoding;
 using ClickZen.Device.Scrcpy;
+using ClickZen.Platform.Capture;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
@@ -12,7 +15,9 @@ using Microsoft.UI.Dispatching;
 namespace ClickZen.App.Services;
 
 /// <summary>
-/// UI-facing model of one device: adb info plus its (optional) scrcpy session.
+/// UI-facing model of one device: an adb device with its (optional) scrcpy session, or a bound emulator
+/// window (<see cref="Profile"/> set) with its window capture. Pages use <see cref="Frames"/>,
+/// <see cref="ScreenSize"/> and <see cref="CreateMirrorInput"/> so both kinds work the same way.
 /// All property changes are raised on the UI thread.
 /// </summary>
 public sealed partial class DeviceEntry : ObservableObject
@@ -23,7 +28,18 @@ public sealed partial class DeviceEntry : ObservableObject
     public partial DeviceInfo Info { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Frames), nameof(IsActive))]
     public partial ScrcpySession? Session { get; set; }
+
+    /// <summary>The emulator profile of a window device; null for adb devices.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsWindow), nameof(AdbSerial))]
+    public partial EmulatorProfile? Profile { get; set; }
+
+    /// <summary>Running window capture of a window device (null when stopped or the window is gone).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Frames), nameof(IsActive))]
+    public partial WindowFrameSource? WindowSource { get; set; }
 
     [ObservableProperty]
     public partial SessionState SessionState { get; set; } = SessionState.Disconnected;
@@ -36,6 +52,59 @@ public sealed partial class DeviceEntry : ObservableObject
 
     public string Serial => Info.Serial;
 
+    public bool IsWindow => Profile is not null;
+
+    /// <summary>The live picture: the scrcpy video or the window capture. Null when neither runs.</summary>
+    public ILiveFrameSource? Frames => (ILiveFrameSource?)Session ?? WindowSource;
+
+    /// <summary>True when <see cref="Frames"/> is running.</summary>
+    public bool IsActive => Frames is not null;
+
+    /// <summary>adb serial for shell commands and input: the device itself, or a window device's linked device (null = none).</summary>
+    public string? AdbSerial => Profile is null ? Serial : string.IsNullOrWhiteSpace(Profile.AdbSerial) ? null : Profile.AdbSerial.Trim();
+
+    /// <summary>
+    /// Device screen size in the current orientation (the space of all device coordinates).
+    /// Window devices: the profile's reference resolution (transposed when the captured picture has the other
+    /// orientation), or the frame size when none is set.
+    /// </summary>
+    public SizeI ScreenSize
+    {
+        get
+        {
+            if (Profile is { } p)
+            {
+                var frame = WindowSource?.Latest?.Size ?? default;
+                var r = p.ReferenceSize;
+                if (r.IsEmpty)
+                {
+                    return frame;
+                }
+
+                return !frame.IsEmpty && frame.Width != frame.Height && frame.IsLandscape != r.IsLandscape ? r.Transposed : r;
+            }
+
+            return Session is { } s && !s.DeviceSize.IsEmpty ? s.DeviceSize : Info.PhysicalSize;
+        }
+    }
+
+    /// <summary>Creates the mirror input of a window device (set by <see cref="DeviceHub"/>).</summary>
+    internal Func<IMirrorInput>? WindowInputFactory { get; set; }
+
+    /// <summary>Window devices: the user wants the capture running (it is restarted when the window reappears).</summary>
+    internal bool WindowWanted { get; set; }
+
+    internal bool WindowStarting { get; set; }
+
+    /// <summary>Handle of the window captured last (preferred when matching again).</summary>
+    internal nint LastWindowHandle { get; set; }
+
+    /// <summary>Live input for a mirror view showing this device; null when it cannot take input yet.</summary>
+    public IMirrorInput? CreateMirrorInput() =>
+        Session is { } s ? new ScrcpyMirrorInput(s.Injector)
+        : IsWindow && WindowInputFactory is { } create ? create()
+        : null;
+
     partial void OnInfoChanged(DeviceInfo value)
     {
         OnPropertyChanged(nameof(Serial));
@@ -47,8 +116,9 @@ public sealed partial class DeviceEntry : ObservableObject
 }
 
 /// <summary>
-/// Owns the adb server, the device list and one scrcpy session per connected device;
-/// tracks the "current" device shown in the title bar. Singleton.
+/// Owns the adb server, the device list and one scrcpy session per connected device, plus one window
+/// device per saved emulator profile (see DeviceHub.Windows.cs); tracks the "current" device shown in the
+/// title bar. Singleton.
 /// </summary>
 public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
 {
@@ -61,12 +131,17 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
     private readonly IScrcpyTransport _transport;
     private readonly ILoggerFactory _loggers;
     private readonly ILogger<DeviceHub> _log;
+    private readonly EmulatorProfileStore _profiles;
+    private readonly ILocalizer _loc;
     private DispatcherQueue? _ui;
     private bool _ffmpegReady;
 
     public DeviceHub(AdbServerHost server, AdbService adb, DeviceWatcher watcher, AutoConnector autoConnector,
-        SettingsService settings, BundledTools tools, IScrcpyTransport transport, ILoggerFactory loggers)
+        SettingsService settings, BundledTools tools, IScrcpyTransport transport, ILoggerFactory loggers,
+        EmulatorProfileStore profiles, ILocalizer loc)
     {
+        _profiles = profiles;
+        _loc = loc;
         _server = server;
         _adb = adb;
         _watcher = watcher;
@@ -78,6 +153,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         _log = loggers.CreateLogger<DeviceHub>();
         _watcher.DevicesChanged += OnDevicesChanged;
         _watcher.TrackingChanged += (_, tracking) => Ui(() => IsAdbAvailable = tracking);
+        _profiles.Changed += (_, _) => Ui(SyncProfiles);
     }
 
     public ObservableCollection<DeviceEntry> Devices { get; } = [];
@@ -123,6 +199,8 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
 
         await _watcher.StartAsync(ct);
         Sync(_watcher.Devices);
+        SyncProfiles();
+        StartWindowMonitor();
 
         if (_settings.Current.Devices.AutoConnectSaved)
         {
@@ -144,6 +222,11 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
     /// </summary>
     public async Task<ClickZen.Core.Input.ITouchInjector> GetInjectorAsync(DeviceEntry entry, CancellationToken ct = default)
     {
+        if (entry.IsWindow)
+        {
+            return await GetWindowInjectorAsync(entry, ct);
+        }
+
         var pref = _settings.Current.Devices.InputMethod;
         if (pref == InputMethodPreference.Root)
         {
@@ -173,6 +256,12 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
     /// <summary>Starts the scrcpy session for a device (no-op if already running).</summary>
     public async Task ConnectAsync(DeviceEntry entry, CancellationToken ct = default)
     {
+        if (entry.IsWindow)
+        {
+            await StartWindowAsync(entry, ct);
+            return;
+        }
+
         if (entry.Session is not null || entry.Info.State != DeviceAdbState.Online)
         {
             return;
@@ -207,6 +296,12 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
 
     public async Task DisconnectAsync(DeviceEntry entry)
     {
+        if (entry.IsWindow)
+        {
+            await StopWindowAsync(entry);
+            return;
+        }
+
         var session = entry.Session;
         if (session is null)
         {
@@ -235,7 +330,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
     private void Sync(IReadOnlyList<DeviceInfo> list)
     {
         var bySerial = list.ToDictionary(d => d.Serial, StringComparer.Ordinal);
-        foreach (var gone in Devices.Where(e => !bySerial.ContainsKey(e.Serial)).ToList())
+        foreach (var gone in Devices.Where(e => !e.IsWindow && !bySerial.ContainsKey(e.Serial)).ToList())
         {
             Devices.Remove(gone);
             _ = DisconnectAsync(gone);
@@ -247,7 +342,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
 
         foreach (var info in list)
         {
-            var existing = Devices.FirstOrDefault(e => e.Serial == info.Serial);
+            var existing = Devices.FirstOrDefault(e => !e.IsWindow && e.Serial == info.Serial);
             if (existing is null)
             {
                 var entry = new DeviceEntry(info);
@@ -268,6 +363,8 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
                 }
             }
         }
+
+        RefreshWindowInfos();
     }
 
     private async Task ConnectQuietlyAsync(DeviceEntry entry)
@@ -297,6 +394,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _windowMonitor?.Cancel();
         foreach (var e in Devices.ToList())
         {
             await DisconnectAsync(e);

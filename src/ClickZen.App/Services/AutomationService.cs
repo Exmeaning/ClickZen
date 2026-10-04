@@ -695,7 +695,7 @@ public sealed partial class AutomationService : ObservableObject, IDisposable
 
     private async Task<(Scheme Scheme, AutomationEngine Engine)> CreateEngineAsync(DeviceEntry entry, string label, CancellationToken ct)
     {
-        if (entry.Session is not { } session)
+        if (entry.Frames is not { } frames)
         {
             throw new InvalidOperationException(Loc["Auto_DeviceNotMirroring"]);
         }
@@ -712,16 +712,18 @@ public sealed partial class AutomationService : ObservableObject, IDisposable
         var baseDir = FilePath is null ? null : Path.GetDirectoryName(FilePath);
         var env = new EngineEnvironment
         {
-            Frames = session,
+            Frames = frames,
             Input = input,
             Matcher = _matcher,
             ScreenSize = () => RecordingService.CurrentScreen(entry),
             DpScale = entry.Info.DpScale,
-            Shell = new AdbDeviceShell(_hub.Adb, entry.Serial),
+            Shell = entry.AdbSerial is { } shellSerial ? new AdbDeviceShell(_hub.Adb, shellSerial) : null,
             ResolveRecording = id => ResolveRecording(id, recordings, baseDir),
             GlobalVariables = GlobalVariables,
             Logger = _loggers.CreateLogger("ClickZen.Automation"),
             DeviceLabel = label,
+            // Window capture produces no frame while the picture is still: do not wait long for one after an action.
+            FreshFrameTimeout = entry.IsWindow ? TimeSpan.FromMilliseconds(500) : TimeSpan.FromSeconds(1),
         };
         _log.LogInformation("Engine for {Device}: input {Input}, screen {Screen}, ref {Ref}", label, input.Name, screen, scheme.RefSize);
         return (scheme, new AutomationEngine(scheme, env));

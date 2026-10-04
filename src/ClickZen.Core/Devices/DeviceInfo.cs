@@ -9,6 +9,8 @@ public enum ConnectionKind
     Wireless,
     /// <summary>Emulator reached over adb TCP on localhost (MuMu, LDPlayer, Nox…).</summary>
     Emulator,
+    /// <summary>A bound emulator window (<see cref="EmulatorProfile"/>): frames from window capture, input via its linked adb device.</summary>
+    Window,
 }
 
 /// <summary>adb-reported state of a device.</summary>

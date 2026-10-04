@@ -113,7 +113,7 @@ public sealed partial class RecordingPage : Page
             _entry.PropertyChanged += OnEntryChanged;
         }
 
-        Mirror.Session = _entry?.Session;
+        Mirror.Show(_entry);
         UpdatePlaceholder();
         UpdateTicker();
         UpdateRecordControls();
@@ -126,12 +126,12 @@ public sealed partial class RecordingPage : Page
             return;
         }
 
-        if (Recorder.RecordingSource == RecordingInputSource.Mirror && _entry?.Session is null)
+        if (Recorder.RecordingSource == RecordingInputSource.Mirror && _entry?.Frames is null)
         {
             Recorder.StopRecording();
         }
 
-        Mirror.Session = _entry?.Session;
+        Mirror.Show(_entry);
         UpdatePlaceholder();
         UpdateRecordControls();
     });
@@ -197,25 +197,16 @@ public sealed partial class RecordingPage : Page
             return;
         }
 
-        var state = entry.SessionState;
-        Mirror.PlaceholderBusy = state is SessionState.Connecting or SessionState.Reconnecting;
-        Mirror.PlaceholderMessage = entry.Session is null
-            ? _loc["Mirror_NotStarted"]
-            : state switch
-            {
-                SessionState.Connecting => _loc["SessionState_Connecting"],
-                SessionState.Reconnecting => _loc.Format("Mirror_Reconnecting", entry.SessionError ?? ""),
-                SessionState.Faulted => _loc.Format("Mirror_Failed", entry.SessionError ?? ""),
-                _ => _loc["Mirror_WaitingForVideo"],
-            };
+        Mirror.PlaceholderBusy = entry.SessionState is SessionState.Connecting or SessionState.Reconnecting;
+        Mirror.PlaceholderMessage = DeviceUi.PlaceholderText(entry);
     }
 
     private void UpdateTicker()
     {
-        var session = _entry?.Session;
-        InfoText.Text = session is null || session.VideoSize.IsEmpty
+        var screen = _entry?.Frames?.Latest is null ? default : _entry.ScreenSize;
+        InfoText.Text = screen.IsEmpty
             ? _entry?.Info.DisplayName ?? ""
-            : _loc.Format("Rec_DeviceInfo", _entry!.Info.DisplayName, session.DeviceSize.Width, session.DeviceSize.Height);
+            : _loc.Format("Rec_DeviceInfo", _entry!.Info.DisplayName, screen.Width, screen.Height);
 
         if (Recorder.IsRecording)
         {
@@ -332,14 +323,14 @@ public sealed partial class RecordingPage : Page
             return;
         }
 
-        var session = _entry?.Session;
-        if (_entry is null || session is null)
+        if (_entry is null || _entry.Frames is not { } frames)
         {
-            ShowInfo(_entry is null ? _loc["Mirror_NoDevice"] : _loc["Mirror_NotStarted"], InfoBarSeverity.Warning);
+            ShowInfo(DeviceUi.PlaceholderText(_entry), InfoBarSeverity.Warning);
             return;
         }
 
-        if (session.VideoSize.IsEmpty || session.DeviceSize.IsEmpty)
+        var screen = _entry.ScreenSize;
+        if (frames.Latest is null || screen.IsEmpty)
         {
             ShowInfo(_loc["Mirror_NoFrame"], InfoBarSeverity.Warning);
             return;
@@ -350,7 +341,7 @@ public sealed partial class RecordingPage : Page
             ShowInfo(_loc["Rec_OrientationWarning"], InfoBarSeverity.Warning);
         }
 
-        Recorder.StartRecording(_entry, session.DeviceSize, RecordingInputSource.Mirror);
+        Recorder.StartRecording(_entry, screen, RecordingInputSource.Mirror);
         Mirror.Focus(FocusState.Programmatic);
     }
 
@@ -407,7 +398,7 @@ public sealed partial class RecordingPage : Page
 
     private async void OnMirrorCharacterReceived(UIElement sender, CharacterReceivedRoutedEventArgs args)
     {
-        if (char.IsControl(args.Character) || _entry?.Session is not { } session)
+        if (char.IsControl(args.Character) || _entry?.Frames is null)
         {
             return;
         }
@@ -415,14 +406,7 @@ public sealed partial class RecordingPage : Page
         args.Handled = true;
         var text = args.Character.ToString();
         Recorder.FeedText(text, Environment.TickCount64);
-        try
-        {
-            await session.Injector.TextAsync(text, CancellationToken.None);
-        }
-        catch (Exception ex)
-        {
-            ShowInfo(ex.Message, InfoBarSeverity.Warning);
-        }
+        await Mirror.SendTextAsync(text); // failures surface through Mirror.InputFailed
     }
 
     private void OnHoverChanged(object? sender, MirrorPoint? p) =>
@@ -504,7 +488,7 @@ public sealed partial class RecordingPage : Page
     private void OnPointPicked(object? sender, MirrorPoint p)
     {
         var docScreen = Recorder.Document.ScreenSize;
-        var device = _entry?.Session?.DeviceSize ?? default;
+        var device = _entry?.ScreenSize ?? default;
         var x = (double)p.Device.X;
         var y = (double)p.Device.Y;
         if (!docScreen.IsEmpty && !device.IsEmpty)

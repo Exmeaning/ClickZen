@@ -1,8 +1,7 @@
+using ClickZen.App.Services;
 using ClickZen.Core.Automation;
 using ClickZen.Core.Geometry;
 using ClickZen.Core.Input;
-using ClickZen.Device.Scrcpy;
-using ClickZen.Device.Scrcpy.Protocol;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
@@ -20,14 +19,17 @@ namespace ClickZen.App.Controls;
 public readonly record struct MirrorPoint(PointI Device, PointI Frame, (byte R, byte G, byte B)? Color);
 
 /// <summary>
-/// Renders a <see cref="ScrcpySession"/>'s frames with Win2D (letterboxed, aspect preserved) and turns
-/// mouse / touch / pen input into live multi-touch on the device. Exposes device-space touch events
-/// for the recorder and a "pick" mode for choosing coordinates.
+/// Renders a device's frames (<see cref="ILiveFrameSource"/>: scrcpy video or an emulator window capture) with
+/// Win2D (letterboxed, aspect preserved) and turns mouse / touch / pen input into live touches on the device
+/// through an <see cref="IMirrorInput"/>. Exposes device-space touch events for the recorder and a "pick" mode
+/// for choosing coordinates.
 /// </summary>
 public sealed partial class MirrorView : UserControl
 {
     private readonly Lock _frameLock = new();
-    private ScrcpySession? _session;
+    private ILiveFrameSource? _source;
+    private IMirrorInput? _input;
+    private Func<SizeI>? _screen;
     private Frame? _pendingFrame;
     private Frame? _shownFrame;
     private CanvasBitmap? _bitmap;
@@ -45,33 +47,54 @@ public sealed partial class MirrorView : UserControl
 
     // ------------------------------------------------------------------ public API
 
-    /// <summary>The session to display and control. Null shows the placeholder.</summary>
-    public ScrcpySession? Session
-    {
-        get => _session;
-        set
-        {
-            if (ReferenceEquals(_session, value))
-            {
-                return;
-            }
+    /// <summary>The frames shown; null shows the placeholder.</summary>
+    public ILiveFrameSource? Source => _source;
 
+    /// <summary>
+    /// Shows a device: its live frames (<see cref="DeviceEntry.Frames"/>), its screen size for coordinate mapping
+    /// and its live input. Null shows the placeholder. Calling it again for the same picture keeps the input
+    /// (and any finger that is down) as it is.
+    /// </summary>
+    public void Show(DeviceEntry? entry)
+    {
+        var source = entry?.Frames;
+        if (entry is null || source is null)
+        {
+            Attach(null, null, null);
+            return;
+        }
+
+        if (ReferenceEquals(source, _source))
+        {
+            _input ??= entry.CreateMirrorInput();
+            return;
+        }
+
+        Attach(source, entry.CreateMirrorInput(), () => entry.ScreenSize);
+    }
+
+    /// <summary>Shows any frame source with an optional input backend and device screen size (null/empty = frame pixels).</summary>
+    public void Attach(ILiveFrameSource? source, IMirrorInput? input, Func<SizeI>? screen)
+    {
+        if (!ReferenceEquals(_source, source))
+        {
             Detach();
-            _session = value;
-            if (_session is not null)
+            _source = source;
+            if (_source is not null)
             {
-                _session.FrameArrived += OnFrameArrived;
-                _session.StateChanged += OnSessionStateChanged;
+                _source.FrameArrived += OnFrameArrived;
                 lock (_frameLock)
                 {
-                    _pendingFrame = _session.Latest;
+                    _pendingFrame = _source.Latest;
                 }
 
                 QueueRedraw();
             }
-
-            UpdatePlaceholder();
         }
+
+        _input = source is null ? null : input;
+        _screen = source is null ? null : screen;
+        UpdatePlaceholder();
     }
 
     /// <summary>When false, pointer input is not forwarded to the device (view-only).</summary>
@@ -115,14 +138,15 @@ public sealed partial class MirrorView : UserControl
 
     private void Detach()
     {
-        if (_session is not null)
+        if (_source is not null)
         {
-            _session.FrameArrived -= OnFrameArrived;
-            _session.StateChanged -= OnSessionStateChanged;
+            _source.FrameArrived -= OnFrameArrived;
         }
 
         ReleaseAllFingers();
-        _session = null;
+        _source = null;
+        _input = null;
+        _screen = null;
         lock (_frameLock)
         {
             _pendingFrame = null;
@@ -143,8 +167,6 @@ public sealed partial class MirrorView : UserControl
 
         QueueRedraw();
     }
-
-    private void OnSessionStateChanged(object? sender, SessionState e) => DispatcherQueue.TryEnqueue(UpdatePlaceholder);
 
     /// <summary>Coalesces redraw requests: at most one pending UI-thread invalidate at a time.</summary>
     private void QueueRedraw()
@@ -260,7 +282,7 @@ public sealed partial class MirrorView : UserControl
             return false;
         }
 
-        var deviceSize = _session?.DeviceSize ?? frame.Size;
+        var deviceSize = _screen?.Invoke() ?? frame.Size;
         var map = new FrameToDevice(frame.Size, deviceSize.IsEmpty ? frame.Size : deviceSize);
         var device = map.ClampToDevice(map.FrameToDevicePoint(framePt));
         var fi = framePt.Round();
@@ -316,14 +338,14 @@ public sealed partial class MirrorView : UserControl
             return true;
         }
 
-        if (!InputEnabled || _session is null || _fingers.Count >= 10)
+        if (!InputEnabled || _input is null || _fingers.Count >= 10)
         {
             return false;
         }
 
         var finger = Enumerable.Range(0, 10).First(i => !_fingers.ContainsValue(i));
         _fingers[pointerId] = finger;
-        Forward(MotionAction.Down, TouchPhase.Down, finger, pointerId, mp.Device);
+        Forward(TouchPhase.Down, finger, pointerId, mp.Device);
         return true;
     }
 
@@ -337,7 +359,7 @@ public sealed partial class MirrorView : UserControl
 
         if (TryMap(viewport, clamp: true, out var mp) && _lastDevicePoint.GetValueOrDefault(pointerId) != mp.Device)
         {
-            Forward(MotionAction.Move, TouchPhase.Move, finger, pointerId, mp.Device);
+            Forward(TouchPhase.Move, finger, pointerId, mp.Device);
         }
 
         return true;
@@ -352,7 +374,7 @@ public sealed partial class MirrorView : UserControl
         }
 
         var device = TryMap(viewport, clamp: true, out var mp) ? mp.Device : _lastDevicePoint.GetValueOrDefault(pointerId);
-        Forward(MotionAction.Up, TouchPhase.Up, finger, pointerId, device);
+        Forward(TouchPhase.Up, finger, pointerId, device);
         _lastDevicePoint.Remove(pointerId);
         return true;
     }
@@ -400,7 +422,7 @@ public sealed partial class MirrorView : UserControl
     {
         if (_fingers.Remove(e.Pointer.PointerId, out var finger))
         {
-            Forward(MotionAction.Up, TouchPhase.Up, finger, e.Pointer.PointerId, _lastDevicePoint.GetValueOrDefault(e.Pointer.PointerId));
+            Forward(TouchPhase.Up, finger, e.Pointer.PointerId, _lastDevicePoint.GetValueOrDefault(e.Pointer.PointerId));
             _lastDevicePoint.Remove(e.Pointer.PointerId);
         }
     }
@@ -420,7 +442,7 @@ public sealed partial class MirrorView : UserControl
 
     private void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
     {
-        if (!InputEnabled || _session is null || PickMode)
+        if (!InputEnabled || _input is null || PickMode)
         {
             return;
         }
@@ -433,20 +455,20 @@ public sealed partial class MirrorView : UserControl
 
         var delta = pt.Properties.MouseWheelDelta / 120f;
         var horizontal = pt.Properties.IsHorizontalMouseWheel;
-        _ = Guard(_session.Injector.ScrollAsync(mp.Device, horizontal ? delta : 0, horizontal ? 0 : delta, CancellationToken.None));
+        _ = Guard(_input.ScrollAsync(mp.Device, horizontal ? delta : 0, horizontal ? 0 : delta, CancellationToken.None));
         e.Handled = true;
     }
 
-    private void Forward(MotionAction action, TouchPhase phase, int finger, uint pointerId, PointI device)
+    private void Forward(TouchPhase phase, int finger, uint pointerId, PointI device)
     {
         _lastDevicePoint[pointerId] = device;
-        var session = _session;
-        if (session is null)
+        var input = _input;
+        if (input is null)
         {
             return;
         }
 
-        _ = Guard(session.Injector.SendRawTouchAsync(action, finger, device, CancellationToken.None));
+        _ = Guard(input.TouchAsync(phase, finger, device, CancellationToken.None));
         TouchForwarded?.Invoke(this, new RawTouchEvent(finger, phase, device, Environment.TickCount64));
     }
 
@@ -454,7 +476,7 @@ public sealed partial class MirrorView : UserControl
     {
         foreach (var (pointerId, finger) in _fingers.ToArray())
         {
-            Forward(MotionAction.Up, TouchPhase.Up, finger, pointerId, _lastDevicePoint.GetValueOrDefault(pointerId));
+            Forward(TouchPhase.Up, finger, pointerId, _lastDevicePoint.GetValueOrDefault(pointerId));
         }
 
         _fingers.Clear();
@@ -464,14 +486,18 @@ public sealed partial class MirrorView : UserControl
     /// <summary>Sends a key press to the device (used by the toolbar and right/middle click).</summary>
     public Task SendKeyAsync(int keyCode)
     {
-        if (_session is null)
+        if (_input is null)
         {
             return Task.CompletedTask;
         }
 
         KeyForwarded?.Invoke(this, keyCode);
-        return Guard(_session.Injector.KeyAsync(keyCode, CancellationToken.None));
+        return Guard(_input.KeyAsync(keyCode, CancellationToken.None));
     }
+
+    /// <summary>Types text on the device; failures raise <see cref="InputFailed"/>.</summary>
+    public Task SendTextAsync(string text) =>
+        _input is null ? Task.CompletedTask : Guard(_input.TextAsync(text, CancellationToken.None));
 
     private async Task Guard(Task t)
     {

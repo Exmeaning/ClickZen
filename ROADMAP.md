@@ -13,7 +13,7 @@ C# / WinUI 3 完全重写，不兼容 1.x 数据格式。
 | M4 | adb input 兜底与 Root sendevent 输入 | 完成 |
 | M5 | 录制与回放（投屏内 / 设备端 getevent），时间轴编辑 | 完成 |
 | M6 | 自动化界面：任务编辑器、画面工作台、实时匹配测试、多设备运行 | 完成 |
-| M7 | 模拟器窗口模式（Windows.Graphics.Capture） | 计划 |
+| M7 | 模拟器窗口模式（Windows.Graphics.Capture） | 完成 |
 | M8 | 变量页与网络同步服务 | 完成 |
 | M9 | 设置页完善、发布产物 | 计划 |
 

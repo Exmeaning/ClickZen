@@ -1,3 +1,4 @@
+using ClickZen.Core.Automation;
 using ClickZen.Core.Devices;
 using ClickZen.Device.Scrcpy;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ public static class DeviceUi
     {
         ConnectionKind.Wireless => "\uE701", // Wifi
         ConnectionKind.Emulator => "\uE7F4", // TVMonitor
+        ConnectionKind.Window => "\uE737",   // Window
         _ => "\uE8EA",                       // CellPhone
     };
 
@@ -25,6 +27,7 @@ public static class DeviceUi
         {
             ConnectionKind.Wireless => Loc["DeviceKind_Wireless"],
             ConnectionKind.Emulator => Loc["DeviceKind_Emulator"],
+            ConnectionKind.Window => Loc["Window_Kind"],
             _ => Loc["DeviceKind_Usb"],
         });
         if (!info.PhysicalSize.IsEmpty)
@@ -77,12 +80,52 @@ public static class DeviceUi
         return (Brush)Application.Current.Resources[key];
     }
 
-    public static Visibility CanStart(DeviceAdbState adb, ScrcpySession? session) =>
-        adb == DeviceAdbState.Online && session is null ? Visibility.Visible : Visibility.Collapsed;
+    public static Visibility CanStart(DeviceAdbState adb, ILiveFrameSource? frames) =>
+        adb == DeviceAdbState.Online && frames is null ? Visibility.Visible : Visibility.Collapsed;
 
-    public static Visibility HasSession(ScrcpySession? session) => session is null ? Visibility.Collapsed : Visibility.Visible;
+    public static Visibility HasSession(ILiveFrameSource? frames) => frames is null ? Visibility.Collapsed : Visibility.Visible;
 
-    public static Visibility IsNetwork(ConnectionKind kind) => kind == ConnectionKind.Usb ? Visibility.Collapsed : Visibility.Visible;
+    public static Visibility IsNetwork(ConnectionKind kind) => kind is ConnectionKind.Wireless or ConnectionKind.Emulator ? Visibility.Visible : Visibility.Collapsed;
+
+    public static Visibility IsWindowKind(ConnectionKind kind) => kind == ConnectionKind.Window ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>"Start mirroring" for adb devices, "Start capture" / "Reconnect" for window devices.</summary>
+    public static string StartText(ConnectionKind kind, SessionState state) =>
+        kind != ConnectionKind.Window ? Loc["Window_StartMirror"]
+        : state == SessionState.Faulted ? Loc["Window_Reconnect"]
+        : Loc["Window_StartCapture"];
+
+    public static string StopText(ConnectionKind kind) =>
+        kind == ConnectionKind.Window ? Loc["Window_StopCapture"] : Loc["Window_StopMirror"];
+
+    /// <summary>What a picture view shows while a device has no picture (no device / not started / connecting / failed).</summary>
+    public static string PlaceholderText(DeviceEntry? entry)
+    {
+        if (entry is null)
+        {
+            return Loc["Mirror_NoDevice"];
+        }
+
+        if (entry.Frames is null)
+        {
+            return entry.IsWindow
+                ? entry.SessionState switch
+                {
+                    SessionState.Connecting => Loc["SessionState_Connecting"],
+                    SessionState.Faulted => Loc.Format("Window_Failed", entry.SessionError ?? ""),
+                    _ => Loc["Window_NotStarted"],
+                }
+                : entry.SessionState == SessionState.Connecting ? Loc["SessionState_Connecting"] : Loc["Mirror_NotStarted"];
+        }
+
+        return entry.SessionState switch
+        {
+            SessionState.Connecting => Loc["SessionState_Connecting"],
+            SessionState.Reconnecting => Loc.Format("Mirror_Reconnecting", entry.SessionError ?? ""),
+            SessionState.Faulted => Loc.Format("Mirror_Failed", entry.SessionError ?? ""),
+            _ => Loc["Mirror_WaitingForVideo"],
+        };
+    }
 
     public static Visibility NotTrue(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 

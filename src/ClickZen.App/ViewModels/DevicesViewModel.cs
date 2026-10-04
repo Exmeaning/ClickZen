@@ -26,6 +26,16 @@ public sealed partial class SavedDeviceItem : ObservableObject
     public partial bool IsBusy { get; set; }
 }
 
+/// <summary>A saved emulator window profile row.</summary>
+public sealed class EmulatorProfileItem(EmulatorProfile model, string description)
+{
+    public EmulatorProfile Model { get; } = model;
+
+    public string Name => Model.Name;
+
+    public string Description { get; } = description;
+}
+
 public sealed partial class DevicesViewModel : ObservableObject
 {
     private readonly DeviceHub _hub;
@@ -47,7 +57,64 @@ public sealed partial class DevicesViewModel : ObservableObject
             RefreshSavedConnectionState();
         };
         _saved.Changed += (_, _) => App.Current.MainWindow?.DispatcherQueue.TryEnqueue(LoadSaved);
+        _hub.Profiles.Changed += (_, _) => App.Current.MainWindow?.DispatcherQueue.TryEnqueue(LoadProfiles);
         LoadSaved();
+        LoadProfiles();
+    }
+
+    public ObservableCollection<EmulatorProfileItem> Profiles { get; } = [];
+
+    public bool HasProfiles => Profiles.Count > 0;
+
+    private void LoadProfiles()
+    {
+        Profiles.Clear();
+        try
+        {
+            foreach (var p in _hub.Profiles.GetAll())
+            {
+                var parts = new List<string> { p.Match.Title ?? p.Match.ProcessName ?? "" };
+                parts.Add(p.CropRect is { } c ? $"{c.Width}×{c.Height} @ {c.X},{c.Y}" : _loc["Window_ClientArea"]);
+                if (!p.ReferenceSize.IsEmpty)
+                {
+                    parts.Add($"{p.ReferenceSize.Width}×{p.ReferenceSize.Height}");
+                }
+
+                parts.Add(p.AdbSerial ?? _loc["Window_AdbNone"]);
+                Profiles.Add(new EmulatorProfileItem(p, string.Join("  ·  ", parts.Where(s => s.Length > 0))));
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning(ex, "Could not load emulator profiles");
+            Report(ex.Message, true);
+        }
+
+        OnPropertyChanged(nameof(HasProfiles));
+    }
+
+    [RelayCommand]
+    private void RemoveProfile(EmulatorProfileItem item)
+    {
+        try
+        {
+            _hub.Profiles.Remove(item.Model.Id);
+            Report(_loc.Format("Window_ProfileRemoved", item.Name), false);
+        }
+        catch (Exception ex)
+        {
+            Report(ex.Message, true);
+        }
+    }
+
+    /// <summary>After the wizard saved a profile: report it and make its device current.</summary>
+    public void OnProfileSaved(EmulatorProfile profile)
+    {
+        Report(_loc.Format("Window_ProfileSaved", profile.Name), false);
+        if (_hub.FindWindowDevice(profile.Id) is { } entry)
+        {
+            _hub.Current = entry;
+        }
     }
 
     public ObservableCollection<DeviceEntry> Devices => _hub.Devices;
@@ -109,6 +176,10 @@ public sealed partial class DevicesViewModel : ObservableObject
     {
         await RunAsync(() => _hub.ConnectAsync(entry));
         _hub.Current = entry;
+        if (entry.IsWindow && entry.Frames is null && entry.SessionError is { } error)
+        {
+            Report(error, true);
+        }
     }
 
     [RelayCommand]

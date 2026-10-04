@@ -46,4 +46,45 @@ public sealed partial class DevicesPage : Page
         var dialog = new AddWirelessDialog(ViewModel) { XamlRoot = XamlRoot };
         await dialog.ShowAsync();
     }
+
+    private async void OnBindWindowClick(object sender, RoutedEventArgs e) => await RunWizardAsync(null);
+
+    private async void OnEditProfileClick(object sender, RoutedEventArgs e) => await RunWizardAsync(Tagged<EmulatorProfileItem>(sender).Model);
+
+    private async void OnEditWindowDeviceClick(object sender, RoutedEventArgs e)
+    {
+        if (Tagged<DeviceEntry>(sender).Profile is { } profile)
+        {
+            await RunWizardAsync(profile);
+        }
+    }
+
+    private async void OnRemoveProfileClick(object sender, RoutedEventArgs e)
+    {
+        var item = Tagged<EmulatorProfileItem>(sender);
+        var loc = App.Current.Services.GetRequiredService<ILocalizer>();
+        var confirm = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = loc["Window_RemoveTitle"],
+            Content = loc.Format("Window_RemoveConfirm", item.Name),
+            PrimaryButtonText = loc["Window_RemoveYes"],
+            CloseButtonText = loc["Common_Cancel"],
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirm.ShowAsync() == ContentDialogResult.Primary)
+        {
+            ViewModel.RemoveProfileCommand.Execute(item);
+        }
+    }
+
+    private async Task RunWizardAsync(ClickZen.Core.Devices.EmulatorProfile? profile)
+    {
+        var dialog = new BindWindowDialog(ViewModel.Hub, profile) { XamlRoot = XamlRoot };
+        await dialog.ShowAsync();
+        if (dialog.SavedProfile is { } saved)
+        {
+            ViewModel.OnProfileSaved(saved);
+        }
+    }
 }

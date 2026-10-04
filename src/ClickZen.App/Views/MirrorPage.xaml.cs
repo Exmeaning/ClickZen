@@ -81,16 +81,27 @@ public sealed partial class MirrorPage : Page
             _entry.PropertyChanged += OnEntryChanged;
         }
 
-        Mirror.Session = _entry?.Session;
+        Mirror.Show(_entry);
         UpdatePlaceholder();
         UpdateInfo();
+        UpdateScrcpyTools();
     }
 
     private void OnEntryChanged(object? sender, PropertyChangedEventArgs e) => DispatcherQueue.TryEnqueue(() =>
     {
-        Mirror.Session = _entry?.Session;
+        Mirror.Show(_entry);
         UpdatePlaceholder();
+        UpdateScrcpyTools();
     });
+
+    /// <summary>Rotate / screen off / paste need the scrcpy control channel; window devices do not have one.</summary>
+    private void UpdateScrcpyTools()
+    {
+        var scrcpy = _entry is not { IsWindow: true };
+        RotateButton.IsEnabled = scrcpy;
+        ScreenOffToggle.IsEnabled = scrcpy;
+        PasteButton.IsEnabled = scrcpy;
+    }
 
     private void UpdatePlaceholder()
     {
@@ -102,31 +113,24 @@ public sealed partial class MirrorPage : Page
             return;
         }
 
-        var state = entry.SessionState;
-        Mirror.PlaceholderBusy = state is SessionState.Connecting or SessionState.Reconnecting;
-        Mirror.PlaceholderMessage = entry.Session is null
-            ? _loc["Mirror_NotStarted"]
-            : state switch
-            {
-                SessionState.Connecting => _loc["SessionState_Connecting"],
-                SessionState.Reconnecting => _loc.Format("Mirror_Reconnecting", entry.SessionError ?? ""),
-                SessionState.Faulted => _loc.Format("Mirror_Failed", entry.SessionError ?? ""),
-                _ => _loc["Mirror_WaitingForVideo"],
-            };
+        Mirror.PlaceholderBusy = entry.SessionState is SessionState.Connecting or SessionState.Reconnecting;
+        Mirror.PlaceholderMessage = DeviceUi.PlaceholderText(entry);
     }
 
     private void UpdateInfo()
     {
-        var session = _entry?.Session;
-        if (session is null || session.VideoSize.IsEmpty)
+        var entry = _entry;
+        var frames = entry?.Frames;
+        var picture = entry?.Session is { } s ? s.VideoSize : frames?.Latest?.Size ?? default;
+        if (entry is null || frames is null || picture.IsEmpty)
         {
-            InfoText.Text = _entry?.Info.DisplayName ?? "";
+            InfoText.Text = entry?.Info.DisplayName ?? "";
             return;
         }
 
-        var dev = session.DeviceSize;
-        InfoText.Text = _loc.Format("Mirror_Info", _entry!.Info.DisplayName, dev.Width, dev.Height,
-            session.VideoSize.Width, session.VideoSize.Height, Math.Round(session.Fps));
+        var dev = entry.ScreenSize;
+        InfoText.Text = _loc.Format("Mirror_Info", entry.Info.DisplayName, dev.Width, dev.Height,
+            picture.Width, picture.Height, Math.Round(frames.Fps));
     }
 
     // ------------------------------------------------------------------ hover / pick
@@ -208,7 +212,7 @@ public sealed partial class MirrorPage : Page
         var session = _entry?.Session;
         if (session is null)
         {
-            ShowInfo(_loc["Mirror_NotStarted"], InfoBarSeverity.Warning);
+            ShowInfo(_entry is { IsWindow: true } ? _loc["Window_NeedsScrcpy"] : _loc["Mirror_NotStarted"], InfoBarSeverity.Warning);
             return;
         }
 
@@ -254,7 +258,7 @@ public sealed partial class MirrorPage : Page
         }
 
         args.Handled = true;
-        await Guard(s => s.Injector.TextAsync(args.Character.ToString(), CancellationToken.None));
+        await Mirror.SendTextAsync(args.Character.ToString());
     }
 
     // ------------------------------------------------------------------ screenshots
@@ -306,9 +310,9 @@ public sealed partial class MirrorPage : Page
 
     private void OnPopOut(object sender, RoutedEventArgs e)
     {
-        if (_entry?.Session is null)
+        if (_entry?.Frames is null)
         {
-            ShowInfo(_loc["Mirror_NotStarted"], InfoBarSeverity.Warning);
+            ShowInfo(DeviceUi.PlaceholderText(_entry), InfoBarSeverity.Warning);
             return;
         }
 

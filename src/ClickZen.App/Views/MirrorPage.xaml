@@ -68,7 +68,7 @@
                 <Button x:Uid="Mirror_Power" Style="{StaticResource MirrorToolButtonStyle}" Click="OnPower">
                     <FontIcon Glyph="&#xE7E8;" />
                 </Button>
-                <Button x:Uid="Mirror_Rotate" Style="{StaticResource MirrorToolButtonStyle}" Click="OnRotate">
+                <Button x:Name="RotateButton" x:Uid="Mirror_Rotate" Style="{StaticResource MirrorToolButtonStyle}" Click="OnRotate">
                     <FontIcon Glyph="&#xE7AD;" />
                 </Button>
                 <ToggleButton x:Name="ScreenOffToggle" x:Uid="Mirror_ScreenOff" Style="{StaticResource MirrorToolToggleStyle}" Click="OnScreenOffToggle">
@@ -91,7 +91,7 @@
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
-                <Button x:Uid="Mirror_PasteText" Style="{StaticResource MirrorToolButtonStyle}" Click="OnPasteText">
+                <Button x:Name="PasteButton" x:Uid="Mirror_PasteText" Style="{StaticResource MirrorToolButtonStyle}" Click="OnPasteText">
                     <FontIcon Glyph="&#xE77F;" />
                 </Button>
                 <MenuFlyoutSeparator />

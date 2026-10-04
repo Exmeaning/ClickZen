@@ -599,4 +599,83 @@
   <data name="Vars_ProtocolLink.Content" xml:space="preserve"><value>查看协议文档（含 Python / C# 示例）</value></data>
   <data name="Status_SyncRunning" xml:space="preserve"><value>同步服务：端口 {0}，{1} 个客户端</value></data>
   <data name="Status_SyncFailed" xml:space="preserve"><value>同步服务：启动失败</value></data>
+  <data name="Window_Kind" xml:space="preserve"><value>模拟器窗口</value></data>
+  <data name="Window_StartMirror" xml:space="preserve"><value>开始投屏</value></data>
+  <data name="Window_StopMirror" xml:space="preserve"><value>停止投屏</value></data>
+  <data name="Window_StartCapture" xml:space="preserve"><value>开始捕获</value></data>
+  <data name="Window_StopCapture" xml:space="preserve"><value>停止捕获</value></data>
+  <data name="Window_Reconnect" xml:space="preserve"><value>重新连接</value></data>
+  <data name="Window_NotStarted" xml:space="preserve"><value>模拟器窗口未在捕获。请在“设备”页点击“开始捕获”。</value></data>
+  <data name="Window_Failed" xml:space="preserve"><value>无法捕获模拟器窗口：{0}</value></data>
+  <data name="Window_NotFound" xml:space="preserve"><value>找不到匹配的窗口。请确认模拟器已启动且窗口未最小化，然后点击“重新连接”。</value></data>
+  <data name="Window_Closed" xml:space="preserve"><value>模拟器窗口已关闭。</value></data>
+  <data name="Window_NoAdbInput" xml:space="preserve"><value>此模拟器窗口没有关联 adb 设备，只能截图和识别，不能点击或输入。请在“设备”页编辑档案并关联 adb 设备。</value></data>
+  <data name="Window_AdbOffline" xml:space="preserve"><value>关联的 adb 设备 {0} 未连接，无法输入。</value></data>
+  <data name="Window_NoAdbShell" xml:space="preserve"><value>当前模拟器窗口没有关联 adb 设备，无法执行 shell 命令。</value></data>
+  <data name="Window_NeedsScrcpy" xml:space="preserve"><value>模拟器窗口设备不支持此操作（需要 scrcpy 控制通道）。</value></data>
+  <data name="Window_BindButton.Label" xml:space="preserve"><value>绑定模拟器窗口</value></data>
+  <data name="Window_EditDevice.ToolTipService.ToolTip" xml:space="preserve"><value>编辑模拟器档案</value></data>
+  <data name="Window_ProfilesHeader.Text" xml:space="preserve"><value>模拟器档案</value></data>
+  <data name="Window_ProfilesEmpty.Text" xml:space="preserve"><value>点击右上角“绑定模拟器窗口”，把模拟器窗口当作设备使用：画面来自窗口截图，输入走关联的 adb 设备。</value></data>
+  <data name="Window_EditProfile.ToolTipService.ToolTip" xml:space="preserve"><value>编辑</value></data>
+  <data name="Window_RemoveProfile.ToolTipService.ToolTip" xml:space="preserve"><value>删除</value></data>
+  <data name="Window_ProfileSaved" xml:space="preserve"><value>模拟器档案“{0}”已保存。</value></data>
+  <data name="Window_ProfileRemoved" xml:space="preserve"><value>模拟器档案“{0}”已删除。</value></data>
+  <data name="Window_RemoveTitle" xml:space="preserve"><value>删除模拟器档案</value></data>
+  <data name="Window_RemoveConfirm" xml:space="preserve"><value>确定删除“{0}”吗？对应的窗口设备会从设备列表中移除。</value></data>
+  <data name="Window_RemoveYes" xml:space="preserve"><value>删除</value></data>
+  <data name="Window_ClientArea" xml:space="preserve"><value>整个客户区</value></data>
+  <data name="Window_AdbNone" xml:space="preserve"><value>不关联（仅截图）</value></data>
+  <data name="Window_AdbOfflineChoice" xml:space="preserve"><value>{0}（未连接）</value></data>
+  <data name="Window_Dialog.PrimaryButtonText" xml:space="preserve"><value>下一步</value></data>
+  <data name="Window_DialogTitle" xml:space="preserve"><value>绑定模拟器窗口</value></data>
+  <data name="Window_DialogEditTitle" xml:space="preserve"><value>编辑模拟器档案</value></data>
+  <data name="Window_Next" xml:space="preserve"><value>下一步</value></data>
+  <data name="Window_Back" xml:space="preserve"><value>上一步</value></data>
+  <data name="Window_Save" xml:space="preserve"><value>保存</value></data>
+  <data name="Window_StepWindow" xml:space="preserve"><value>选择窗口</value></data>
+  <data name="Window_StepWindowHint" xml:space="preserve"><value>选择模拟器的主窗口。右侧是实时缩略图，用来确认选对了窗口。</value></data>
+  <data name="Window_StepArea" xml:space="preserve"><value>画面区域</value></data>
+  <data name="Window_StepAreaHint" xml:space="preserve"><value>在截图上拖出 Android 画面所在的矩形，去掉模拟器的标题栏、工具栏和边框；画面占满窗口时可直接使用整个客户区。</value></data>
+  <data name="Window_StepDevice" xml:space="preserve"><value>设备与分辨率</value></data>
+  <data name="Window_StepDeviceHint" xml:space="preserve"><value>关联 adb 设备后可以点击和输入；参考分辨率是画面对应的 Android 屏幕分辨率，所有坐标都按它换算。</value></data>
+  <data name="Window_StepName" xml:space="preserve"><value>名称</value></data>
+  <data name="Window_StepNameHint" xml:space="preserve"><value>为档案命名。下次启动时按匹配规则重新找到这个窗口。</value></data>
+  <data name="Window_Filter.PlaceholderText" xml:space="preserve"><value>按标题或进程名筛选</value></data>
+  <data name="Window_RefreshWindows.ToolTipService.ToolTip" xml:space="preserve"><value>刷新窗口列表</value></data>
+  <data name="Window_PreviewHeader.Text" xml:space="preserve"><value>实时缩略图</value></data>
+  <data name="Window_PreviewNone.Text" xml:space="preserve"><value>选择左侧的窗口</value></data>
+  <data name="Window_PreviewLoading" xml:space="preserve"><value>正在捕获…</value></data>
+  <data name="Window_PreviewFailed" xml:space="preserve"><value>无法捕获此窗口：{0}</value></data>
+  <data name="Window_PickWindowFirst" xml:space="preserve"><value>请先选择一个窗口。</value></data>
+  <data name="Window_UseClientArea.ToolTipService.ToolTip" xml:space="preserve"><value>不裁剪，使用整个客户区</value></data>
+  <data name="Window_UseClientAreaText.Text" xml:space="preserve"><value>使用整个客户区</value></data>
+  <data name="Window_Recapture.ToolTipService.ToolTip" xml:space="preserve"><value>重新截取窗口画面</value></data>
+  <data name="Window_RecaptureText.Text" xml:space="preserve"><value>重新截图</value></data>
+  <data name="Window_AreaNoPicture.Text" xml:space="preserve"><value>还没有窗口画面。请返回上一步确认缩略图正常显示。</value></data>
+  <data name="Window_AreaMissing" xml:space="preserve"><value>还没有窗口画面。请返回上一步确认缩略图正常显示。</value></data>
+  <data name="Window_AreaTooSmall" xml:space="preserve"><value>选择的区域太小。</value></data>
+  <data name="Window_AreaInfoCrop" xml:space="preserve"><value>区域 {0}, {1}  {2}×{3}（客户区 {4}×{5}）</value></data>
+  <data name="Window_AreaInfoClient" xml:space="preserve"><value>整个客户区 {0}×{1}</value></data>
+  <data name="Window_AdbHeader.Text" xml:space="preserve"><value>关联 adb 设备（可选）</value></data>
+  <data name="Window_AdbHint.Text" xml:space="preserve"><value>点击、滑动和按键通过这台 adb 设备发送。不关联时只能截图和识别。</value></data>
+  <data name="Window_RefHeader.Text" xml:space="preserve"><value>参考分辨率</value></data>
+  <data name="Window_RefHint.Text" xml:space="preserve"><value>选择 adb 设备后会自动读取其屏幕分辨率，并按画面方向调整；也可以手动填写。留空表示直接使用画面像素。</value></data>
+  <data name="Window_RefWidth.Header" xml:space="preserve"><value>宽</value></data>
+  <data name="Window_RefHeight.Header" xml:space="preserve"><value>高</value></data>
+  <data name="Window_RefFromAdb.ToolTipService.ToolTip" xml:space="preserve"><value>从 adb 设备读取</value></data>
+  <data name="Window_RefFromFrame.ToolTipService.ToolTip" xml:space="preserve"><value>使用画面尺寸</value></data>
+  <data name="Window_RefInfo" xml:space="preserve"><value>画面 {0}×{1} 将映射到设备坐标 {2}×{3}。</value></data>
+  <data name="Window_RefNone" xml:space="preserve"><value>未设置参考分辨率：设备坐标等于画面像素（{0}×{1}）。</value></data>
+  <data name="Window_RefAspectWarning" xml:space="preserve"><value>注意：宽高比与画面不一致，请检查画面区域是否框选准确。</value></data>
+  <data name="Window_RefReadFailed" xml:space="preserve"><value>无法读取设备分辨率：{0}</value></data>
+  <data name="Window_Name.Header" xml:space="preserve"><value>名称</value></data>
+  <data name="Window_NameRequired" xml:space="preserve"><value>请填写名称。</value></data>
+  <data name="Window_MatchHeader.Text" xml:space="preserve"><value>窗口匹配规则</value></data>
+  <data name="Window_MatchHint.Text" xml:space="preserve"><value>填写的条件都满足的窗口才会被使用（标题为包含匹配，不区分大小写）。标题里有会变化的内容时可以删掉那部分。</value></data>
+  <data name="Window_MatchTitle.Header" xml:space="preserve"><value>标题包含</value></data>
+  <data name="Window_MatchProcess.Header" xml:space="preserve"><value>进程名</value></data>
+  <data name="Window_MatchClass.Header" xml:space="preserve"><value>窗口类名</value></data>
+  <data name="Window_RuleInvalid" xml:space="preserve"><value>匹配规则无效：{0}</value></data>
+  <data name="Window_Summary" xml:space="preserve"><value>画面区域：{0}    参考分辨率：{1}    输入：{2}</value></data>
 </root>

@@ -1,0 +1,81 @@
+# key	zh-CN	en-US
+# ---- Emulator window mode (M7): window devices, the binding wizard, saved profiles. Prefix: Window_ ----
+Window_Kind	模拟器窗口	Emulator window
+Window_StartMirror	开始投屏	Start mirroring
+Window_StopMirror	停止投屏	Stop mirroring
+Window_StartCapture	开始捕获	Start capture
+Window_StopCapture	停止捕获	Stop capture
+Window_Reconnect	重新连接	Reconnect
+Window_NotStarted	模拟器窗口未在捕获。请在“设备”页点击“开始捕获”。	The emulator window is not being captured. Click "Start capture" on the Devices page.
+Window_Failed	无法捕获模拟器窗口：{0}	Cannot capture the emulator window: {0}
+Window_NotFound	找不到匹配的窗口。请确认模拟器已启动且窗口未最小化，然后点击“重新连接”。	No matching window found. Make sure the emulator is running and not minimized, then click "Reconnect".
+Window_Closed	模拟器窗口已关闭。	The emulator window was closed.
+Window_NoAdbInput	此模拟器窗口没有关联 adb 设备，只能截图和识别，不能点击或输入。请在“设备”页编辑档案并关联 adb 设备。	This emulator window has no linked adb device: it can be captured and matched but not tapped or typed into. Edit the profile on the Devices page and link an adb device.
+Window_AdbOffline	关联的 adb 设备 {0} 未连接，无法输入。	The linked adb device {0} is not connected, so input is unavailable.
+Window_NoAdbShell	当前模拟器窗口没有关联 adb 设备，无法执行 shell 命令。	The current emulator window has no linked adb device, so shell commands cannot run.
+Window_NeedsScrcpy	模拟器窗口设备不支持此操作（需要 scrcpy 控制通道）。	Emulator window devices do not support this action (it needs the scrcpy control channel).
+Window_BindButton.Label	绑定模拟器窗口	Bind emulator window
+Window_EditDevice.ToolTipService.ToolTip	编辑模拟器档案	Edit emulator profile
+Window_ProfilesHeader.Text	模拟器档案	Emulator profiles
+Window_ProfilesEmpty.Text	点击右上角“绑定模拟器窗口”，把模拟器窗口当作设备使用：画面来自窗口截图，输入走关联的 adb 设备。	Click "Bind emulator window" above to use an emulator window as a device: the picture comes from the window, input goes through the linked adb device.
+Window_EditProfile.ToolTipService.ToolTip	编辑	Edit
+Window_RemoveProfile.ToolTipService.ToolTip	删除	Remove
+Window_ProfileSaved	模拟器档案“{0}”已保存。	Emulator profile "{0}" saved.
+Window_ProfileRemoved	模拟器档案“{0}”已删除。	Emulator profile "{0}" removed.
+Window_RemoveTitle	删除模拟器档案	Remove emulator profile
+Window_RemoveConfirm	确定删除“{0}”吗？对应的窗口设备会从设备列表中移除。	Remove "{0}"? Its window device disappears from the device list.
+Window_RemoveYes	删除	Remove
+Window_ClientArea	整个客户区	whole client area
+Window_AdbNone	不关联（仅截图）	None (capture only)
+Window_AdbOfflineChoice	{0}（未连接）	{0} (not connected)
+Window_Dialog.PrimaryButtonText	下一步	Next
+Window_DialogTitle	绑定模拟器窗口	Bind emulator window
+Window_DialogEditTitle	编辑模拟器档案	Edit emulator profile
+Window_Next	下一步	Next
+Window_Back	上一步	Back
+Window_Save	保存	Save
+Window_StepWindow	选择窗口	Window
+Window_StepWindowHint	选择模拟器的主窗口。右侧是实时缩略图，用来确认选对了窗口。	Choose the emulator's main window. The live thumbnail on the right confirms it is the right one.
+Window_StepArea	画面区域	Screen area
+Window_StepAreaHint	在截图上拖出 Android 画面所在的矩形，去掉模拟器的标题栏、工具栏和边框；画面占满窗口时可直接使用整个客户区。	Drag a rectangle around the Android screen on the capture to leave out the emulator's title bar, toolbar and borders; use the whole client area when the screen fills the window.
+Window_StepDevice	设备与分辨率	Device and resolution
+Window_StepDeviceHint	关联 adb 设备后可以点击和输入；参考分辨率是画面对应的 Android 屏幕分辨率，所有坐标都按它换算。	Link an adb device to tap and type; the reference resolution is the Android screen resolution the picture shows, and all coordinates are expressed in it.
+Window_StepName	名称	Name
+Window_StepNameHint	为档案命名。下次启动时按匹配规则重新找到这个窗口。	Name the profile. The match rule finds the window again next time.
+Window_Filter.PlaceholderText	按标题或进程名筛选	Filter by title or process
+Window_RefreshWindows.ToolTipService.ToolTip	刷新窗口列表	Refresh the window list
+Window_PreviewHeader.Text	实时缩略图	Live thumbnail
+Window_PreviewNone.Text	选择左侧的窗口	Choose a window on the left
+Window_PreviewLoading	正在捕获…	Capturing…
+Window_PreviewFailed	无法捕获此窗口：{0}	Cannot capture this window: {0}
+Window_PickWindowFirst	请先选择一个窗口。	Choose a window first.
+Window_UseClientArea.ToolTipService.ToolTip	不裁剪，使用整个客户区	No crop: use the whole client area
+Window_UseClientAreaText.Text	使用整个客户区	Use whole client area
+Window_Recapture.ToolTipService.ToolTip	重新截取窗口画面	Capture the window again
+Window_RecaptureText.Text	重新截图	Recapture
+Window_AreaNoPicture.Text	还没有窗口画面。请返回上一步确认缩略图正常显示。	No picture of the window yet. Go back and check that the thumbnail shows.
+Window_AreaMissing	还没有窗口画面。请返回上一步确认缩略图正常显示。	No picture of the window yet. Go back and check that the thumbnail shows.
+Window_AreaTooSmall	选择的区域太小。	The selected area is too small.
+Window_AreaInfoCrop	区域 {0}, {1}  {2}×{3}（客户区 {4}×{5}）	Area {0}, {1}  {2}×{3} (client area {4}×{5})
+Window_AreaInfoClient	整个客户区 {0}×{1}	Whole client area {0}×{1}
+Window_AdbHeader.Text	关联 adb 设备（可选）	Linked adb device (optional)
+Window_AdbHint.Text	点击、滑动和按键通过这台 adb 设备发送。不关联时只能截图和识别。	Taps, swipes and keys are sent through this adb device. Without one the window can only be captured and matched.
+Window_RefHeader.Text	参考分辨率	Reference resolution
+Window_RefHint.Text	选择 adb 设备后会自动读取其屏幕分辨率，并按画面方向调整；也可以手动填写。留空表示直接使用画面像素。	Read automatically from the adb device's screen (oriented like the picture) once a device is chosen; you can also type it. Leave empty to use picture pixels.
+Window_RefWidth.Header	宽	Width
+Window_RefHeight.Header	高	Height
+Window_RefFromAdb.ToolTipService.ToolTip	从 adb 设备读取	Read from the adb device
+Window_RefFromFrame.ToolTipService.ToolTip	使用画面尺寸	Use the picture size
+Window_RefInfo	画面 {0}×{1} 将映射到设备坐标 {2}×{3}。	The {0}×{1} picture maps to device coordinates {2}×{3}.
+Window_RefNone	未设置参考分辨率：设备坐标等于画面像素（{0}×{1}）。	No reference resolution: device coordinates equal picture pixels ({0}×{1}).
+Window_RefAspectWarning	注意：宽高比与画面不一致，请检查画面区域是否框选准确。	Note: the aspect ratio differs from the picture; check that the screen area is accurate.
+Window_RefReadFailed	无法读取设备分辨率：{0}	Could not read the device resolution: {0}
+Window_Name.Header	名称	Name
+Window_NameRequired	请填写名称。	Enter a name.
+Window_MatchHeader.Text	窗口匹配规则	Window match rule
+Window_MatchHint.Text	填写的条件都满足的窗口才会被使用（标题为包含匹配，不区分大小写）。标题里有会变化的内容时可以删掉那部分。	A window is used only when every filled-in condition matches (title: case-insensitive substring). Remove parts of the title that change.
+Window_MatchTitle.Header	标题包含	Title contains
+Window_MatchProcess.Header	进程名	Process name
+Window_MatchClass.Header	窗口类名	Window class
+Window_RuleInvalid	匹配规则无效：{0}	The match rule is invalid: {0}
+Window_Summary	画面区域：{0}    参考分辨率：{1}    输入：{2}	Area: {0}    Reference: {1}    Input: {2}

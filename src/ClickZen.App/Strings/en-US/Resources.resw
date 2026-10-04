@@ -599,4 +599,83 @@
   <data name="Vars_ProtocolLink.Content" xml:space="preserve"><value>Protocol documentation (with Python / C# examples)</value></data>
   <data name="Status_SyncRunning" xml:space="preserve"><value>Sync service: port {0}, {1} client(s)</value></data>
   <data name="Status_SyncFailed" xml:space="preserve"><value>Sync service: failed to start</value></data>
+  <data name="Window_Kind" xml:space="preserve"><value>Emulator window</value></data>
+  <data name="Window_StartMirror" xml:space="preserve"><value>Start mirroring</value></data>
+  <data name="Window_StopMirror" xml:space="preserve"><value>Stop mirroring</value></data>
+  <data name="Window_StartCapture" xml:space="preserve"><value>Start capture</value></data>
+  <data name="Window_StopCapture" xml:space="preserve"><value>Stop capture</value></data>
+  <data name="Window_Reconnect" xml:space="preserve"><value>Reconnect</value></data>
+  <data name="Window_NotStarted" xml:space="preserve"><value>The emulator window is not being captured. Click "Start capture" on the Devices page.</value></data>
+  <data name="Window_Failed" xml:space="preserve"><value>Cannot capture the emulator window: {0}</value></data>
+  <data name="Window_NotFound" xml:space="preserve"><value>No matching window found. Make sure the emulator is running and not minimized, then click "Reconnect".</value></data>
+  <data name="Window_Closed" xml:space="preserve"><value>The emulator window was closed.</value></data>
+  <data name="Window_NoAdbInput" xml:space="preserve"><value>This emulator window has no linked adb device: it can be captured and matched but not tapped or typed into. Edit the profile on the Devices page and link an adb device.</value></data>
+  <data name="Window_AdbOffline" xml:space="preserve"><value>The linked adb device {0} is not connected, so input is unavailable.</value></data>
+  <data name="Window_NoAdbShell" xml:space="preserve"><value>The current emulator window has no linked adb device, so shell commands cannot run.</value></data>
+  <data name="Window_NeedsScrcpy" xml:space="preserve"><value>Emulator window devices do not support this action (it needs the scrcpy control channel).</value></data>
+  <data name="Window_BindButton.Label" xml:space="preserve"><value>Bind emulator window</value></data>
+  <data name="Window_EditDevice.ToolTipService.ToolTip" xml:space="preserve"><value>Edit emulator profile</value></data>
+  <data name="Window_ProfilesHeader.Text" xml:space="preserve"><value>Emulator profiles</value></data>
+  <data name="Window_ProfilesEmpty.Text" xml:space="preserve"><value>Click "Bind emulator window" above to use an emulator window as a device: the picture comes from the window, input goes through the linked adb device.</value></data>
+  <data name="Window_EditProfile.ToolTipService.ToolTip" xml:space="preserve"><value>Edit</value></data>
+  <data name="Window_RemoveProfile.ToolTipService.ToolTip" xml:space="preserve"><value>Remove</value></data>
+  <data name="Window_ProfileSaved" xml:space="preserve"><value>Emulator profile "{0}" saved.</value></data>
+  <data name="Window_ProfileRemoved" xml:space="preserve"><value>Emulator profile "{0}" removed.</value></data>
+  <data name="Window_RemoveTitle" xml:space="preserve"><value>Remove emulator profile</value></data>
+  <data name="Window_RemoveConfirm" xml:space="preserve"><value>Remove "{0}"? Its window device disappears from the device list.</value></data>
+  <data name="Window_RemoveYes" xml:space="preserve"><value>Remove</value></data>
+  <data name="Window_ClientArea" xml:space="preserve"><value>whole client area</value></data>
+  <data name="Window_AdbNone" xml:space="preserve"><value>None (capture only)</value></data>
+  <data name="Window_AdbOfflineChoice" xml:space="preserve"><value>{0} (not connected)</value></data>
+  <data name="Window_Dialog.PrimaryButtonText" xml:space="preserve"><value>Next</value></data>
+  <data name="Window_DialogTitle" xml:space="preserve"><value>Bind emulator window</value></data>
+  <data name="Window_DialogEditTitle" xml:space="preserve"><value>Edit emulator profile</value></data>
+  <data name="Window_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Window_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Window_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Window_StepWindow" xml:space="preserve"><value>Window</value></data>
+  <data name="Window_StepWindowHint" xml:space="preserve"><value>Choose the emulator's main window. The live thumbnail on the right confirms it is the right one.</value></data>
+  <data name="Window_StepArea" xml:space="preserve"><value>Screen area</value></data>
+  <data name="Window_StepAreaHint" xml:space="preserve"><value>Drag a rectangle around the Android screen on the capture to leave out the emulator's title bar, toolbar and borders; use the whole client area when the screen fills the window.</value></data>
+  <data name="Window_StepDevice" xml:space="preserve"><value>Device and resolution</value></data>
+  <data name="Window_StepDeviceHint" xml:space="preserve"><value>Link an adb device to tap and type; the reference resolution is the Android screen resolution the picture shows, and all coordinates are expressed in it.</value></data>
+  <data name="Window_StepName" xml:space="preserve"><value>Name</value></data>
+  <data name="Window_StepNameHint" xml:space="preserve"><value>Name the profile. The match rule finds the window again next time.</value></data>
+  <data name="Window_Filter.PlaceholderText" xml:space="preserve"><value>Filter by title or process</value></data>
+  <data name="Window_RefreshWindows.ToolTipService.ToolTip" xml:space="preserve"><value>Refresh the window list</value></data>
+  <data name="Window_PreviewHeader.Text" xml:space="preserve"><value>Live thumbnail</value></data>
+  <data name="Window_PreviewNone.Text" xml:space="preserve"><value>Choose a window on the left</value></data>
+  <data name="Window_PreviewLoading" xml:space="preserve"><value>Capturing…</value></data>
+  <data name="Window_PreviewFailed" xml:space="preserve"><value>Cannot capture this window: {0}</value></data>
+  <data name="Window_PickWindowFirst" xml:space="preserve"><value>Choose a window first.</value></data>
+  <data name="Window_UseClientArea.ToolTipService.ToolTip" xml:space="preserve"><value>No crop: use the whole client area</value></data>
+  <data name="Window_UseClientAreaText.Text" xml:space="preserve"><value>Use whole client area</value></data>
+  <data name="Window_Recapture.ToolTipService.ToolTip" xml:space="preserve"><value>Capture the window again</value></data>
+  <data name="Window_RecaptureText.Text" xml:space="preserve"><value>Recapture</value></data>
+  <data name="Window_AreaNoPicture.Text" xml:space="preserve"><value>No picture of the window yet. Go back and check that the thumbnail shows.</value></data>
+  <data name="Window_AreaMissing" xml:space="preserve"><value>No picture of the window yet. Go back and check that the thumbnail shows.</value></data>
+  <data name="Window_AreaTooSmall" xml:space="preserve"><value>The selected area is too small.</value></data>
+  <data name="Window_AreaInfoCrop" xml:space="preserve"><value>Area {0}, {1}  {2}×{3} (client area {4}×{5})</value></data>
+  <data name="Window_AreaInfoClient" xml:space="preserve"><value>Whole client area {0}×{1}</value></data>
+  <data name="Window_AdbHeader.Text" xml:space="preserve"><value>Linked adb device (optional)</value></data>
+  <data name="Window_AdbHint.Text" xml:space="preserve"><value>Taps, swipes and keys are sent through this adb device. Without one the window can only be captured and matched.</value></data>
+  <data name="Window_RefHeader.Text" xml:space="preserve"><value>Reference resolution</value></data>
+  <data name="Window_RefHint.Text" xml:space="preserve"><value>Read automatically from the adb device's screen (oriented like the picture) once a device is chosen; you can also type it. Leave empty to use picture pixels.</value></data>
+  <data name="Window_RefWidth.Header" xml:space="preserve"><value>Width</value></data>
+  <data name="Window_RefHeight.Header" xml:space="preserve"><value>Height</value></data>
+  <data name="Window_RefFromAdb.ToolTipService.ToolTip" xml:space="preserve"><value>Read from the adb device</value></data>
+  <data name="Window_RefFromFrame.ToolTipService.ToolTip" xml:space="preserve"><value>Use the picture size</value></data>
+  <data name="Window_RefInfo" xml:space="preserve"><value>The {0}×{1} picture maps to device coordinates {2}×{3}.</value></data>
+  <data name="Window_RefNone" xml:space="preserve"><value>No reference resolution: device coordinates equal picture pixels ({0}×{1}).</value></data>
+  <data name="Window_RefAspectWarning" xml:space="preserve"><value>Note: the aspect ratio differs from the picture; check that the screen area is accurate.</value></data>
+  <data name="Window_RefReadFailed" xml:space="preserve"><value>Could not read the device resolution: {0}</value></data>
+  <data name="Window_Name.Header" xml:space="preserve"><value>Name</value></data>
+  <data name="Window_NameRequired" xml:space="preserve"><value>Enter a name.</value></data>
+  <data name="Window_MatchHeader.Text" xml:space="preserve"><value>Window match rule</value></data>
+  <data name="Window_MatchHint.Text" xml:space="preserve"><value>A window is used only when every filled-in condition matches (title: case-insensitive substring). Remove parts of the title that change.</value></data>
+  <data name="Window_MatchTitle.Header" xml:space="preserve"><value>Title contains</value></data>
+  <data name="Window_MatchProcess.Header" xml:space="preserve"><value>Process name</value></data>
+  <data name="Window_MatchClass.Header" xml:space="preserve"><value>Window class</value></data>
+  <data name="Window_RuleInvalid" xml:space="preserve"><value>The match rule is invalid: {0}</value></data>
+  <data name="Window_Summary" xml:space="preserve"><value>Area: {0}    Reference: {1}    Input: {2}</value></data>
 </root>

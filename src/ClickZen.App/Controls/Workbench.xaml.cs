@@ -3,7 +3,6 @@ using System.Numerics;
 using ClickZen.App.Services;
 using ClickZen.Core.Automation;
 using ClickZen.Core.Geometry;
-using ClickZen.Device.Scrcpy;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.Text;
@@ -50,7 +49,7 @@ public sealed partial class Workbench : UserControl
     private const float LabelFontSize = 12;
 
     private readonly Lock _frameLock = new();
-    private ScrcpySession? _session;
+    private ILiveFrameSource? _session;
     private Frame? _pendingFrame;
     private Frame? _shownFrame;
     private CanvasBitmap? _bitmap;
@@ -78,7 +77,7 @@ public sealed partial class Workbench : UserControl
     /// <summary>Localiser for the mode text (set by the host).</summary>
     public ILocalizer? Localizer { get; set; }
 
-    /// <summary>Device screen size of the shown picture (current orientation). Defaults to the session's.</summary>
+    /// <summary>Device screen size of the shown picture (current orientation). Defaults to the frame size.</summary>
     public Func<SizeI>? ScreenProvider { get; set; }
 
     /// <summary>Space of the overlay and hover coordinates (the scheme's RefSize); empty = device pixels.</summary>
@@ -115,7 +114,7 @@ public sealed partial class Workbench : UserControl
     {
         get
         {
-            var s = ScreenProvider?.Invoke() ?? _session?.DeviceSize ?? default;
+            var s = ScreenProvider?.Invoke() ?? default;
             return s.IsEmpty ? CurrentFrame?.Size ?? default : s;
         }
     }
@@ -133,8 +132,8 @@ public sealed partial class Workbench : UserControl
     /// <summary>Raised when the mode changes (pick started / finished).</summary>
     public event EventHandler<WorkbenchMode>? ModeChanged;
 
-    /// <summary>The live session to show; null shows the placeholder.</summary>
-    public ScrcpySession? Session
+    /// <summary>The live picture to show (scrcpy video or window capture); null shows the placeholder.</summary>
+    public ILiveFrameSource? Source
     {
         get => _session;
         set

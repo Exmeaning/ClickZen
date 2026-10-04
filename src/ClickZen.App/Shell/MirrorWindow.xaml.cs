@@ -27,7 +27,7 @@ public sealed partial class MirrorWindow : Window
         ThemeService.ApplyBackdrop(this);
         services.GetRequiredService<ThemeService>().Register(this);
 
-        var size = entry.Session?.DeviceSize ?? default;
+        var size = entry.ScreenSize;
         if (!size.IsEmpty)
         {
             // Open at a sensible size with the device's aspect ratio.
@@ -42,29 +42,29 @@ public sealed partial class MirrorWindow : Window
             this.SetWindowSize(w, h);
         }
 
-        Mirror.Session = entry.Session;
+        Mirror.Show(entry);
         Mirror.PlaceholderMessage = services.GetRequiredService<ILocalizer>()["Mirror_WaitingForVideo"];
         entry.PropertyChanged += OnEntryChanged;
         Closed += (_, _) =>
         {
             entry.PropertyChanged -= OnEntryChanged;
-            Mirror.Session = null;
+            Mirror.Show(null);
         };
     }
 
     private void OnEntryChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(DeviceEntry.Session))
+        if (e.PropertyName == nameof(DeviceEntry.Frames))
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (_entry.Session is null)
+                if (_entry.Frames is null)
                 {
                     Close();
                 }
                 else
                 {
-                    Mirror.Session = _entry.Session;
+                    Mirror.Show(_entry);
                 }
             });
         }

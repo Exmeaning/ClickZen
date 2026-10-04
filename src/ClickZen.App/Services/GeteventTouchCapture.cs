@@ -23,7 +23,8 @@ public sealed class GeteventTouchCapture : IDeviceTouchCapture
         _log = log;
     }
 
-    public bool CanCapture(DeviceEntry entry) => entry.Info.State == DeviceAdbState.Online;
+    /// <summary>adb devices only: a window device's touches would need mapping from its linked device.</summary>
+    public bool CanCapture(DeviceEntry entry) => !entry.IsWindow && entry.Info.State == DeviceAdbState.Online;
 
     public async Task CaptureAsync(DeviceEntry entry, Action<RawTouchEvent> onTouch, CancellationToken ct)
     {

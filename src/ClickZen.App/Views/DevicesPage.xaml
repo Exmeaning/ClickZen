@@ -29,6 +29,9 @@
                 <AppBarButton x:Uid="Devices_AddWireless" Click="OnAddWirelessClick">
                     <AppBarButton.Icon><FontIcon Glyph="&#xE701;" /></AppBarButton.Icon>
                 </AppBarButton>
+                <AppBarButton x:Uid="Window_BindButton" Click="OnBindWindowClick">
+                    <AppBarButton.Icon><FontIcon Glyph="&#xE737;" /></AppBarButton.Icon>
+                </AppBarButton>
                 <AppBarButton x:Uid="Devices_Refresh" Command="{x:Bind ViewModel.RefreshCommand}">
                     <AppBarButton.Icon><FontIcon Glyph="&#xE72C;" /></AppBarButton.Icon>
                 </AppBarButton>
@@ -97,11 +100,12 @@
                                                        Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" MaxLines="2" />
                                         </StackPanel>
                                         <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
-                                            <Button x:Uid="Devices_StartMirror" Style="{StaticResource AccentButtonStyle}"
-                                                    Visibility="{x:Bind svc:DeviceUi.CanStart(Info.State, Session), Mode=OneWay}"
+                                            <Button Style="{StaticResource AccentButtonStyle}"
+                                                    Content="{x:Bind svc:DeviceUi.StartText(Info.Kind, SessionState), Mode=OneWay}"
+                                                    Visibility="{x:Bind svc:DeviceUi.CanStart(Info.State, Frames), Mode=OneWay}"
                                                     Click="OnStartMirrorClick" Tag="{x:Bind}" />
-                                            <Button x:Uid="Devices_StopMirror"
-                                                    Visibility="{x:Bind svc:DeviceUi.HasSession(Session), Mode=OneWay}"
+                                            <Button Content="{x:Bind svc:DeviceUi.StopText(Info.Kind), Mode=OneWay}"
+                                                    Visibility="{x:Bind svc:DeviceUi.HasSession(Frames), Mode=OneWay}"
                                                     Click="OnStopMirrorClick" Tag="{x:Bind}" />
                                             <Button x:Uid="Devices_SetCurrent"
                                                     Visibility="{x:Bind svc:DeviceUi.NotTrue(IsCurrent), Mode=OneWay}"
@@ -109,9 +113,43 @@
                                             <Button x:Uid="Devices_DisconnectWireless"
                                                     Visibility="{x:Bind svc:DeviceUi.IsNetwork(Info.Kind), Mode=OneWay}"
                                                     Click="OnDisconnectWirelessClick" Tag="{x:Bind}" />
+                                            <Button x:Uid="Window_EditDevice"
+                                                    Visibility="{x:Bind svc:DeviceUi.IsWindowKind(Info.Kind), Mode=OneWay}"
+                                                    Click="OnEditWindowDeviceClick" Tag="{x:Bind}">
+                                                <FontIcon Glyph="&#xE70F;" FontSize="14" />
+                                            </Button>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
+                <!-- Emulator window profiles -->
+                <StackPanel Spacing="8">
+                    <TextBlock x:Uid="Window_ProfilesHeader" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock x:Uid="Window_ProfilesEmpty" Style="{StaticResource SecondaryCaptionTextBlockStyle}" TextWrapping="Wrap"
+                               Visibility="{x:Bind svc:DeviceUi.NotTrue(ViewModel.HasProfiles), Mode=OneWay}" />
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Profiles}">
+                        <ItemsRepeater.Layout>
+                            <StackLayout Spacing="4" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:EmulatorProfileItem">
+                                <ctk:SettingsCard Header="{x:Bind Name}" Description="{x:Bind Description}">
+                                    <ctk:SettingsCard.HeaderIcon>
+                                        <FontIcon Glyph="&#xE737;" />
+                                    </ctk:SettingsCard.HeaderIcon>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button x:Uid="Window_EditProfile" Click="OnEditProfileClick" Tag="{x:Bind}">
+                                            <FontIcon Glyph="&#xE70F;" FontSize="14" />
+                                        </Button>
+                                        <Button x:Uid="Window_RemoveProfile" Click="OnRemoveProfileClick" Tag="{x:Bind}">
+                                            <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                        </Button>
+                                    </StackPanel>
+                                </ctk:SettingsCard>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>

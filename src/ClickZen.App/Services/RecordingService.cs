@@ -621,8 +621,7 @@ public sealed partial class RecordingService : ObservableObject, IDisposable
     // ------------------------------------------------------------------ playback
 
     /// <summary>Screen size playback coordinates are scaled to.</summary>
-    public static SizeI CurrentScreen(DeviceEntry entry) =>
-        entry.Session is { } s && !s.DeviceSize.IsEmpty ? s.DeviceSize : entry.Info.PhysicalSize;
+    public static SizeI CurrentScreen(DeviceEntry entry) => entry.ScreenSize;
 
     /// <summary>True when the recording was made in the other orientation than the device is in now.</summary>
     public bool OrientationDiffers(DeviceEntry entry)

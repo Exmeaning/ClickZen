@@ -52,7 +52,7 @@ public sealed record WindowFrameSourceOptions
 /// <para>WGC only produces frames when the window content changes, so a static window yields no new frames:
 /// <see cref="WaitForFrameAsync"/> then times out and returns the latest frame, which is still accurate.</para>
 /// </summary>
-public sealed class WindowFrameSource : IFrameSource, IAsyncDisposable
+public sealed class WindowFrameSource : ILiveFrameSource, IAsyncDisposable
 {
     private readonly WindowFrameSourceOptions _options;
     private readonly ILogger? _logger;

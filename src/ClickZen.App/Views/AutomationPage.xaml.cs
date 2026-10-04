@@ -132,7 +132,7 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
             _entry.PropertyChanged += OnEntryChanged;
         }
 
-        Bench.Session = _entry?.Session;
+        Bench.Source = _entry?.Frames;
         UpdatePlaceholder();
         UpdateTargetText();
     }
@@ -141,7 +141,7 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
     {
         if (ReferenceEquals(sender, _entry))
         {
-            Bench.Session = _entry?.Session;
+            Bench.Source = _entry?.Frames;
             UpdatePlaceholder();
         }
     });
@@ -149,15 +149,7 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
     private void UpdatePlaceholder()
     {
         var entry = _entry;
-        Bench.PlaceholderMessage = entry is null ? _loc["Mirror_NoDevice"]
-            : entry.Session is null ? _loc["Mirror_NotStarted"]
-            : entry.SessionState switch
-            {
-                SessionState.Connecting => _loc["SessionState_Connecting"],
-                SessionState.Reconnecting => _loc.Format("Mirror_Reconnecting", entry.SessionError ?? ""),
-                SessionState.Faulted => _loc.Format("Mirror_Failed", entry.SessionError ?? ""),
-                _ => _loc["Mirror_WaitingForVideo"],
-            };
+        Bench.PlaceholderMessage = DeviceUi.PlaceholderText(entry);
     }
 
     private void OnTick()
@@ -694,9 +686,9 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
         {
             var item = new ToggleMenuFlyoutItem
             {
-                Text = d.Session is null ? _loc.Format("Auto_TargetNotMirroring", d.Info.DisplayName) : d.Info.DisplayName,
+                Text = d.Frames is null ? _loc.Format("Auto_TargetNotMirroring", d.Info.DisplayName) : d.Info.DisplayName,
                 IsChecked = Service.TargetSerials.Contains(d.Serial),
-                IsEnabled = d.Session is not null,
+                IsEnabled = d.Frames is not null,
             };
             var serial = d.Serial;
             item.Click += (s, _) =>

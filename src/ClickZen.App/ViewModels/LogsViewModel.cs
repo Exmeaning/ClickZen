@@ -216,8 +216,15 @@ public sealed partial class LogsViewModel : ObservableObject, IDisposable
             return;
         }
 
+        // Window devices run shell commands on their linked adb device.
+        if (device.AdbSerial is not { } serial)
+        {
+            AppendTerminal(_loc["Window_NoAdbShell"], false, true);
+            return;
+        }
+
         RememberHistory(cmd);
-        AppendTerminal($"{device.Serial}{(AsRoot ? " #" : " $")} {cmd}", true, false);
+        AppendTerminal($"{serial}{(AsRoot ? " #" : " $")} {cmd}", true, false);
         Command = "";
         IsRunning = true;
         _running = new CancellationTokenSource();
@@ -225,7 +232,7 @@ public sealed partial class LogsViewModel : ObservableObject, IDisposable
         {
             // Streamed so long-running commands (logcat, top -n 1…) show output as it arrives.
             var command = AsRoot ? ShellQuoting.BuildRootCommand(cmd) : cmd;
-            await _adb.ExecuteStreamingAsync(device.Serial, command,
+            await _adb.ExecuteStreamingAsync(serial, command,
                 line => _ui.TryEnqueue(() => AppendTerminal(line, false, false)), _running.Token);
         }
         catch (OperationCanceledException)

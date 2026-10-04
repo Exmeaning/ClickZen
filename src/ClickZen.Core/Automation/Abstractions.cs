@@ -50,6 +50,19 @@ public interface IFrameSource
     Task<Frame?> WaitForFrameAsync(long afterSequence, TimeSpan timeout, CancellationToken ct);
 }
 
+/// <summary>
+/// A continuously running <see cref="IFrameSource"/> (scrcpy video, window capture) that also pushes frames,
+/// so a view can render them as they arrive.
+/// </summary>
+public interface ILiveFrameSource : IFrameSource
+{
+    /// <summary>Raised on a background thread for every new frame.</summary>
+    event EventHandler<Frame>? FrameArrived;
+
+    /// <summary>Frames per second over the last second.</summary>
+    double Fps { get; }
+}
+
 /// <summary>Result of looking for a template.</summary>
 public readonly record struct MatchResult(bool Found, double Score, RectI Location)
 {

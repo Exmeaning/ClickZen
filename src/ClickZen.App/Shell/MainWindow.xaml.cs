@@ -206,9 +206,10 @@ public sealed partial class MainWindow : Window
         DeviceStateText.Text = _loc[key];
         DeviceStateDot.Fill = (Brush)Application.Current.Resources[brush];
 
-        var session = entry.Session;
-        StatusDevice.Text = session is { State: SessionState.Streaming }
-            ? _loc.Format("Status_DeviceStreaming", entry.Info.DisplayName, session.VideoSize.Width, session.VideoSize.Height, Math.Round(session.Fps))
+        var picture = entry.Session is { State: SessionState.Streaming } session ? session.VideoSize
+            : entry.WindowSource?.Latest?.Size ?? default;
+        StatusDevice.Text = !picture.IsEmpty && entry.Frames is { } frames
+            ? _loc.Format("Status_DeviceStreaming", entry.Info.DisplayName, picture.Width, picture.Height, Math.Round(frames.Fps))
             : entry.Info.DisplayName;
     }
 }

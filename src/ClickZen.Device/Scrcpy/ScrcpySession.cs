@@ -40,7 +40,7 @@ public sealed record ScrcpySessionOptions
 /// exposes the newest frame as an <see cref="IFrameSource"/>; offers an <see cref="ScrcpyTouchInjector"/>.
 /// Reconnects with exponential back-off (1 s → 30 s) when the connection drops.
 /// </summary>
-public sealed class ScrcpySession : IFrameSource, IAsyncDisposable
+public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
 {
     private readonly IScrcpyTransport _transport;
     private readonly ScrcpySessionOptions _options;

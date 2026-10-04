@@ -59,6 +59,7 @@ public partial class App : Application
         sc.AddSingleton<AdbService>();
         sc.AddSingleton<DeviceWatcher>();
         sc.AddSingleton<SavedDeviceStore>();
+        sc.AddSingleton(sp => new ClickZen.Core.Devices.EmulatorProfileStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<ILogger<ClickZen.Core.Devices.EmulatorProfileStore>>()));
         sc.AddSingleton<AutoConnector>();
         sc.AddSingleton<IScrcpyTransport, AdbScrcpyTransport>();
         sc.AddSingleton<DeviceHub>();
@@ -138,6 +139,11 @@ public partial class App : Application
         if (Environment.GetCommandLineArgs().Contains("--selftest-automation", StringComparer.OrdinalIgnoreCase))
         {
             _ = new AutomationSelfTest(_window, _services, _log).RunAsync();
+        }
+
+        if (Environment.GetCommandLineArgs().Contains("--selftest-window", StringComparer.OrdinalIgnoreCase))
+        {
+            _ = new WindowSelfTest(_window, _services, _log).RunAsync();
         }
 
         if (Environment.GetCommandLineArgs().Contains("--selftest-variables", StringComparer.OrdinalIgnoreCase))

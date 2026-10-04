@@ -257,7 +257,7 @@ internal sealed class AutomationSelfTest
     }
 
     /// <summary>The top resumed activity ("package/.Activity"), or null when it cannot be read.</summary>
-    private static async Task<string?> ResumedActivityAsync(DeviceHub hub, string serial)
+    internal static async Task<string?> ResumedActivityAsync(DeviceHub hub, string serial)
     {
         try
         {
@@ -271,7 +271,7 @@ internal sealed class AutomationSelfTest
         }
     }
 
-    private static async Task GoHomeAsync(Core.Input.ITouchInjector injector)
+    internal static async Task GoHomeAsync(Core.Input.ITouchInjector injector)
     {
         await injector.KeyAsync(Core.Input.KeyCodes.Home, CancellationToken.None);
         await Task.Delay(1500);
@@ -280,7 +280,7 @@ internal sealed class AutomationSelfTest
     }
 
     /// <summary>Drives the workbench's pointer handlers with a drag from frame point a to b.</summary>
-    private static async Task<bool> DragAsync(Workbench bench, PointD a, PointD b)
+    internal static async Task<bool> DragAsync(Workbench bench, PointD a, PointD b)
     {
         if (bench.FrameToViewport(a) is not { } va || bench.FrameToViewport(b) is not { } vb)
         {
@@ -308,7 +308,7 @@ internal sealed class AutomationSelfTest
     /// which opens without first-run screens): along the first dock column, the longest run of non-dark pixels
     /// between 74% and 92% of the height (the dock icons sit on the dark wallpaper; the run is the icon's circle).
     /// </summary>
-    private static PointD FindIcon(Frame f)
+    internal static PointD FindIcon(Frame f)
     {
         var cx = (int)(f.Width / 8.0);
         var y0 = (int)(f.Height * 0.74);

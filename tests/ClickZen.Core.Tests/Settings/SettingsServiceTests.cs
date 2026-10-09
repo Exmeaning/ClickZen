@@ -90,4 +90,51 @@ public sealed class SettingsServiceTests : IDisposable
         svc.Update(s => s.Devices.MaxSize = 0);
         Assert.Equal(0, Create().Current.Devices.MaxSize);
     }
+
+    [Fact]
+    public void Mcp_defaults_are_off_loopback_with_every_capability()
+    {
+        var m = Create().Current.Mcp;
+
+        Assert.False(m.Enabled);
+        Assert.False(m.AllowRemote);
+        Assert.Equal(McpSettings.DefaultPort, m.Port);
+        Assert.Equal("", m.ProtectedToken);
+        Assert.True(m.AllowObserve && m.AllowInput && m.AllowAutomation && m.AllowRecording && m.AllowVariables && m.AllowShell);
+    }
+
+    [Fact]
+    public void Mcp_section_is_restored_and_clamped()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(Path.Combine(_dir, "settings.json"),
+            """{ "mcp": { "enabled": true, "port": 70000, "allowShell": false, "protectedToken": null } }""");
+
+        var m = Create().Current.Mcp;
+
+        Assert.True(m.Enabled);
+        Assert.Equal(65535, m.Port);
+        Assert.False(m.AllowShell);
+        Assert.True(m.AllowInput);
+        Assert.Equal("", m.ProtectedToken);
+    }
+
+    [Fact]
+    public void Mcp_settings_persist()
+    {
+        var svc = Create();
+        svc.Update(s =>
+        {
+            s.Mcp.Enabled = true;
+            s.Mcp.Port = 9600;
+            s.Mcp.AllowRemote = true;
+            s.Mcp.AllowVariables = false;
+        });
+
+        var m = Create().Current.Mcp;
+        Assert.True(m.Enabled);
+        Assert.Equal(9600, m.Port);
+        Assert.True(m.AllowRemote);
+        Assert.False(m.AllowVariables);
+    }
 }

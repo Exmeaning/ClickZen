@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    MCP server (AI access). Exposes ClickZen to AI clients over Streamable HTTP (embedded Kestrel)
+    and bridges stdio clients to a running instance. Depends only on Core: the App implements
+    IClickZenBackend, so tools can be tested against a fake backend.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ClickZen.Mcp</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClickZen.Core\ClickZen.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ClickZen.Mcp.Tests" />
+  </ItemGroup>
+</Project>

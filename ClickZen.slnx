@@ -7,6 +7,7 @@
     <Project Path="src/ClickZen.Device/ClickZen.Device.csproj" />
     <Project Path="src/ClickZen.Platform/ClickZen.Platform.csproj" />
     <Project Path="src/ClickZen.Vision/ClickZen.Vision.csproj" />
+    <Project Path="src/ClickZen.Mcp/ClickZen.Mcp.csproj" />
     <Project Path="src/ClickZen.App/ClickZen.App.csproj" />
   </Folder>
   <Folder Name="/tests/">

@@ -59,6 +59,7 @@ public sealed class SettingsService
         s.Automation ??= new();
         s.Recording ??= new();
         s.Sync ??= new();
+        s.Mcp ??= new();
         s.Tools ??= new();
         s.General ??= new();
 
@@ -75,6 +76,8 @@ public sealed class SettingsService
         s.Sync.Port = Math.Clamp(s.Sync.Port, 1024, 65535);
         s.Sync.MaxClients = Math.Clamp(s.Sync.MaxClients, 1, 256);
         s.Sync.ProtectedToken ??= "";
+        s.Mcp.Port = Math.Clamp(s.Mcp.Port, 1024, 65535);
+        s.Mcp.ProtectedToken ??= "";
         s.Tools.CustomAdbPath ??= "";
     }
 }

@@ -18,7 +18,7 @@
     <RepositoryUrl>https://github.com/Exmeaning/ClickZen</RepositoryUrl>
 
     <!-- CI overrides with -p:Version=x.y.z from the git tag -->
-    <Version Condition="'$(Version)' == ''">2.0.0-dev</Version>
+    <Version Condition="'$(Version)' == ''">2.1.0-dev</Version>
 
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
   </PropertyGroup>

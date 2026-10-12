@@ -9,7 +9,8 @@ public static class EmulatorProfileFactory
     /// <summary>
     /// The match rule for an instance's window: process name and window class identify the emulator, the title
     /// tells instances apart. AVD titles carry the console port (":5554"), which changes when the port does, so for
-    /// the Android Studio emulator the rule matches on the AVD name only.
+    /// the Android Studio emulator the rule matches on the AVD name only. Qt window classes embed the Qt version
+    /// ("Qt653QWindowIcon"), which changes with emulator updates, so Qt classes are left out.
     /// </summary>
     public static WindowMatchRule MatchRule(EmulatorInstance instance)
     {
@@ -21,10 +22,12 @@ public static class EmulatorProfileFactory
             title = avd ?? instance.InstanceKey;
         }
 
+        var cls = instance.WindowClass.Trim();
+        var versionedQt = cls.StartsWith("Qt", StringComparison.Ordinal) && cls.EndsWith("QWindowIcon", StringComparison.Ordinal);
         return new WindowMatchRule
         {
             ProcessName = string.IsNullOrWhiteSpace(instance.ProcessName) ? null : instance.ProcessName,
-            ClassName = string.IsNullOrWhiteSpace(instance.WindowClass) ? null : instance.WindowClass,
+            ClassName = cls.Length == 0 || versionedQt ? null : cls,
             Title = title.Length == 0 ? null : title,
             TitleMode = TitleMatchMode.Contains,
         };

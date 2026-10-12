@@ -115,6 +115,27 @@ internal static partial class Win32
     [return: MarshalAs(UnmanagedType.Bool)]
     public static unsafe partial bool QueryFullProcessImageName(nint process, uint flags, char* buffer, ref uint size);
 
+    // ---- process command line (emulator detection)
+
+    /// <summary>ProcessCommandLineInformation (Windows 8.1+): the command line as a UNICODE_STRING followed by its buffer.</summary>
+    public const int ProcessCommandLineInformation = 60;
+
+    /// <summary>NTSTATUS values meaning "buffer too small, the required size was returned".</summary>
+    public const int StatusInfoLengthMismatch = unchecked((int)0xC0000004);
+    public const int StatusBufferTooSmall = unchecked((int)0xC0000023);
+    public const int StatusBufferOverflow = unchecked((int)0x80000005);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct UNICODE_STRING
+    {
+        public ushort Length;
+        public ushort MaximumLength;
+        public nint Buffer;
+    }
+
+    [LibraryImport("ntdll.dll")]
+    public static unsafe partial int NtQueryInformationProcess(nint process, int infoClass, void* info, uint length, out uint returnLength);
+
     // ---- WinRT / COM activation (Windows.Graphics.Capture interop)
 
     [LibraryImport("combase.dll", EntryPoint = "WindowsCreateString")]

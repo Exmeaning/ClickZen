@@ -209,6 +209,42 @@ public sealed class EmulatorConfigParserTests
     }
 
     [Theory]
+    [InlineData(@"""C:\leidian\LDPlayer9\dnplayer.exe"" index=2|", 2)]
+    [InlineData(@"dnplayer.exe leidian3", 3)]
+    [InlineData(@"""C:\leidian\LDPlayer9\dnplayer.exe""", null)]
+    [InlineData(@"dnplayer.exe reindex=4", null)]
+    [InlineData(null, null)]
+    public void LdPlayer_command_line_index(string? commandLine, int? expected)
+    {
+        Assert.Equal(expected, EmulatorConfigParsers.LdPlayerCommandLineIndex(commandLine));
+    }
+
+    // Shape of D:\leidian\LDPlayer14\vms\config\leidian0.config (LDPlayer 14, dotted keys at the top level).
+    [Theory]
+    [InlineData("""{ "propertySettings.phoneModel": "24117RK2CC", "basicSettings.adbDebug": 1, "basicSettings.rootMode": true }""", true)]
+    [InlineData("""{ "basicSettings.adbDebug": 0 }""", false)]
+    [InlineData("""{ "basicSettings.adbDebug": "0" }""", false)]
+    [InlineData("""{ "basicSettings.adbDebug": true }""", true)]
+    [InlineData("""{ "basicSettings.fps": 60 }""", null)]
+    [InlineData("{", null)]
+    [InlineData(null, null)]
+    public void LdPlayer_adb_switch(string? json, bool? expected)
+    {
+        Assert.Equal(expected, EmulatorConfigParsers.LdPlayerAdbEnabled(json));
+    }
+
+    [Theory]
+    [InlineData(@"""D:\MuMu\nx_device\12.0\shell\MuMuNxDevice.exe"" -v MuMuPlayerGlobal-12.0-3 --x", "MuMuPlayerGlobal-12.0-3")]
+    [InlineData(@"MuMuVMMHeadless.exe --comment MuMuPlayer-12.0-0 --startvm abc", "MuMuPlayer-12.0-0")]
+    [InlineData(@"""D:\MuMu\vms\MuMuPlayer-12.0-base\x""", null)]
+    [InlineData(@"MuMuPlayer.exe", null)]
+    [InlineData(null, null)]
+    public void MuMu_vm_name_in_text(string? text, string? expected)
+    {
+        Assert.Equal(expected, EmulatorConfigParsers.FindMuMuVmName(text));
+    }
+
+    [Theory]
     [InlineData("nox", 0)]
     [InlineData("Nox_1", 1)]
     [InlineData("Nox64_3", 3)]

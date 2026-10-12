@@ -12,3 +12,4 @@ GetClientRect
 ClientToScreen
 GetShellWindow
 WINDOW_EX_STYLE
+EnumChildWindows

@@ -34,6 +34,12 @@ public sealed record EmulatorDefinition
     /// <summary>Prefixes of HKLM/HKCU …\Uninstall sub keys whose UninstallString points into the installation.</summary>
     public IReadOnlyList<string> UninstallKeyPrefixes { get; init; } = [];
 
+    /// <summary>
+    /// Files (relative to the installation directory) that prove a directory is this emulator's installation; used to
+    /// validate directories derived from the registry or a process path.
+    /// </summary>
+    public IReadOnlyList<string> InstallMarkers { get; init; } = [];
+
     /// <summary>adb port of instance N by the emulator's documented formula, or null when there is no reliable formula.</summary>
     public Func<int, int?> PortForIndex { get; init; } = _ => null;
 
@@ -74,6 +80,7 @@ public static class EmulatorCatalog
         PlayerProcesses = ["MuMuNxDevice", "MuMuPlayer"],
         VmProcesses = ["MuMuVMMHeadless"],
         UninstallKeyPrefixes = ["MuMuPlayer", "MuMu Player", "YXArkNights"],
+        InstallMarkers = [@"nx_main\MuMuNxMain.exe", @"shell\MuMuPlayer.exe"],
         // Official: 16384 + 32 × index (the port moves up by one when it is taken).
         PortForIndex = i => i >= 0 ? 16384 + 32 * i : null,
         ScanInstances = 6,
@@ -90,6 +97,7 @@ public static class EmulatorCatalog
         PlayerProcesses = ["dnplayer"],
         VmProcesses = ["Ld9BoxHeadless", "LdVBoxHeadless", "LdBoxHeadless"],
         UninstallKeyPrefixes = ["LDPlayer", "leidian"],
+        InstallMarkers = ["dnplayer.exe"],
         // Official (LDPlayer 9): instance N is emulator-(5554 + 2N), i.e. adb port 5555 + 2N; adb finds it by itself.
         PortForIndex = i => i >= 0 ? 5555 + 2 * i : null,
         ScanInstances = 6,
@@ -106,6 +114,7 @@ public static class EmulatorCatalog
         PlayerProcesses = ["Nox"],
         VmProcesses = ["NoxVMHandle"],
         UninstallKeyPrefixes = ["Nox"],
+        InstallMarkers = ["Nox.exe", @"bin\Nox.exe"],
         // Official: 62001 for the first instance, then 62025, 62026, …
         PortForIndex = i => i switch { 0 => 62001, > 0 => 62024 + i, _ => null },
         ScanInstances = 6,
@@ -120,6 +129,7 @@ public static class EmulatorCatalog
         PlayerProcesses = ["MEmu"],
         VmProcesses = ["MEmuHeadless"],
         UninstallKeyPrefixes = ["MEmu"],
+        InstallMarkers = ["MEmu.exe"],
         // Official forum: 21503 + 10 × index (NAT mode).
         PortForIndex = i => i >= 0 ? 21503 + 10 * i : null,
         ScanInstances = 6,
@@ -133,6 +143,7 @@ public static class EmulatorCatalog
         ChineseName = "BlueStacks 蓝叠",
         PlayerProcesses = ["HD-Player"],
         UninstallKeyPrefixes = ["BlueStacks"],
+        InstallMarkers = ["HD-Player.exe"],
         // No reliable formula (Hyper-V builds pick a new port on every start): the port comes from bluestacks.conf.
         // The scan still tries the common ones.
         PortForIndex = i => i >= 0 ? 5555 + 10 * i : null,
@@ -147,6 +158,7 @@ public static class EmulatorCatalog
         ChineseName = "Android Studio 模拟器",
         PlayerProcesses = [],
         PlayerProcessPrefix = "qemu-system-",
+        InstallMarkers = [@"emulator\emulator.exe"],
         // Console port 5554 + 2N, adb port one higher; adb lists it as emulator-<console port> by itself.
         PortForIndex = i => i >= 0 ? 5555 + 2 * i : null,
         ScanInstances = 1,

@@ -153,7 +153,7 @@ public sealed class EmulatorProfileFactoryTests
         var p = EmulatorProfileFactory.Create(MuMu(), "", new RectI(0, 40, 1280, 720), new SizeI(1280, 760), new SizeI(1920, 1080), "127.0.0.1:16384");
         Assert.Equal("Android Device", p.Name);
         Assert.Equal("MuMuNxDevice", p.Match.ProcessName);
-        Assert.Equal("Qt5156QWindowIcon", p.Match.ClassName);
+        Assert.Null(p.Match.ClassName); // Qt classes carry the Qt version, which changes with updates
         Assert.Equal("Android Device", p.Match.Title);
         Assert.Equal(new RectI(0, 40, 1280, 720), p.CropRect);
         Assert.Equal(new SizeI(1280, 760), p.ClientSize);
@@ -161,6 +161,9 @@ public sealed class EmulatorProfileFactoryTests
         Assert.Equal("127.0.0.1:16384", p.AdbSerial);
         Assert.Equal("mumu:MuMuPlayerGlobal-12.0-0", p.EmulatorKey);
         Assert.Null(p.Match.Validate());
+
+        var ld = new EmulatorInstance { Kind = EmulatorKind.LDPlayer, InstanceKey = "leidian0", ProcessName = "dnplayer", WindowTitle = "雷电模拟器", WindowClass = "LDPlayerMainFrame" };
+        Assert.Equal("LDPlayerMainFrame", EmulatorProfileFactory.MatchRule(ld).ClassName);
     }
 
     [Fact]

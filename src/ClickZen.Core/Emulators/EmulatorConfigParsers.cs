@@ -79,8 +79,18 @@ public static partial class EmulatorConfigParsers
     /// <summary>True for MuMu 12 VM directory names (see <see cref="MuMuVmIndex"/>).</summary>
     public static bool IsMuMuVmName(string? vmName) => MuMuVmIndex(vmName) is not null;
 
+    /// <summary>The first MuMu 12 VM name anywhere in <paramref name="text"/> (e.g. a player's command line), or null.</summary>
+    public static string? FindMuMuVmName(string? text)
+    {
+        var m = MuMuVmSearchRegex().Match(text ?? "");
+        return m.Success ? m.Value : null;
+    }
+
     [GeneratedRegex(@"^(?:MuMuPlayer(?:Global)?|YXArkNights)-\d+(?:\.\d+)?-(\d+)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex MuMuVmRegex();
+
+    [GeneratedRegex(@"(?<![\w-])(?:MuMuPlayer(?:Global)?|YXArkNights)-\d+(?:\.\d+)?-\d+(?![\w.])", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex MuMuVmSearchRegex();
 
     // ------------------------------------------------------------------ VirtualBox XML (Nox .vbox, MEmu .memu, old MuMu .nemu)
 
@@ -274,6 +284,50 @@ public static partial class EmulatorConfigParsers
             && int.TryParse(s.AsSpan("leidian".Length), NumberStyles.None, CultureInfo.InvariantCulture, out var i)
             ? i
             : null;
+    }
+
+    /// <summary>
+    /// Instance number in an LDPlayer player command line: "index=2" (as written by ldconsole) or a "leidian2" argument.
+    /// </summary>
+    public static int? LdPlayerCommandLineIndex(string? commandLine)
+    {
+        var m = LdIndexRegex().Match(commandLine ?? "");
+        return m.Success && int.TryParse(m.Groups[1].Success ? m.Groups[1].ValueSpan : m.Groups[2].ValueSpan, NumberStyles.None, CultureInfo.InvariantCulture, out var i)
+            ? i
+            : null;
+    }
+
+    [GeneratedRegex(@"(?<![\w])index[=:](\d+)|(?<![\w])leidian(\d+)(?![\w])", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex LdIndexRegex();
+
+    /// <summary>
+    /// LDPlayer <c>vms\config\leidian&lt;N&gt;.config</c> (JSON with dotted keys): whether the instance's ADB debugging
+    /// switch (<c>basicSettings.adbDebug</c>, 1 = local connection on) is on; null when absent or unreadable.
+    /// </summary>
+    public static bool? LdPlayerAdbEnabled(string? json)
+    {
+        var root = ParseJson(json);
+        if (root is not { } r)
+        {
+            return null;
+        }
+
+        using (r)
+        {
+            if (r.RootElement.ValueKind != JsonValueKind.Object || !r.RootElement.TryGetProperty("basicSettings.adbDebug", out var v))
+            {
+                return null;
+            }
+
+            return v.ValueKind switch
+            {
+                JsonValueKind.Number when v.TryGetInt32(out var n) => n != 0,
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.String => v.GetString()?.Trim() is { Length: > 0 } s ? s != "0" && !s.Equals("false", StringComparison.OrdinalIgnoreCase) : null,
+                _ => null,
+            };
+        }
     }
 
     // ------------------------------------------------------------------ Nox / MEmu instance names

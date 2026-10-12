@@ -9,7 +9,8 @@ namespace ClickZen.Platform.Windows;
 
 /// <summary>A top-level desktop window that can be bound as an emulator frame source.</summary>
 /// <param name="ProcessName">Executable name without ".exe" (e.g. "MuMuPlayer"); "" when it could not be read.</param>
-public sealed record DesktopWindowInfo(nint Handle, string Title, string ClassName, uint ProcessId, string ProcessName = "");
+/// <param name="IsMinimized">The window is minimized (only reported by <see cref="WindowEnumerator.GetTopLevelWindows"/>).</param>
+public sealed record DesktopWindowInfo(nint Handle, string Title, string ClassName, uint ProcessId, string ProcessName = "", bool IsMinimized = false);
 
 /// <summary>Enumerates user-visible top-level windows, skipping cloaked/minimized/tool windows.</summary>
 public static class WindowEnumerator
@@ -19,7 +20,13 @@ public static class WindowEnumerator
         "Progman", "Shell_TrayWnd", "Shell_SecondaryTrayWnd", "WorkerW", "Windows.UI.Core.CoreWindow",
     };
 
-    public static IReadOnlyList<DesktopWindowInfo> GetVisibleWindows(uint excludeProcessId = 0)
+    /// <summary>Visible, non-minimized top-level windows with a title (what can be captured right now).</summary>
+    public static IReadOnlyList<DesktopWindowInfo> GetVisibleWindows(uint excludeProcessId = 0) => Enumerate(excludeProcessId, includeMinimized: false);
+
+    /// <summary>Like <see cref="GetVisibleWindows"/> but also minimized windows (flagged with <see cref="DesktopWindowInfo.IsMinimized"/>).</summary>
+    public static IReadOnlyList<DesktopWindowInfo> GetTopLevelWindows(uint excludeProcessId = 0) => Enumerate(excludeProcessId, includeMinimized: true);
+
+    private static List<DesktopWindowInfo> Enumerate(uint excludeProcessId, bool includeMinimized)
     {
         var result = new List<DesktopWindowInfo>();
         var names = new Dictionary<uint, string>();
@@ -27,7 +34,13 @@ public static class WindowEnumerator
 
         bool Visit(HWND hwnd)
         {
-            if (hwnd == shell || !PInvoke.IsWindowVisible(hwnd) || PInvoke.IsIconic(hwnd))
+            if (hwnd == shell || !PInvoke.IsWindowVisible(hwnd))
+            {
+                return true;
+            }
+
+            var minimized = PInvoke.IsIconic(hwnd);
+            if (minimized && !includeMinimized)
             {
                 return true;
             }
@@ -62,7 +75,7 @@ public static class WindowEnumerator
                 names[pid] = processName;
             }
 
-            result.Add(new DesktopWindowInfo(hwnd, title, cls, pid, processName));
+            result.Add(new DesktopWindowInfo(hwnd, title, cls, pid, processName, minimized));
             return true;
         }
 

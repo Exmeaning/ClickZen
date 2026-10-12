@@ -148,7 +148,7 @@ AI 接入页上可以分组开关工具。关闭的分组不会出现在工具�
 | `connect_device` | `device`、`makeCurrent` | 启动投屏或窗口捕获，并等待画面就绪；可以同时设为当前设备 |
 | `take_screenshot` | `format`（`jpeg`/`png`）、`maxSize`（默认 1280，0 = 原始分辨率）、`quality`、`x/y/width/height`（裁剪区域） | 返回图片和坐标换算说明。没有画面时会自动开始投屏；截图会等待最近一次 AI 操作之后的新帧 |
 | `dump_ui` | `filter`、`maxNodes`（默认 250）、`includeAll` | 原生界面元素：类名、文字、描述、资源 id、可点击/可滚动/勾选等状态，以及中心点和边界。游戏、视频、画布类界面返回的内容很少 |
-| `find_image` | `template`（方案中的模板名）或 `imageBase64`、`threshold`（默认 0.85）、`grayscale`、`multiScale`、搜索区域 | OpenCV 模板匹配，返回是否找到、相似度、位置和中心点 |
+| `find_image` | `template`（方案中的模板名）或 `imageBase64`、`imageScale`、`threshold`（默认 0.85）、`grayscale`、`multiScale`、搜索区域 | OpenCV 模板匹配，返回是否找到、相似度、位置和中心点。`imageBase64` 若是从缩放后的截图上裁下来的，需要传 `imageScale` = 设备宽度 ÷ 截图宽度（截图返回的文字说明里会直接给出这个值），否则尺寸对不上会找不到 |
 | `get_pixel_color` | `x`、`y`、`refWidth/refHeight` | 返回 `#RRGGBB` 和 r/g/b |
 | `wait_for_text` | `text`、`timeoutMs`（默认 10000，上限 60000）、`gone` | 轮询控件树，直到指定文字出现（或在 `gone=true` 时消失） |
 | `list_apps` | `filter`、`includeSystem` | 已安装应用的包名 |

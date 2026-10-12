@@ -17,6 +17,8 @@ public static class McpJson
         {
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             WriteIndented = false,
+            // Tool results go to a language model, not into HTML: keep CJK and other text readable (and short).
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         };
         o.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
         o.Converters.Add(new PointConverter());

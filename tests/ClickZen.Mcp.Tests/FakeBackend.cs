@@ -69,7 +69,7 @@ internal sealed class FakeBackend : IClickZenBackend
         Result($"pixel {point.X},{point.Y}", new McpPixel(point.X, point.Y, "#FF8000", 255, 128, 0));
 
     public Task<McpImageMatch> FindImageAsync(string? device, McpImageQuery query, CancellationToken ct) =>
-        Result($"find {query.TemplateName} png={query.Png?.Length ?? 0} area={query.Area}",
+        Result($"find {query.TemplateName} png={query.Png?.Length ?? 0} area={query.Area} scale={query.ImageScale.ToString(System.Globalization.CultureInfo.InvariantCulture)}",
             new McpImageMatch(true, 0.97, query.Threshold, new RectI(10, 20, 30, 40), new PointI(25, 40), query.TemplateName));
 
     public Task<McpUiDump> DumpUiAsync(string? device, CancellationToken ct) => Result("dump", new McpUiDump(UiXml, 1, 1));

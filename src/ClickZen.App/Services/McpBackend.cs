@@ -293,12 +293,20 @@ public sealed class McpBackend : IClickZenBackend
         string? name = null;
         if (query.Png is { } png)
         {
-            template = new TemplateAsset { Id = "mcp-" + Guid.NewGuid().ToString("N"), Name = "image", Png = png, Size = Vision.ImageCodec.MeasurePng(png) };
-            if (template.Size.IsEmpty)
+            var size = Vision.ImageCodec.MeasurePng(png);
+            if (size.IsEmpty)
             {
                 throw new McpToolException("imageBase64 could not be decoded.");
             }
 
+            // The template is matched in device pixels (refSize = screen): bring a crop of a scaled screenshot back to device size.
+            if (Math.Abs(query.ImageScale - 1) > 0.001)
+            {
+                size = new SizeI(Math.Max(1, (int)Math.Round(size.Width * query.ImageScale)), Math.Max(1, (int)Math.Round(size.Height * query.ImageScale)));
+                png = await Task.Run(() => TemplateImaging.ResizePng(png, size), ct);
+            }
+
+            template = new TemplateAsset { Id = "mcp-" + Guid.NewGuid().ToString("N"), Name = "image", Png = png, Size = size };
             refSize = default;
         }
         else
@@ -491,18 +499,21 @@ public sealed class McpBackend : IClickZenBackend
         }
 
         // Non-ASCII: paste through the clipboard of the scrcpy session (adb "input text" cannot type it).
+        // Window devices paste through their linked adb device's session.
         var entry = await OnUi(() => Resolve(device));
-        var session = await OnUi(() =>
+        var target = await OnUi(() => entry.IsWindow
+            ? entry.AdbSerial is { } s ? _hub.Devices.FirstOrDefault(d => !d.IsWindow && d.Serial.Equals(s, StringComparison.OrdinalIgnoreCase)) : null
+            : entry);
+        if (target is null)
         {
-            var target = entry.IsWindow && entry.AdbSerial is { } s
-                ? _hub.Devices.FirstOrDefault(d => !d.IsWindow && d.Serial.Equals(s, StringComparison.OrdinalIgnoreCase))
-                : entry;
-            return target?.Session;
-        });
+            throw new McpToolException($"{entry.Info.DisplayName} has no linked adb device, so non-ASCII text cannot be typed. Link one on the Devices page.");
+        }
+
+        var session = await OnUi(() => target.Session);
         if (session is not { IsControlAvailable: true })
         {
-            await EnsurePictureAsync(entry, ct);
-            session = await OnUi(() => entry.Session);
+            await EnsurePictureAsync(target, ct);
+            session = await OnUi(() => target.Session);
         }
 
         if (session is not { IsControlAvailable: true })

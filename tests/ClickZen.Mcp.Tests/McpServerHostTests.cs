@@ -330,6 +330,42 @@ public sealed class McpServerHostTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Find_image_passes_image_scale_and_rejects_bad_values()
+    {
+        await using var client = await ConnectAsync();
+        var b64 = Convert.ToBase64String(FakeBackend.TinyPng);
+
+        var ok = await CallAsync(client, "find_image", new() { ["imageBase64"] = b64, ["imageScale"] = 1.875 });
+        var bad = await CallAsync(client, "find_image", new() { ["imageBase64"] = b64, ["imageScale"] = 50 });
+
+        Assert.NotEqual(true, ok.IsError);
+        Assert.Contains(_backend.Calls, c => c.Contains("scale=1.875", StringComparison.Ordinal));
+        Assert.True(bad.IsError);
+    }
+
+    [Fact]
+    public async Task Results_keep_non_ascii_text_readable()
+    {
+        await using var client = await ConnectAsync();
+
+        await CallAsync(client, "set_variable", new() { ["name"] = "state", ["value"] = "战斗中" });
+        var text = Text(await CallAsync(client, "get_variables"));
+
+        Assert.Contains("战斗中", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("\\u", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Scaled_screenshot_text_explains_find_image_scale()
+    {
+        await using var client = await ConnectAsync();
+
+        var text = Text(await CallAsync(client, "take_screenshot", new() { ["maxSize"] = 1200 }));
+
+        Assert.Contains("imageScale=2", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Find_image_accepts_base64_with_data_url_prefix()
     {
         await using var client = await ConnectAsync();

@@ -173,10 +173,11 @@ public sealed partial class ClickZenTools
 
     [McpServerTool(Name = "find_image", Title = "Find image on screen", ReadOnly = true, Idempotent = true, Destructive = false, OpenWorld = false)]
     [McpCapability(McpCapability.Observe)]
-    [Description("Searches the live screen for an image (OpenCV template matching): a template of the open automation scheme (by name), or any PNG/JPEG you provide as base64 (authored at the device's current screen size). Returns whether it was found, the score and the centre in device pixels – ready for tap.")]
+    [Description("Searches the live screen for an image (OpenCV template matching): a template of the open automation scheme (by name), or any PNG/JPEG you provide as base64 – for example a crop of an earlier screenshot (pass that screenshot's imageScale so it is resized to device pixels). Returns whether it was found, the score and the centre in device pixels – ready for tap.")]
     public Task<string> FindImage(
         [Description("Name (or id) of a template in the open scheme (see get_scheme).")] string? template = null,
         [Description("Alternatively: the image to find, base64-encoded PNG or JPEG (data: URL prefix allowed).")] string? imageBase64 = null,
+        [Description("For imageBase64: device pixels per image pixel. 1 (default) when the image was cut at device resolution; when cut from a scaled screenshot use device width / screenshot width (e.g. 1080/576 = 1.875).")] double imageScale = 1,
         [Description("Device id or name from list_devices; omit for the current device.")] string? device = null,
         [Description("Similarity threshold 0.5–1.0 (default 0.85).")] double threshold = 0.85,
         [Description("Match in grayscale (ignores tint, faster).")] bool grayscale = false,
@@ -198,7 +199,12 @@ public sealed partial class ClickZenTools
             throw new McpToolException("Pass either template (a template name of the open scheme) or imageBase64.");
         }
 
-        var r = await B.FindImageAsync(device, new McpImageQuery(template, png, Region(x, y, width, height), Math.Clamp(threshold, 0.5, 1.0), grayscale, multiScale), ct);
+        if (!double.IsFinite(imageScale) || imageScale < 0.1 || imageScale > 10)
+        {
+            throw new McpToolException("imageScale must be between 0.1 and 10.");
+        }
+
+        var r = await B.FindImageAsync(device, new McpImageQuery(template, png, Region(x, y, width, height), Math.Clamp(threshold, 0.5, 1.0), grayscale, multiScale, imageScale), ct);
         return McpJson.Serialize(r);
     }, cancellationToken);
 
@@ -804,14 +810,16 @@ public sealed partial class ClickZenTools
         var sx = s.ImageWidth > 0 ? (double)s.Region.Width / s.ImageWidth : 1;
         var sy = s.ImageHeight > 0 ? (double)s.Region.Height / s.ImageHeight : 1;
         var inv = CultureInfo.InvariantCulture;
+        var oneToOne = Math.Abs(sx - 1) < 0.001 && Math.Abs(sy - 1) < 0.001;
+        var findHint = oneToOne ? "" : string.Create(inv, $" When passing this image (or a crop of it) to find_image, set imageScale={sx:0.####}.");
         if (full)
         {
-            return Math.Abs(sx - 1) < 0.001 && Math.Abs(sy - 1) < 0.001
+            return oneToOne
                 ? string.Create(inv, $"Screenshot {s.ImageWidth}x{s.ImageHeight} = device screen (1:1). Image pixels are device pixels.")
-                : string.Create(inv, $"Screenshot {s.ImageWidth}x{s.ImageHeight} of a {s.ScreenWidth}x{s.ScreenHeight} screen. To tap a point measured on this image, call tap with x, y and refWidth={s.ImageWidth}, refHeight={s.ImageHeight} (or multiply by {sx:0.####}).");
+                : string.Create(inv, $"Screenshot {s.ImageWidth}x{s.ImageHeight} of a {s.ScreenWidth}x{s.ScreenHeight} screen. To tap a point measured on this image, call tap with x, y and refWidth={s.ImageWidth}, refHeight={s.ImageHeight} (or multiply by {sx:0.####}).") + findHint;
         }
 
-        return string.Create(inv, $"Crop {s.ImageWidth}x{s.ImageHeight} of device region x={s.Region.X}, y={s.Region.Y}, {s.Region.Width}x{s.Region.Height} (screen {s.ScreenWidth}x{s.ScreenHeight}). Device coordinates = ({s.Region.X} + imageX × {sx:0.####}, {s.Region.Y} + imageY × {sy:0.####}).");
+        return string.Create(inv, $"Crop {s.ImageWidth}x{s.ImageHeight} of device region x={s.Region.X}, y={s.Region.Y}, {s.Region.Width}x{s.Region.Height} (screen {s.ScreenWidth}x{s.ScreenHeight}). Device coordinates = ({s.Region.X} + imageX × {sx:0.####}, {s.Region.Y} + imageY × {sy:0.####}).") + findHint;
     }
 
     private async Task<IReadOnlyList<UiNode>> ReadUiAsync(string? device, bool includeAll, CancellationToken ct)

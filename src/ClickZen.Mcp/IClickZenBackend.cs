@@ -48,9 +48,11 @@ public sealed record McpImageMatch(bool Found, double Score, double Threshold, R
 
 /// <summary>What to look for in <see cref="IClickZenBackend.FindImageAsync"/>.</summary>
 /// <param name="TemplateName">Name (or id) of a template in the open scheme.</param>
-/// <param name="Png">Or: an encoded image (PNG/JPEG) authored at the device's current screen size.</param>
+/// <param name="Png">Or: an encoded image (PNG/JPEG).</param>
+/// <param name="ImageScale">For <paramref name="Png"/>: device pixels per image pixel (1 when it was cut at device resolution,
+/// e.g. 1.875 when cut from a 576-wide screenshot of a 1080-wide screen).</param>
 /// <param name="Area">Optional device-pixel search area.</param>
-public sealed record McpImageQuery(string? TemplateName, byte[]? Png, RectI? Area, double Threshold, bool Grayscale, bool MultiScale);
+public sealed record McpImageQuery(string? TemplateName, byte[]? Png, RectI? Area, double Threshold, bool Grayscale, bool MultiScale, double ImageScale = 1);
 
 /// <summary>Colour of a pixel.</summary>
 public sealed record McpPixel(int X, int Y, string Hex, int R, int G, int B);

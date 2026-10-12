@@ -193,4 +193,87 @@ public sealed class RootSendeventInjectorTests
         var keys = new InputDeviceInfo("/dev/input/event0", "keys", new Dictionary<int, AbsAxis>(), new HashSet<int>(), false);
         Assert.Throws<ArgumentException>(() => Create(keys));
     }
+
+    /// <summary>Decodes the <c>print -n "…"</c> payloads of a raw script into (type, code, value) records.</summary>
+    private static List<List<(int Type, int Code, int Value)>> RawBatches(string script)
+    {
+        var batches = new List<List<(int, int, int)>>();
+        foreach (var part in script.Split(";print -n \"").Skip(1))
+        {
+            var payload = part[..part.IndexOf("\">&4", StringComparison.Ordinal)].Replace("$z", new string('Z', 1), StringComparison.Ordinal);
+            var bytes = new List<byte>();
+            for (var i = 0; i < payload.Length;)
+            {
+                if (payload[i] == 'Z')
+                {
+                    bytes.AddRange(new byte[16]);
+                    i++;
+                }
+                else if (payload[i..].StartsWith("\\0", StringComparison.Ordinal))
+                {
+                    bytes.Add(0);
+                    i += 2;
+                }
+                else
+                {
+                    Assert.StartsWith("\\x", payload[i..], StringComparison.Ordinal);
+                    bytes.Add(Convert.ToByte(payload.Substring(i + 2, 2), 16));
+                    i += 4;
+                }
+            }
+
+            Assert.Equal(0, bytes.Count % 24);
+            var batch = new List<(int, int, int)>();
+            for (var o = 0; o < bytes.Count; o += 24)
+            {
+                Assert.All(bytes.Skip(o).Take(16), b => Assert.Equal(0, b));
+                batch.Add((bytes[o + 16] | (bytes[o + 17] << 8), bytes[o + 18] | (bytes[o + 19] << 8),
+                    BitConverter.ToInt32([bytes[o + 20], bytes[o + 21], bytes[o + 22], bytes[o + 23]])));
+            }
+
+            batches.Add(batch);
+        }
+
+        return batches;
+    }
+
+    [Fact]
+    public void Raw_script_encodes_the_same_events_as_sendevent()
+    {
+        var gesture = new[] { (IReadOnlyList<TimedPoint>)[new TimedPoint(540, 1200, 0), new TimedPoint(800, 600, 120)] };
+        var raw = Create(Touch()).BuildRawScript(gesture);
+        var text = Commands(Create(Touch()).BuildScript(gesture));
+
+        var events = RawBatches(raw).SelectMany(b => b).Select(e => $"{e.Type} {e.Code} {e.Value}").ToArray();
+
+        // Tracking ids come from separate injector instances (both start at 100), so the streams match exactly.
+        Assert.Equal(text, events);
+        Assert.Contains("3 57 -1", events);
+        Assert.StartsWith("f=/data/local/tmp/.czev$$;", raw, StringComparison.Ordinal);
+        Assert.Contains("exec 4>/dev/input/event2||exit 1", raw, StringComparison.Ordinal);
+        Assert.Matches(@";w 0\.01\d;", raw);
+        Assert.DoesNotContain("sendevent", raw, StringComparison.Ordinal);
+        Assert.DoesNotContain("sleep 0", raw.Replace("w(){ sleep $1;}", "", StringComparison.Ordinal), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Raw_batches_end_with_syn_report()
+    {
+        var raw = Create(Touch()).BuildRawScript([[new TimedPoint(10, 10, 0), new TimedPoint(10, 10, 40)]]);
+
+        var batches = RawBatches(raw);
+
+        // Down, resampled moves every 16 ms, up – every batch closed by SYN_REPORT, the last one lifts the finger.
+        Assert.True(batches.Count >= 2);
+        Assert.All(batches, b => Assert.Equal((0, 0, 0), b[^1]));
+        Assert.Contains((3, 0x39, 100), batches[0]);
+        Assert.Equal((3, 0x39, -1), batches[^1].First(e => e.Code == 0x39));
+    }
+
+    [Fact]
+    public void Injector_name_reflects_mode()
+    {
+        Assert.Equal("root (sendevent)", Create(Touch()).Name);
+        Assert.Equal("root", new RootSendeventInjector((_, _) => Task.FromResult(""), Touch(), () => new SizeI(1080, 2400), () => DisplayRotation.Rotation0, rawEvents: true).Name);
+    }
 }

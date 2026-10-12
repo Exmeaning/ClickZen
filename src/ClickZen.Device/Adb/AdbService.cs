@@ -195,18 +195,43 @@ public sealed class AdbService : IDisposable
 
     /// <summary>
     /// Runs <paramref name="command"/> as root. The command is single-quoted for <c>sh</c>, so it may contain
-    /// quotes, pipes and redirections. Uses the <c>su</c> syntax detected by <see cref="CheckRootAsync(string, CancellationToken)"/>.
+    /// quotes, pipes and redirections. Uses the <c>su</c> syntax detected by <see cref="CheckRootAsync(string, CancellationToken)"/>;
+    /// before a check ran it tries <c>su -c</c> and, when the device answers like AOSP's <c>su</c> (emulator
+    /// userdebug images), switches to <c>su 0 sh -c</c> for this device and repeats the command.
     /// </summary>
     public Task<string> RootShellAsync(string serial, string command, CancellationToken ct = default) =>
         RootShellAsync(serial, command, DefaultShellTimeout, ct);
 
     /// <summary>Like <see cref="RootShellAsync(string, string, CancellationToken)"/> with an explicit timeout.</summary>
-    public Task<string> RootShellAsync(string serial, string command, TimeSpan timeout, CancellationToken ct = default)
+    public async Task<string> RootShellAsync(string serial, string command, TimeSpan timeout, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(serial);
         ArgumentNullException.ThrowIfNull(command);
-        var style = _suStyles.TryGetValue(serial, out var s) ? s : SuStyle.DashC;
-        return ShellAsync(serial, ShellQuoting.BuildRootCommand(command, style), timeout, ct);
+        if (_suStyles.TryGetValue(serial, out var known))
+        {
+            return await ShellAsync(serial, ShellQuoting.BuildRootCommand(command, known), timeout, ct);
+        }
+
+        var output = await ShellAsync(serial, ShellQuoting.BuildRootCommand(command, SuStyle.DashC), timeout, ct);
+        if (!IsAospSuRejection(output))
+        {
+            return output;
+        }
+
+        _logger.LogInformation("{Serial}: su rejected -c, using AOSP syntax (su 0 sh -c)", serial);
+        _suStyles[serial] = SuStyle.Uid0;
+        return await ShellAsync(serial, ShellQuoting.BuildRootCommand(command, SuStyle.Uid0), timeout, ct);
+    }
+
+    /// <summary>
+    /// AOSP's <c>su</c> parses <c>-c</c> as a uid and fails before running anything, so its error is the whole
+    /// output (first line). Checking only that keeps a command whose own output mentions "invalid uid" from
+    /// being run twice.
+    /// </summary>
+    internal static bool IsAospSuRejection(string output)
+    {
+        var first = output.TrimStart().Split('\n', 2)[0];
+        return first.StartsWith("su:", StringComparison.Ordinal) && LooksLikeAospSu(first);
     }
 
     /// <summary>

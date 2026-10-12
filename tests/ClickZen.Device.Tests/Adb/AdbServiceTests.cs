@@ -204,6 +204,37 @@ public sealed class AdbServiceTests
     }
 
     [Fact]
+    public async Task Root_shell_detects_aosp_su_without_a_root_check()
+    {
+        var (svc, fake, _) = Create();
+        fake.Shell = (_, cmd, _) => Task.FromResult<IEnumerable<string>>(cmd.StartsWith("su 0", StringComparison.Ordinal)
+            ? ["uid=0(root) gid=0(root)"]
+            : ["su: invalid uid/gid '-c'"]);
+
+        var first = await svc.RootShellAsync("emulator-5554", "id", Ct);
+        var second = await svc.RootShellAsync("emulator-5554", "getevent -p", Ct);
+
+        Assert.StartsWith("uid=0(root)", first, StringComparison.Ordinal);
+        Assert.StartsWith("uid=0(root)", second, StringComparison.Ordinal);
+        Assert.Equal(
+            ["emulator-5554: su -c 'id'", "emulator-5554: su 0 sh -c 'id'", "emulator-5554: su 0 sh -c 'getevent -p'"],
+            fake.ShellLog);
+    }
+
+    [Fact]
+    public async Task Root_shell_does_not_rerun_commands_that_merely_print_su_errors()
+    {
+        var (svc, fake, _) = Create();
+        fake.Shell = (_, _, _) => Task.FromResult<IEnumerable<string>>(["log line", "su: invalid uid/gid 'x'"]);
+
+        await svc.RootShellAsync("R5CT", "cat /data/log.txt", Ct);
+
+        Assert.Single(fake.ShellLog);
+        Assert.True(AdbService.IsAospSuRejection("su: invalid uid/gid '-c'"));
+        Assert.False(AdbService.IsAospSuRejection("/system/bin/sh: su: inaccessible or not found"));
+    }
+
+    [Fact]
     public async Task Check_root_timeout_is_a_status()
     {
         var (svc, fake, _) = Create();

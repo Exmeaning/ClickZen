@@ -230,7 +230,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         var pref = _settings.Current.Devices.InputMethod;
         if (pref == InputMethodPreference.Root)
         {
-            var touch = await ClickZen.Device.Input.RootSendeventInjector.DetectTouchscreenAsync(_adb, entry.Serial, ct);
+            var (touch, raw) = await RootInputOfAsync(entry.Serial, ct);
             if (touch is not null)
             {
                 return new ClickZen.Device.Input.RootSendeventInjector(
@@ -238,7 +238,8 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
                     () => entry.Info.PhysicalSize,
                     () => entry.Session is { } s && !s.VideoSize.IsEmpty && s.VideoSize.IsLandscape != entry.Info.PhysicalSize.IsLandscape
                         ? ClickZen.Core.Geometry.DisplayRotation.Rotation90
-                        : ClickZen.Core.Geometry.DisplayRotation.Rotation0);
+                        : ClickZen.Core.Geometry.DisplayRotation.Rotation0,
+                    raw);
             }
 
             _log.LogWarning("No touchscreen found for root input on {Serial}; using adb input as root", entry.Serial);
@@ -251,6 +252,35 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         }
 
         return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel);
+    }
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<(ClickZen.Device.Input.InputDeviceInfo? Touch, bool Raw)>> _rootInput =
+        new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Touchscreen node and raw-event support of a rooted device, probed once per connection (getevent -p and the
+    /// shell probe cost about a second, which every tap paid before). Failed probes are not cached.
+    /// </summary>
+    private async Task<(ClickZen.Device.Input.InputDeviceInfo? Touch, bool Raw)> RootInputOfAsync(string serial, CancellationToken ct)
+    {
+        var task = _rootInput.GetOrAdd(serial, s => ProbeRootInputAsync(s));
+        try
+        {
+            return await task.WaitAsync(ct);
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            _rootInput.TryRemove(new KeyValuePair<string, Task<(ClickZen.Device.Input.InputDeviceInfo?, bool)>>(serial, task));
+            throw;
+        }
+    }
+
+    private async Task<(ClickZen.Device.Input.InputDeviceInfo? Touch, bool Raw)> ProbeRootInputAsync(string serial)
+    {
+        var touch = await ClickZen.Device.Input.RootSendeventInjector.DetectTouchscreenAsync(_adb, serial, CancellationToken.None);
+        var raw = touch is not null && await ClickZen.Device.Input.RootSendeventInjector.SupportsRawEventsAsync(_adb, serial, CancellationToken.None);
+        _log.LogInformation("Root input on {Serial}: touchscreen {Touch}, {Mode}", serial, touch?.Path ?? "none", raw ? "raw events" : "sendevent");
+        return (touch, raw);
     }
 
     /// <summary>Starts the scrcpy session for a device (no-op if already running).</summary>
@@ -333,6 +363,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         foreach (var gone in Devices.Where(e => !e.IsWindow && !bySerial.ContainsKey(e.Serial)).ToList())
         {
             Devices.Remove(gone);
+            _rootInput.TryRemove(gone.Serial, out _);
             _ = DisconnectAsync(gone);
             if (Current == gone)
             {
@@ -356,6 +387,11 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             else if (existing.Info != info)
             {
                 var cameOnline = existing.Info.State != DeviceAdbState.Online && info.State == DeviceAdbState.Online;
+                if (cameOnline)
+                {
+                    _rootInput.TryRemove(existing.Serial, out _);
+                }
+
                 existing.Info = info;
                 if (cameOnline && _settings.Current.Mirror.OpenMirrorOnConnect)
                 {

@@ -62,6 +62,9 @@ public sealed class ScrcpySessionTests
                 await video.SendAsync(name, SocketFlags.None, serverCts.Token);
                 await video.SendAsync("h264"u8.ToArray(), SocketFlags.None, serverCts.Token);
                 var control = await listener.AcceptSocketAsync(serverCts.Token);
+                // Stop listening only after both accepts: the client can finish its handshake (and used to stop the
+                // listener) while the control connection still waits in the backlog, which aborted this accept.
+                listener.Stop();
 
                 var hdr = new byte[12];
                 StreamProtocol.WriteSessionHeader(hdr, 176, 144);
@@ -86,10 +89,10 @@ public sealed class ScrcpySessionTests
             }, CancellationToken.None);
 
             var conn = await ScrcpyConnection.ConnectAsync((IPEndPoint)listener.LocalEndpoint, video: true, TimeSpan.FromSeconds(5), ct);
-            listener.Stop();
             return new ScrcpyStartResult(conn, server.ContinueWith(_ => { }, TaskScheduler.Default), async () =>
             {
                 await serverCts.CancelAsync();
+                listener.Stop();
                 serverCts.Dispose();
             });
         }

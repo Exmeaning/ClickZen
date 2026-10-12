@@ -23,6 +23,9 @@ Taken unmodified from the official scrcpy v4.1 Windows release
 | CommunityToolkit.Mvvm, CommunityToolkit.WinUI.* | MIT |
 | WinUIEx | MIT |
 | Microsoft.Extensions.* | MIT |
+| ModelContextProtocol, ModelContextProtocol.Core, ModelContextProtocol.AspNetCore 2.2.0 (MCP server, AI access) | Apache License 2.0 – <https://github.com/modelcontextprotocol/csharp-sdk> |
+| Microsoft.Extensions.AI.Abstractions | MIT |
+| ASP.NET Core runtime (Microsoft.AspNetCore.App, embedded Kestrel for the MCP server; shipped in self-contained builds) | MIT – <https://github.com/dotnet/aspnetcore> |
 | Serilog, Serilog.Extensions.Logging, Serilog.Sinks.File, Serilog.Sinks.Async | Apache License 2.0 |
 | AdvancedSharpAdbClient | Apache License 2.0 |
 | FFmpeg.AutoGen 8.1.0 | MIT (verified from the package's LICENSE.txt; older versions used LGPL) |

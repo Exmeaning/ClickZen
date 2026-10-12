@@ -75,6 +75,18 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
     /// <summary>When set, <see cref="CaptureTemplateAsync"/> uses this name instead of asking (self-test).</summary>
     internal string? AutoTemplateName { get; set; }
 
+    /// <summary>
+    /// When set, answers the "switch the task's orientation" question instead of showing the dialog (self-test);
+    /// receives the task and returns the button that would have been pressed.
+    /// </summary>
+    internal Func<AutomationTask, ContentDialogResult>? AutoOrientationAnswer { get; set; }
+
+    /// <summary>Selects a task of the list and shows it in the editor (self-test).</summary>
+    internal void SelectTask(TaskItem item) => TaskList.SelectedItem = item;
+
+    /// <summary>The task editor (null until a task was shown).</summary>
+    internal TaskEditor? Editor => _editor;
+
     private TaskItem? SelectedTask => TaskList.SelectedItem as TaskItem;
 
     // ------------------------------------------------------------------ lifecycle
@@ -646,7 +658,8 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
                 CloseButtonText = _loc["Common_Cancel"],
                 DefaultButton = ContentDialogButton.Primary,
             };
-            switch (await ShowDialogAsync(dialog))
+            var answer = AutoOrientationAnswer is { } auto ? auto(forTask) : await ShowDialogAsync(dialog);
+            switch (answer)
                 {
                     case ContentDialogResult.Primary:
                         // Coordinates keep their numbers: the other orientation's layout differs, so they are re-picked, not converted.

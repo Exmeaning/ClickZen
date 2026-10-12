@@ -77,6 +77,13 @@ public sealed partial class TaskEditor : UserControl
     /// <summary>Rebuilds the whole editor from the model (e.g. after the host changed the task or templates externally).</summary>
     public void Refresh() => Rebuild();
 
+    /// <summary>The orientation box's selection and the explanation under it (self-test).</summary>
+    internal (TaskOrientation Selected, string Hint) OrientationState =>
+        (OrientationBox.SelectedIndex >= 0 ? Orientations[OrientationBox.SelectedIndex] : TaskOrientation.Auto, OrientationHint.Text);
+
+    /// <summary>Picks an orientation in the box as the user would (self-test).</summary>
+    internal void SelectOrientation(TaskOrientation orientation) => OrientationBox.SelectedIndex = Array.IndexOf(Orientations, orientation);
+
     /// <summary>
     /// Re-reads only the orientation field and its explanation (the host changed the task's orientation while a
     /// coordinate was being picked; a full rebuild would discard the field that is about to receive the value).

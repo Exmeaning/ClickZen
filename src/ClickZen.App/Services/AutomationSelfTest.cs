@@ -37,6 +37,7 @@ internal sealed class AutomationSelfTest
         try
         {
             var hub = _services.GetRequiredService<DeviceHub>();
+            await SelfTestUtil.UseTestDeviceAsync(hub);
             var entry = await SelfTestUtil.WaitForAsync(() => hub.Current is { Session.State: SessionState.Streaming } c ? c : null, TimeSpan.FromSeconds(60));
             if (entry?.Session is not { } session)
             {

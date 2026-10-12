@@ -175,6 +175,11 @@ public partial class App : Application
             _ = new AutomationSelfTest(_window, _services, _log).RunAsync();
         }
 
+        if (Environment.GetCommandLineArgs().Contains("--selftest-orientation", StringComparer.OrdinalIgnoreCase))
+        {
+            _ = new OrientationSelfTest(_window, _services, _log).RunAsync();
+        }
+
         if (Environment.GetCommandLineArgs().Contains("--selftest-window", StringComparer.OrdinalIgnoreCase))
         {
             _ = new WindowSelfTest(_window, _services, _log).RunAsync();

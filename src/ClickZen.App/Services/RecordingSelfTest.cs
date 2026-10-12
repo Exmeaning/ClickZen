@@ -141,6 +141,25 @@ internal sealed class RecordingSelfTest
 /// <summary>Helpers shared by the developer self-tests.</summary>
 internal static class SelfTestUtil
 {
+    /// <summary>
+    /// With CLICKZEN_TEST_SERIAL set (several devices attached), makes that device the current one and starts mirroring
+    /// it, so a self-test never acts on another device. Without it the current device is used as before.
+    /// </summary>
+    public static async Task UseTestDeviceAsync(DeviceHub hub)
+    {
+        if (Environment.GetEnvironmentVariable("CLICKZEN_TEST_SERIAL") is not { Length: > 0 } serial)
+        {
+            return;
+        }
+
+        var entry = await WaitForAsync(() => hub.Devices.FirstOrDefault(d => d.Serial == serial), TimeSpan.FromSeconds(30));
+        if (entry is not null)
+        {
+            hub.Current = entry;
+            await hub.ConnectAsync(entry);
+        }
+    }
+
     public static double MeanDifference(Frame a, Frame b)
     {
         if (a.Size != b.Size)

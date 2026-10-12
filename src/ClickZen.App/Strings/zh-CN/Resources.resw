@@ -610,12 +610,12 @@
   <data name="Emu_Method_ScreenshotMatch" xml:space="preserve"><value>按设备截图定位</value></data>
   <data name="Emu_Method_EdgeDetection" xml:space="preserve"><value>按窗口边框定位</value></data>
   <data name="Emu_Method_ClientArea" xml:space="preserve"><value>使用整个客户区</value></data>
-  <data name="Nav_Ai" xml:space="preserve"><value>AI 接入</value></data>
-  <data name="Page_Ai_Title.Text" xml:space="preserve"><value>AI 接入</value></data>
+  <data name="Nav_Ai" xml:space="preserve"><value>MCP</value></data>
+  <data name="Page_Ai_Title.Text" xml:space="preserve"><value>MCP</value></data>
   <data name="Page_Ai_Description.Text" xml:space="preserve"><value>通过 MCP（Model Context Protocol）让 Claude、Cursor、VS Code 等 AI 助手查看画面并操作设备、运行自动化方案。</value></data>
-  <data name="Status_McpOff" xml:space="preserve"><value>AI 接入：未启用</value></data>
-  <data name="Status_McpRunning" xml:space="preserve"><value>AI 接入：端口 {0}，{1} 次调用</value></data>
-  <data name="Status_McpFailed" xml:space="preserve"><value>AI 接入：启动失败</value></data>
+  <data name="Status_McpOff" xml:space="preserve"><value>MCP：未启用</value></data>
+  <data name="Status_McpRunning" xml:space="preserve"><value>MCP：端口 {0}，{1} 次调用</value></data>
+  <data name="Status_McpFailed" xml:space="preserve"><value>MCP：启动失败</value></data>
   <data name="Ai_ServerCard.Header" xml:space="preserve"><value>MCP 服务器</value></data>
   <data name="Ai_ServerCard.Description" xml:space="preserve"><value>开启后，AI 客户端可以通过下方地址连接本机的 ClickZen</value></data>
   <data name="Ai_Running" xml:space="preserve"><value>正在运行：{0}</value></data>
@@ -672,7 +672,7 @@
   <data name="Settings_Group_Automation" xml:space="preserve"><value>自动化默认值</value></data>
   <data name="Settings_Group_Recording" xml:space="preserve"><value>录制</value></data>
   <data name="Settings_Group_Sync" xml:space="preserve"><value>变量同步</value></data>
-  <data name="Settings_Group_Mcp" xml:space="preserve"><value>AI 接入（MCP）</value></data>
+  <data name="Settings_Group_Mcp" xml:space="preserve"><value>MCP</value></data>
   <data name="Settings_Group_Tools" xml:space="preserve"><value>工具</value></data>
   <data name="Settings_Group_General" xml:space="preserve"><value>常规</value></data>
   <data name="Settings_Appearance_Theme" xml:space="preserve"><value>主题</value></data>
@@ -720,8 +720,8 @@
   <data name="Settings_Off" xml:space="preserve"><value>关</value></data>
   <data name="Settings_OpenVariables" xml:space="preserve"><value>打开变量页</value></data>
   <data name="Settings_SyncLink" xml:space="preserve"><value>启用、端口与访问令牌在变量页管理</value></data>
-  <data name="Settings_OpenAi" xml:space="preserve"><value>打开 AI 接入页</value></data>
-  <data name="Settings_McpLink" xml:space="preserve"><value>启用、端口、访问令牌与允许的功能在 AI 接入页管理</value></data>
+  <data name="Settings_OpenAi" xml:space="preserve"><value>打开 MCP 页</value></data>
+  <data name="Settings_McpLink" xml:space="preserve"><value>启用、端口、访问令牌与允许的功能在 MCP 页管理</value></data>
   <data name="Settings_ServerVersion" xml:space="preserve"><value>随包 scrcpy-server 版本</value></data>
   <data name="Settings_Browse" xml:space="preserve"><value>浏览</value></data>
   <data name="Settings_BundledAdb" xml:space="preserve"><value>留空使用随包 adb</value></data>

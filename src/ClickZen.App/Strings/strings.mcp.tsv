@@ -1,11 +1,11 @@
 # key	zh-CN	en-US
-# ---- AI access (MCP server) ----
-Nav_Ai	AI 接入	AI access
-Page_Ai_Title.Text	AI 接入	AI access
+# ---- MCP page (MCP server) ----
+Nav_Ai	MCP	MCP
+Page_Ai_Title.Text	MCP	MCP
 Page_Ai_Description.Text	通过 MCP（Model Context Protocol）让 Claude、Cursor、VS Code 等 AI 助手查看画面并操作设备、运行自动化方案。	Let AI assistants such as Claude, Cursor and VS Code see the screen, control devices and run automation schemes through MCP (Model Context Protocol).
-Status_McpOff	AI 接入：未启用	AI access: off
-Status_McpRunning	AI 接入：端口 {0}，{1} 次调用	AI access: port {0}, {1} call(s)
-Status_McpFailed	AI 接入：启动失败	AI access: failed to start
+Status_McpOff	MCP：未启用	MCP: off
+Status_McpRunning	MCP：端口 {0}，{1} 次调用	MCP: port {0}, {1} call(s)
+Status_McpFailed	MCP：启动失败	MCP: failed to start
 # Server card
 Ai_ServerCard.Header	MCP 服务器	MCP server
 Ai_ServerCard.Description	开启后，AI 客户端可以通过下方地址连接本机的 ClickZen	When on, AI clients can connect to this ClickZen at the address below

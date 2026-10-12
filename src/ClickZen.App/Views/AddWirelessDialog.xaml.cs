@@ -1,5 +1,6 @@
 using ClickZen.App.Services;
 using ClickZen.App.ViewModels;
+using ClickZen.Core.Emulators;
 using ClickZen.Device.Adb;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -92,14 +93,28 @@ public sealed partial class AddWirelessDialog : ContentDialog
         {
             ScanResults.Items.Clear();
             var found = await _vm.ScanEmulatorsAsync();
-            foreach (var addr in found)
+            foreach (var serial in found)
             {
-                var preset = EmulatorPresets.ForPort(int.Parse(addr[(addr.LastIndexOf(':') + 1)..], System.Globalization.CultureInfo.InvariantCulture));
-                ScanResults.Items.Add(preset.Count > 0 ? $"{addr}  ({string.Join(" / ", preset.Select(p => p.Name))})" : addr);
+                ScanResults.Items.Add(DescribeScanResult(serial));
             }
 
             Show(found.Count == 0 ? _loc["Devices_ScanNone"] : _loc.Format("Devices_ScanFound", found.Count), found.Count > 0);
         });
+    }
+
+    /// <summary>
+    /// "127.0.0.1:16384  (MuMu 模拟器 · Android Device)" for a detected instance, else the port preset names
+    /// ("127.0.0.1:5555  (雷电模拟器 / BlueStacks 蓝叠 / …)"). Results may be adb serials such as "emulator-5554".
+    /// </summary>
+    private string DescribeScanResult(string serial)
+    {
+        if (_vm.Emulators.Instances.FirstOrDefault(i => i.Instance.OwnsSerial(serial)) is { } detected)
+        {
+            return $"{serial}  ({EmulatorUi.Title(detected.Instance)})";
+        }
+
+        var presets = EmulatorSerials.LocalAdbPort(serial) is int port ? EmulatorPresets.ForPort(port) : [];
+        return presets.Count > 0 ? $"{serial}  ({string.Join(" / ", presets.Select(p => p.Name))})" : serial;
     }
 
     private async Task RunAsync(Control trigger, Func<Task> action)

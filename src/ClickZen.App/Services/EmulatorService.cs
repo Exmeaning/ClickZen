@@ -110,8 +110,37 @@ public sealed partial class EmulatorService : ObservableObject
         _loc = loc;
         _log = loggers.CreateLogger<EmulatorService>();
         _detector = new EmulatorDetector(environment, loggers.CreateLogger<EmulatorDetector>());
-        _hub.Devices.CollectionChanged += (_, _) => Ui(RefreshStates);
+        // Rows follow the adb list: devices coming and going, and a listed device going online / offline (Info changes).
+        _hub.Devices.CollectionChanged += OnHubDevicesChanged;
+        foreach (var d in _hub.Devices)
+        {
+            d.PropertyChanged += OnHubDeviceChanged;
+        }
+
         _hub.Profiles.Changed += (_, _) => Ui(RefreshStates);
+    }
+
+    private void OnHubDevicesChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        foreach (var d in e.OldItems?.OfType<DeviceEntry>() ?? [])
+        {
+            d.PropertyChanged -= OnHubDeviceChanged;
+        }
+
+        foreach (var d in e.NewItems?.OfType<DeviceEntry>() ?? [])
+        {
+            d.PropertyChanged += OnHubDeviceChanged;
+        }
+
+        Ui(RefreshStates);
+    }
+
+    private void OnHubDeviceChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(DeviceEntry.Info))
+        {
+            Ui(RefreshStates);
+        }
     }
 
     /// <summary>Running instances from the last detection.</summary>

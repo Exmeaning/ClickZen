@@ -132,7 +132,7 @@
                                             </Grid.ColumnDefinitions>
                                             <FontIcon Glyph="{x:Bind svc:DeviceUi.KindGlyph(Info.Kind), Mode=OneWay}" FontSize="24" VerticalAlignment="Center" />
                                             <StackPanel Grid.Column="1">
-                                                <TextBlock Text="{x:Bind Info.DisplayName, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{x:Bind Info.DisplayName, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                                                 <TextBlock Text="{x:Bind Serial, Mode=OneWay}" Style="{StaticResource SecondaryCaptionTextBlockStyle}" FontFamily="{StaticResource MonoFontFamily}" />
                                             </StackPanel>
                                             <Border Grid.Column="2" Padding="8,2" CornerRadius="10" VerticalAlignment="Top"

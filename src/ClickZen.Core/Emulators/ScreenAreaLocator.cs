@@ -97,6 +97,70 @@ public static class ScreenAreaLocator
     }
 
     /// <summary>
+    /// Scales at which a <paramref name="shot"/>-sized device screenshot can appear inside a <paramref name="window"/>-sized
+    /// client area: the screen fills the window's height or width, possibly minus a title bar / tool bar (tried in 8 px
+    /// steps up to 96 px). Largest first; every candidate fits into the window.
+    /// </summary>
+    public static IReadOnlyList<double> CandidateScales(SizeI window, SizeI shot)
+    {
+        if (window.IsEmpty || shot.IsEmpty)
+        {
+            return [];
+        }
+
+        var bars = Enumerable.Range(0, 13).Select(k => k * 8);
+        return bars.Select(b => (double)(window.Height - b) / shot.Height)
+            .Concat(bars.Select(b => (double)(window.Width - b) / shot.Width))
+            .Where(s => s > 0.05 && Math.Round(shot.Width * s) <= window.Width && Math.Round(shot.Height * s) <= window.Height)
+            .Select(s => Math.Round(s, 4))
+            .Distinct()
+            .OrderByDescending(s => s)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Finds the device's own screenshot (<paramref name="screenshot"/>, PNG of <paramref name="shotSize"/>) inside the window
+    /// picture by template matching at <see cref="CandidateScales"/>. The matched rectangle is the Android screen. Null when
+    /// nothing matched well enough (black screen, animation, a window that scales the picture unevenly).
+    /// </summary>
+    public static ScreenArea? FromScreenshot(Frame window, byte[] screenshot, SizeI shotSize, IImageMatcher matcher, double minScore = 0.8)
+    {
+        ArgumentNullException.ThrowIfNull(window);
+        ArgumentNullException.ThrowIfNull(screenshot);
+        ArgumentNullException.ThrowIfNull(matcher);
+        if (shotSize.Width < 16 || shotSize.Height < 16 || screenshot.Length == 0)
+        {
+            return null;
+        }
+
+        var template = new TemplateAsset { Id = "screen-area-" + Guid.NewGuid().ToString("N"), Name = "device screenshot", Png = screenshot, Size = shotSize };
+        var options = new ImageCondition { Threshold = minScore, Grayscale = true };
+        var best = MatchResult.NotFound();
+        try
+        {
+            foreach (var scale in CandidateScales(window.Size, shotSize))
+            {
+                var r = matcher.Match(window, default, template, scale, options);
+                if (r.Score > best.Score)
+                {
+                    best = r;
+                }
+
+                if (best.Score >= 0.97)
+                {
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            matcher.ClearCache();
+        }
+
+        return best.Score > 0 ? FromScreenshotMatch(best.Location, best.Score, window.Size, minScore) : null;
+    }
+
+    /// <summary>
     /// Trims uniform bars off the window picture: walks in from each edge while the row/column is (almost) one colour,
     /// then checks that the remaining rectangle has the device's aspect ratio. Works for title bars and tool bars drawn
     /// in a flat colour and for black letterbox borders, which covers the common emulator layouts. Null when the result

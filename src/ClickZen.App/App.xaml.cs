@@ -185,6 +185,11 @@ public partial class App : Application
             _ = new VariablesSelfTest(_window, _services, _log).RunAsync();
         }
 
+        if (Environment.GetCommandLineArgs().Contains("--selftest-emulator", StringComparer.OrdinalIgnoreCase))
+        {
+            _ = new EmulatorSelfTest(_window, _services, _log).RunAsync();
+        }
+
         // Developer convenience: `ClickZen.exe --page mirror` opens a page directly.
         var cli = Environment.GetCommandLineArgs();
         var pageIndex = Array.FindIndex(cli, a => string.Equals(a, "--page", StringComparison.OrdinalIgnoreCase));

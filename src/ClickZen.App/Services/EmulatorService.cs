@@ -441,7 +441,7 @@ public sealed partial class EmulatorService : ObservableObject
             }
 
             // 2. A picture of the window (client area).
-            var frame = await CaptureOnceAsync(i.WindowHandle, ct);
+            var frame = await WindowFrameSource.CaptureOnceAsync(i.WindowHandle, null, WindowCaptureMethod.Auto, TimeSpan.FromSeconds(4), ct);
             if (frame is null)
             {
                 return Failed(_loc.Format("Emu_BindCaptureFailed", i.Name));
@@ -504,28 +504,6 @@ public sealed partial class EmulatorService : ObservableObject
         EmulatorBindResult Failed(string message) => new(false, false, message, null, null, ScreenAreaMethod.ClientArea);
     }
 
-    /// <summary>Starts a window capture of the whole client area, waits for one frame (up to 3 s) and stops.</summary>
-    private async Task<Frame?> CaptureOnceAsync(nint hwnd, CancellationToken ct)
-    {
-        await using var source = new WindowFrameSource(hwnd, new WindowFrameSourceOptions { Method = WindowCaptureMethod.Auto });
-        await source.StartAsync(ct);
-        if (source.State == WindowCaptureState.Faulted)
-        {
-            _log.LogWarning("Capture for binding failed: {Error}", source.LastError);
-            return null;
-        }
-
-        // A few frames in, the first one may still be stale (WGC delivers the last composed picture first).
-        Frame? frame = null;
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(3);
-        while (DateTime.UtcNow < deadline && (frame is null || frame.Sequence < 2))
-        {
-            frame = await source.WaitForFrameAsync(frame?.Sequence ?? -1, TimeSpan.FromMilliseconds(400), ct) ?? frame;
-        }
-
-        return frame;
-    }
-
     /// <summary>The best screen area among the locator methods, most reliable first.</summary>
     private async Task<ScreenArea> LocateScreenAsync(EmulatorInstance i, Frame frame, SizeI device, string? serial, CancellationToken ct)
     {
@@ -555,7 +533,8 @@ public sealed partial class EmulatorService : ObservableObject
             try
             {
                 var png = await _adb.ScreencapPngAsync(serial, ct);
-                if (await Task.Run(() => MatchScreenshot(frame, png), ct) is { } matched)
+                var shot = Vision.ImageCodec.MeasurePng(png);
+                if (await Task.Run(() => ScreenAreaLocator.FromScreenshot(frame, png, shot, _matcher), ct) is { } matched)
                 {
                     return matched;
                 }
@@ -580,54 +559,6 @@ public sealed partial class EmulatorService : ObservableObject
         }
 
         return ScreenArea.WholeClient;
-    }
-
-    /// <summary>
-    /// Finds the device screenshot in the window picture: the screenshot is scaled to the candidate sizes the screen can
-    /// have inside the window (the window height or width minus bars) and matched with OpenCV. Off the UI thread.
-    /// </summary>
-    private ScreenArea? MatchScreenshot(Frame window, byte[] png)
-    {
-        var shot = Vision.ImageCodec.MeasurePng(png);
-        if (shot.Width < 16 || shot.Height < 16)
-        {
-            return null;
-        }
-
-        var template = new TemplateAsset { Id = "emulator-bind-" + Guid.NewGuid().ToString("N"), Png = png, Size = shot };
-        var best = (Score: 0.0, Rect: default(RectI));
-        // The screen fills the window in one dimension (height or width), possibly minus a bar: try those scales.
-        var scales = new[]
-        {
-            (double)window.Height / shot.Height,
-            (double)window.Width / shot.Width,
-        }.Concat(Enumerable.Range(1, 12).Select(k => (double)(window.Height - k * 8) / shot.Height))
-         .Concat(Enumerable.Range(1, 12).Select(k => (double)(window.Width - k * 8) / shot.Width))
-         .Where(s => s > 0.05 && shot.Width * s <= window.Width + 1 && shot.Height * s <= window.Height + 1)
-         .Distinct()
-         .ToList();
-        try
-        {
-            foreach (var s in scales)
-            {
-                var r = _matcher.Match(window, default, template, s, new ImageCondition { Threshold = 0.5, Grayscale = true });
-                if (r.Score > best.Score)
-                {
-                    best = (r.Score, r.Location);
-                }
-
-                if (best.Score >= 0.97)
-                {
-                    break;
-                }
-            }
-        }
-        finally
-        {
-            _matcher.ClearCache();
-        }
-
-        return best.Score > 0 ? ScreenAreaLocator.FromScreenshotMatch(best.Rect, best.Score, window.Size) : null;
     }
 
     // ------------------------------------------------------------------ threading

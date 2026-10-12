@@ -256,12 +256,15 @@ internal sealed class AutomationSelfTest
         }
     }
 
-    /// <summary>The top resumed activity ("package/.Activity"), or null when it cannot be read.</summary>
+    /// <summary>
+    /// The top resumed activity ("package/.Activity"), or null when it cannot be read. Android 12+ reports
+    /// <c>topResumedActivity</c>; Android 11 and older only <c>mResumedActivity</c>.
+    /// </summary>
     internal static async Task<string?> ResumedActivityAsync(DeviceHub hub, string serial)
     {
         try
         {
-            var text = await hub.Adb.ShellAsync(serial, "dumpsys activity activities | grep -m1 topResumedActivity", CancellationToken.None);
+            var text = await hub.Adb.ShellAsync(serial, "dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity'", CancellationToken.None);
             var m = System.Text.RegularExpressions.Regex.Match(text, @"\s(\S+/\S+)\s");
             return m.Success ? m.Groups[1].Value : null;
         }

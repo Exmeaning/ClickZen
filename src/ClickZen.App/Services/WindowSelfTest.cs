@@ -45,9 +45,13 @@ internal sealed class WindowSelfTest
         {
             hub = _services.GetRequiredService<DeviceHub>();
 
-            // 1. The AVD window and its adb device.
-            var rule = new WindowMatchRule { ProcessName = "qemu-system-x86_64", Title = "Android Emulator", TitleMode = TitleMatchMode.Contains };
-            var window = WindowMatcher.FindBestMatch(rule, WindowEnumerator.GetVisibleWindows((uint)Environment.ProcessId));
+            // 1. The AVD window (found by emulator detection) and its adb device.
+            var detected = await _services.GetRequiredService<EmulatorService>().DetectAsync();
+            var avd = detected.FirstOrDefault(d => d.Instance.Kind == Core.Emulators.EmulatorKind.AndroidStudio && d.Instance.HasWindow
+                && d.Instance.OwnsSerial(AdbSerial));
+            var window = avd is null
+                ? null
+                : WindowEnumerator.GetVisibleWindows((uint)Environment.ProcessId).FirstOrDefault(w => w.Handle == avd.Instance.WindowHandle);
             var adbEntry = await SelfTestUtil.WaitForAsync(
                 () => hub.Devices.FirstOrDefault(d => !d.IsWindow && d.Serial == AdbSerial && d.Info.State == DeviceAdbState.Online && !d.Info.PhysicalSize.IsEmpty),
                 TimeSpan.FromSeconds(30));

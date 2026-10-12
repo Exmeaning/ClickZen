@@ -34,6 +34,7 @@ public sealed partial class ClickZenTools
         Coordinates are device pixels in the device's current orientation (screenWidth x screenHeight from list_devices). Screenshots are scaled down by default: when you measure a point on a screenshot, pass refWidth/refHeight = that image's width/height and ClickZen rescales it to the device.
 
         Omit `device` to use the current device (the one selected in ClickZen's title bar).
+        Emulators on this PC: list_emulators shows running ones with their exact adb address; connect_emulator connects one (then use it like any device); bind_emulator_window captures its window instead of scrcpy.
         Native apps: prefer dump_ui and tap_element (exact, no pixel guessing). Games, canvases, video: use screenshots, find_image and get_pixel_color.
         Automation schemes (.czscheme) are image-recognition scripts built in ClickZen: list_schemes, open_scheme, get_scheme, start_automation, stop_automation, get_automation_log. Variables (get_variables / set_variable) are shared with running schemes.
         The user can disable tool groups in ClickZen's AI page; a disabled tool reports that it is disabled.
@@ -115,6 +116,42 @@ public sealed partial class ClickZenTools
 
         return McpJson.Serialize(d);
     }, cancellationToken);
+
+    [McpServerTool(Name = "list_emulators", Title = "List running emulators", ReadOnly = true, Idempotent = true, Destructive = false, OpenWorld = false)]
+    [McpCapability(McpCapability.Observe)]
+    [Description("Detects Android emulators running on this PC (MuMu, LDPlayer, NoxPlayer, MEmu, BlueStacks, Android Studio) from their processes and their own settings – no adb needed – with each instance's exact adb address, whether it is connected to ClickZen and whether its window is bound as a window device. Also lists installed emulators that are not running. Use connect_emulator to connect one, then list_devices / take_screenshot as usual.")]
+    public Task<string> ListEmulators(CancellationToken cancellationToken = default) => Run(async ct =>
+    {
+        var list = await B.ListEmulatorsAsync(ct);
+        if (list.Running.Count == 0)
+        {
+            return list.Installed.Count == 0
+                ? "No emulator is running and none is installed (MuMu, LDPlayer, NoxPlayer, MEmu, BlueStacks or Android Studio). Start an emulator, or connect a phone."
+                : $"No emulator is running. Installed: {string.Join(", ", list.Installed)}. Ask the user to start one (ClickZen does not launch emulators).";
+        }
+
+        return McpJson.Serialize(list);
+    }, cancellationToken);
+
+    [McpServerTool(Name = "connect_emulator", Title = "Connect emulator", ReadOnly = false, Idempotent = true, Destructive = false, OpenWorld = false)]
+    [McpCapability(McpCapability.Observe)]
+    [Description("Connects a running emulator to ClickZen over adb at the exact port read from its settings (adb connect 127.0.0.1:port; instances adb already lists as emulator-NNNN are just selected). Afterwards it appears in list_devices and is the current device unless makeCurrent=false.")]
+    public Task<string> ConnectEmulator(
+        [Description("Emulator id, instance name or display name from list_emulators; omit when only one emulator is running.")] string? emulator = null,
+        [Description("Make the connected emulator the current device (default true).")] bool makeCurrent = true,
+        CancellationToken cancellationToken = default) => Run(async ct =>
+    {
+        var r = await B.ConnectEmulatorAsync(emulator, makeCurrent, ct);
+        return r.Connected ? McpJson.Serialize(r) : throw new McpToolException(r.Message);
+    }, cancellationToken);
+
+    [McpServerTool(Name = "bind_emulator_window", Title = "Bind emulator window", ReadOnly = false, Idempotent = true, Destructive = false, OpenWorld = false)]
+    [McpCapability(McpCapability.Observe)]
+    [Description("Binds a running emulator's window as a window device: ClickZen captures the emulator window itself (works when the window is in the background or covered, not when minimized), locates the Android screen in it automatically, links the emulator's adb device for input and saves the binding (binding again updates it). Returns the window device id to pass as `device`. Use it when screenshots of the window are wanted instead of scrcpy mirroring, e.g. for emulators where scrcpy video does not work.")]
+    public Task<string> BindEmulatorWindow(
+        [Description("Emulator id, instance name or display name from list_emulators; omit when only one emulator is running.")] string? emulator = null,
+        CancellationToken cancellationToken = default) => Run(async ct =>
+        McpJson.Serialize(await B.BindEmulatorWindowAsync(emulator, ct)), cancellationToken);
 
     [McpServerTool(Name = "take_screenshot", Title = "Take screenshot", ReadOnly = true, Idempotent = false, Destructive = false, OpenWorld = false)]
     [McpCapability(McpCapability.Observe)]

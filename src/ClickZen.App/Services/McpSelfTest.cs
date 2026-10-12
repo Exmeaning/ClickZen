@@ -56,6 +56,10 @@ internal sealed class McpSelfTest
                 Check(status.IsError != true && Text(status).Contains("\"version\"", StringComparison.Ordinal), "get_status failed: " + Text(status));
                 var devices = await client.CallToolAsync("list_devices");
                 Check(devices.IsError != true, "list_devices failed: " + Text(devices));
+                // Emulator detection reads processes and config files only (no adb), so it works here too.
+                var emulators = await client.CallToolAsync("list_emulators");
+                Check(emulators.IsError != true && (Text(emulators).Contains("\"running\"", StringComparison.Ordinal) || Text(emulators).StartsWith("No emulator", StringComparison.Ordinal)),
+                    "list_emulators failed: " + Text(emulators));
                 var scheme = await client.CallToolAsync("get_scheme");
                 Check(scheme.IsError != true, "get_scheme failed: " + Text(scheme));
                 var set = await client.CallToolAsync("set_variable", new Dictionary<string, object?> { ["name"] = "mcp_selftest", ["value"] = 42 });

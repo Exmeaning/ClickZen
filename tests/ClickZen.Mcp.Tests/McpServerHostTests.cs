@@ -381,4 +381,88 @@ public sealed class McpServerHostTests : IAsyncLifetime
         var bad = await CallAsync(client, "find_image", new() { ["imageBase64"] = "aGVsbG8=" });
         Assert.True(bad.IsError);
     }
+
+    [Fact]
+    public async Task Emulator_tools_are_listed_in_the_observe_group()
+    {
+        await using var client = await ConnectAsync();
+        var tools = await client.ListToolsAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        foreach (var name in new[] { "list_emulators", "connect_emulator", "bind_emulator_window" })
+        {
+            var t = tools.Single(x => x.Name == name).ProtocolTool;
+            Assert.Equal(McpCapability.Observe, ClickZenTools.CapabilityOf(name));
+            Assert.False(t.Annotations?.DestructiveHint);
+            Assert.Contains("emulator", t.Description, StringComparison.OrdinalIgnoreCase);
+        }
+
+        Assert.True(tools.Single(x => x.Name == "list_emulators").ProtocolTool.Annotations?.ReadOnlyHint);
+        Assert.False(tools.Single(x => x.Name == "connect_emulator").ProtocolTool.Annotations?.ReadOnlyHint);
+    }
+
+    [Fact]
+    public async Task List_emulators_returns_instances_with_their_adb_address()
+    {
+        await using var client = await ConnectAsync();
+
+        var r = await CallAsync(client, "list_emulators");
+
+        Assert.NotEqual(true, r.IsError);
+        using var doc = System.Text.Json.JsonDocument.Parse(Text(r));
+        var mumu = doc.RootElement.GetProperty("running")[0];
+        Assert.Equal("mumu:MuMuPlayer-12.0-0", mumu.GetProperty("id").GetString());
+        Assert.Equal("127.0.0.1:16384", mumu.GetProperty("adbAddress").GetString());
+        Assert.Equal("config", mumu.GetProperty("portSource").GetString());
+        Assert.Equal("notConnected", mumu.GetProperty("state").GetString());
+        Assert.Contains("MuMu 模拟器", mumu.GetProperty("name").GetString(), StringComparison.Ordinal); // CJK stays readable
+    }
+
+    [Fact]
+    public async Task List_emulators_explains_when_none_runs()
+    {
+        await using var client = await ConnectAsync();
+        _backend.Emulators.Clear();
+
+        var installed = Text(await CallAsync(client, "list_emulators"));
+        Assert.Contains("No emulator is running", installed, StringComparison.Ordinal);
+        Assert.Contains("mumu", installed, StringComparison.Ordinal);
+
+        _backend.InstalledEmulators.Clear();
+        Assert.Contains("none is installed", Text(await CallAsync(client, "list_emulators")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Connect_emulator_connects_and_reports_failures_as_errors()
+    {
+        await using var client = await ConnectAsync();
+
+        var ok = await CallAsync(client, "connect_emulator", new() { ["emulator"] = "MuMuPlayer-12.0-0", ["makeCurrent"] = false });
+        Assert.NotEqual(true, ok.IsError);
+        Assert.Contains("\"device\":\"127.0.0.1:16384\"", Text(ok), StringComparison.Ordinal);
+        Assert.Contains("connect-emulator MuMuPlayer-12.0-0 False", _backend.Calls);
+
+        _backend.Emulators[0] = _backend.Emulators[0] with { AdbAddress = null, State = "portUnknown" };
+        var failed = await CallAsync(client, "connect_emulator");
+        Assert.True(failed.IsError);
+        Assert.Contains("port unknown", Text(failed), StringComparison.Ordinal);
+        Assert.Contains("connect-emulator  True", _backend.Calls); // omitted emulator / default makeCurrent
+
+        var unknown = await CallAsync(client, "connect_emulator", new() { ["emulator"] = "nox:Nox_9" });
+        Assert.True(unknown.IsError);
+        Assert.Contains("No emulator", Text(unknown), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Bind_emulator_window_returns_the_window_device()
+    {
+        await using var client = await ConnectAsync();
+
+        var r = await CallAsync(client, "bind_emulator_window", new() { ["emulator"] = "mumu:MuMuPlayer-12.0-0" });
+
+        Assert.NotEqual(true, r.IsError);
+        var text = Text(r);
+        Assert.Contains("\"windowDevice\":\"window:abc123\"", text, StringComparison.Ordinal);
+        Assert.Contains("\"method\":\"screenshotMatch\"", text, StringComparison.Ordinal);
+        Assert.Contains("bind-emulator mumu:MuMuPlayer-12.0-0", _backend.Calls);
+    }
 }

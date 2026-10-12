@@ -30,6 +30,7 @@ public sealed class McpBackend : IClickZenBackend
     private static readonly TimeSpan FreshFrameTimeout = TimeSpan.FromMilliseconds(600);
 
     private readonly DeviceHub _hub;
+    private readonly EmulatorService _emulators;
     private readonly AutomationService _automation;
     private readonly RecordingService _recording;
     private readonly VariableStore _globals;
@@ -44,10 +45,11 @@ public sealed class McpBackend : IClickZenBackend
     private CancellationTokenSource? _playCts;
     private McpPlaybackInfo? _playback;
 
-    public McpBackend(DeviceHub hub, AutomationService automation, RecordingService recording, VariableStore globals,
+    public McpBackend(DeviceHub hub, EmulatorService emulators, AutomationService automation, RecordingService recording, VariableStore globals,
         IImageMatcher matcher, SettingsService settings, AppPaths paths, ILogger<McpBackend> log)
     {
         _hub = hub;
+        _emulators = emulators;
         _automation = automation;
         _recording = recording;
         _globals = globals;
@@ -169,6 +171,116 @@ public sealed class McpBackend : IClickZenBackend
 
     public Task<IReadOnlyList<McpDevice>> ListDevicesAsync(CancellationToken ct) =>
         OnUi<IReadOnlyList<McpDevice>>(() => _hub.Devices.Select(Describe).ToList());
+
+    // =====================================================================================
+    //  emulators
+    // =====================================================================================
+
+    public async Task<McpEmulatorList> ListEmulatorsAsync(CancellationToken ct)
+    {
+        await _emulators.DetectAsync(ct);
+        return await OnUi(() => new McpEmulatorList(
+            _emulators.Instances.Select(DescribeEmulator).ToList(),
+            _emulators.Installed.Select(i => i.Kind.ToString().ToLowerInvariant()).Distinct().ToList()));
+    }
+
+    public async Task<McpEmulatorConnect> ConnectEmulatorAsync(string? emulator, bool makeCurrent, CancellationToken ct)
+    {
+        var row = await ResolveEmulatorAsync(emulator, ct);
+        var r = await _emulators.ConnectAsync(row, makeCurrent, ct);
+        return await OnUi(() => new McpEmulatorConnect(r.Success, r.Serial, r.Message, DescribeEmulator(row)));
+    }
+
+    public async Task<McpEmulatorBind> BindEmulatorWindowAsync(string? emulator, CancellationToken ct)
+    {
+        var row = await ResolveEmulatorAsync(emulator, ct);
+        var r = await _emulators.BindWindowAsync(row, ct);
+        if (r.NeedsReview)
+        {
+            throw new McpToolException(
+                $"Could not locate the Android screen inside the window of {row.Instance.Name} reliably (best guess: {r.Method}). " +
+                "Ask the user to bind it on ClickZen's Devices page (\"Bind window\" opens the wizard prefilled), or use connect_emulator and scrcpy mirroring instead.");
+        }
+
+        if (!r.Success || r.DeviceId is null)
+        {
+            throw new McpToolException(r.Message);
+        }
+
+        return await OnUi(() =>
+        {
+            var size = _hub.Devices.FirstOrDefault(d => d.Serial == r.DeviceId)?.ScreenSize ?? r.Profile?.ReferenceSize ?? default;
+            return new McpEmulatorBind(r.DeviceId, McpEnumName(r.Method.ToString()), r.Profile?.AdbSerial, size.Width, size.Height, r.Message);
+        });
+    }
+
+    /// <summary>Detects again and resolves the argument; a clear error lists the running emulators when nothing matches.</summary>
+    private async Task<DetectedEmulator> ResolveEmulatorAsync(string? emulator, CancellationToken ct)
+    {
+        await _emulators.DetectAsync(ct);
+        return await OnUi(() =>
+        {
+            if (_emulators.Find(emulator) is { } row)
+            {
+                return row;
+            }
+
+            var running = _emulators.Instances.Select(i => $"{i.Key} ({i.Instance.Name})").ToList();
+            throw new McpToolException(running.Count == 0
+                ? "No emulator is running. Start one first (ClickZen does not launch emulators)."
+                : string.IsNullOrWhiteSpace(emulator)
+                    ? $"Several emulators are running; pass `emulator`: {string.Join(", ", running)}."
+                    : $"No running emulator matches \"{emulator}\". Running: {string.Join(", ", running)}.");
+        });
+    }
+
+    private McpEmulator DescribeEmulator(DetectedEmulator row)
+    {
+        var i = row.Instance;
+        var notes = new List<string>();
+        if (!i.HasWindow)
+        {
+            notes.Add("no window found (headless or not shown yet)");
+        }
+        else if (i.WindowMinimized)
+        {
+            notes.Add("window minimized: restore it before bind_emulator_window");
+        }
+
+        if (i.AdbEnabled == false)
+        {
+            notes.Add("ADB is turned off in the emulator's settings; the user must enable it");
+        }
+
+        if (i.PortSource == ClickZen.Core.Emulators.AdbPortSource.Formula)
+        {
+            notes.Add("port inferred from the instance number");
+        }
+
+        if (!ClickZen.Core.Emulators.EmulatorCatalog.Get(i.Kind).HardwareVerified)
+        {
+            notes.Add("detection for this emulator is not verified on real hardware yet");
+        }
+
+        return new McpEmulator(
+            i.Key,
+            i.Kind.ToString().ToLowerInvariant(),
+            EmulatorUi.Title(i),
+            i.InstanceKey,
+            i.Index,
+            i.AdbAddress,
+            McpEnumName(i.PortSource.ToString()),
+            i.AdbEnabled,
+            McpEnumName(row.State.ToString()),
+            row.ConnectedSerial,
+            row.BoundDevice,
+            i.HasWindow,
+            i.ProcessId,
+            notes);
+    }
+
+    /// <summary>camelCase like the rest of the MCP JSON ("NotConnected" → "notConnected").</summary>
+    private static string McpEnumName(string name) => name.Length == 0 ? name : char.ToLowerInvariant(name[0]) + name[1..];
 
     public async Task<McpDevice> ConnectAsync(string? device, CancellationToken ct)
     {

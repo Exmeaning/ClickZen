@@ -52,6 +52,30 @@ internal sealed class FakeBackend : IClickZenBackend
     public Task<IReadOnlyList<McpDevice>> ListDevicesAsync(CancellationToken ct) =>
         Result<IReadOnlyList<McpDevice>>("list", [Device()]);
 
+    /// <summary>Running emulators returned by <see cref="ListEmulatorsAsync"/> (MuMu, not connected, by default).</summary>
+    public List<McpEmulator> Emulators { get; } =
+    [
+        new("mumu:MuMuPlayer-12.0-0", "mumu", "MuMu 模拟器 · Android Device", "MuMuPlayer-12.0-0", 0, "127.0.0.1:16384", "config", null,
+            "notConnected", null, null, true, 4242, []),
+    ];
+
+    public List<string> InstalledEmulators { get; } = ["mumu"];
+
+    public Task<McpEmulatorList> ListEmulatorsAsync(CancellationToken ct) =>
+        Result("emulators", new McpEmulatorList(Emulators.ToList(), InstalledEmulators.ToList()));
+
+    public Task<McpEmulatorConnect> ConnectEmulatorAsync(string? emulator, bool makeCurrent, CancellationToken ct)
+    {
+        var e = Emulators.FirstOrDefault(x => emulator is null || x.Id == emulator || x.Instance == emulator)
+            ?? throw new McpToolException($"No emulator \"{emulator}\".");
+        return e.AdbAddress is null
+            ? Result($"connect-emulator {emulator} {makeCurrent}", new McpEmulatorConnect(false, null, "port unknown", e))
+            : Result($"connect-emulator {emulator} {makeCurrent}", new McpEmulatorConnect(true, e.AdbAddress, "connected", e with { State = "connected", Device = e.AdbAddress }));
+    }
+
+    public Task<McpEmulatorBind> BindEmulatorWindowAsync(string? emulator, CancellationToken ct) =>
+        Result($"bind-emulator {emulator}", new McpEmulatorBind("window:abc123", "screenshotMatch", "127.0.0.1:16384", 1920, 1080, "bound"));
+
     public Task<McpDevice> ConnectAsync(string? device, CancellationToken ct) => Result($"connect {device}", Device(device ?? "emulator-5554"));
 
     public Task<McpDevice> SelectDeviceAsync(string device, CancellationToken ct) => Result($"select {device}", Device(device));

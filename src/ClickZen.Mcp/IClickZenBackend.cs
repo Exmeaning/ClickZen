@@ -134,6 +134,44 @@ public sealed record McpShellResult(string Output, bool Truncated, long ElapsedM
 /// <summary>An installed package.</summary>
 public sealed record McpApp(string Package, bool System);
 
+/// <summary>A running Android emulator instance found on the PC.</summary>
+/// <param name="Id">Stable id to pass to connect_emulator / bind_emulator_window ("mumu:MuMuPlayer-12.0-0").</param>
+/// <param name="Kind">"mumu", "ldplayer", "nox", "memu", "bluestacks" or "androidstudio".</param>
+/// <param name="Instance">The emulator's own instance name.</param>
+/// <param name="AdbAddress">127.0.0.1:port to connect to, null when the port is unknown.</param>
+/// <param name="PortSource">"config", "runtime", "formula" or "unknown".</param>
+/// <param name="AdbEnabled">False when the emulator's own ADB switch is off; null when unknown.</param>
+/// <param name="State">"connected", "notConnected", "offline", "adbDisabled" or "portUnknown".</param>
+/// <param name="Device">The adb device id (list_devices) when connected.</param>
+/// <param name="WindowDevice">The window device id ("window:…") when the window is bound.</param>
+/// <param name="Notes">Hints such as "window minimized" or "not verified on hardware".</param>
+public sealed record McpEmulator(
+    string Id,
+    string Kind,
+    string Name,
+    string Instance,
+    int? Index,
+    string? AdbAddress,
+    string PortSource,
+    bool? AdbEnabled,
+    string State,
+    string? Device,
+    string? WindowDevice,
+    bool HasWindow,
+    int ProcessId,
+    IReadOnlyList<string> Notes);
+
+/// <summary>Running emulators and installed ones (registry).</summary>
+public sealed record McpEmulatorList(IReadOnlyList<McpEmulator> Running, IReadOnlyList<string> Installed);
+
+/// <summary>Outcome of connect_emulator.</summary>
+public sealed record McpEmulatorConnect(bool Connected, string? Device, string Message, McpEmulator Emulator);
+
+/// <summary>Outcome of bind_emulator_window.</summary>
+/// <param name="WindowDevice">The window device id to use as <c>device</c> in other tools.</param>
+/// <param name="Method">How the Android screen was located ("aspectMatch", "renderWindow", "screenshotMatch", "edgeDetection", "clientArea").</param>
+public sealed record McpEmulatorBind(string WindowDevice, string Method, string? AdbDevice, int ScreenWidth, int ScreenHeight, string Message);
+
 /// <summary>
 /// Everything the MCP tools need from ClickZen. <c>device</c> arguments are a device id from
 /// <see cref="ListDevicesAsync"/>, a display name, or null/empty for the current device.
@@ -144,6 +182,15 @@ public interface IClickZenBackend
     Task<McpStatus> GetStatusAsync(CancellationToken ct);
 
     Task<IReadOnlyList<McpDevice>> ListDevicesAsync(CancellationToken ct);
+
+    /// <summary>Detects running emulators (processes and their own configuration; no adb).</summary>
+    Task<McpEmulatorList> ListEmulatorsAsync(CancellationToken ct);
+
+    /// <summary>Connects a detected emulator over adb (id, instance or name from <see cref="ListEmulatorsAsync"/>; empty = the only one).</summary>
+    Task<McpEmulatorConnect> ConnectEmulatorAsync(string? emulator, bool makeCurrent, CancellationToken ct);
+
+    /// <summary>Binds a detected emulator's window as a window device (locates the Android screen automatically).</summary>
+    Task<McpEmulatorBind> BindEmulatorWindowAsync(string? emulator, CancellationToken ct);
 
     /// <summary>Starts mirroring (scrcpy session / window capture) if needed and waits for a picture.</summary>
     Task<McpDevice> ConnectAsync(string? device, CancellationToken ct);

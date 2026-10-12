@@ -5,6 +5,7 @@ Settings_Group_Mirror	投屏	Mirror
 Settings_Group_Automation	自动化默认值	Automation defaults
 Settings_Group_Recording	录制	Recording
 Settings_Group_Sync	变量同步	Variable sync
+Settings_Group_Mcp	AI 接入（MCP）	AI access (MCP)
 Settings_Group_Tools	工具	Tools
 Settings_Group_General	常规	General
 Settings_Appearance_Theme	主题	Theme
@@ -52,6 +53,8 @@ Settings_On	开	On
 Settings_Off	关	Off
 Settings_OpenVariables	打开变量页	Open variables
 Settings_SyncLink	启用、端口与访问令牌在变量页管理	Manage enablement, port and access token on the Variables page
+Settings_OpenAi	打开 AI 接入页	Open AI access
+Settings_McpLink	启用、端口、访问令牌与允许的功能在 AI 接入页管理	Manage enablement, port, access token and allowed tools on the AI access page
 Settings_ServerVersion	随包 scrcpy-server 版本	Bundled scrcpy-server version
 Settings_Browse	浏览	Browse
 Settings_BundledAdb	留空使用随包 adb	Empty to use bundled adb

@@ -15,6 +15,7 @@ public static class NavigationPages
         new("recording", "Nav_Recording", null, "\uE7C8", typeof(Views.RecordingPage)),
         new("automation", "Nav_Automation", null, "\uE945", typeof(Views.AutomationPage)),
         new("variables", "Nav_Variables", null, "\uE943", typeof(Views.VariablesPage)),
+        new("ai", "Nav_Ai", null, "\uE99A", typeof(Views.AiPage)),
         new("logs", "Nav_Logs", null, "\uE9D9", typeof(Views.LogsPage)),
         new("settings", "Nav_Settings", null, "\uE713", typeof(Views.SettingsPage), IsFooter: true),
     ];

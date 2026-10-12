@@ -26,6 +26,43 @@ public static class ImageCodec
     /// <summary>Encodes a whole frame as PNG.</summary>
     public static byte[] ToPng(Frame frame) => CropToPng(frame, new RectI(0, 0, frame.Width, frame.Height));
 
+    /// <summary>
+    /// Crops <paramref name="rect"/> (frame pixels), scales it so the longest edge is at most <paramref name="maxSize"/>
+    /// (0 = no scaling) and encodes it as JPEG (<paramref name="jpegQuality"/> 1–100) or PNG (quality 0).
+    /// </summary>
+    /// <returns>The encoded bytes and the size of the encoded image.</returns>
+    public static (byte[] Data, SizeI Size) Encode(Frame frame, RectI rect, int maxSize, int jpegQuality)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+        var r = rect.ClampTo(frame.Size);
+        if (r.IsEmpty)
+        {
+            throw new ArgumentException("Crop rectangle is outside the frame.", nameof(rect));
+        }
+
+        using var full = Mat.FromPixelData(frame.Height, frame.Width, MatType.CV_8UC4, frame.Bgra);
+        using var roi = new Mat(full, new Rect(r.X, r.Y, r.Width, r.Height));
+        using var bgr = new Mat();
+        Cv2.CvtColor(roi, bgr, ColorConversionCodes.BGRA2BGR);
+
+        var longest = Math.Max(r.Width, r.Height);
+        var output = bgr;
+        using var scaled = new Mat();
+        if (maxSize > 0 && longest > maxSize)
+        {
+            var f = (double)maxSize / longest;
+            var w = Math.Max(1, (int)Math.Round(r.Width * f));
+            var h = Math.Max(1, (int)Math.Round(r.Height * f));
+            Cv2.Resize(bgr, scaled, new OpenCvSharp.Size(w, h), 0, 0, InterpolationFlags.Area);
+            output = scaled;
+        }
+
+        var bytes = jpegQuality > 0
+            ? output.ImEncode(".jpg", new ImageEncodingParam(ImwriteFlags.JpegQuality, Math.Clamp(jpegQuality, 1, 100)))
+            : output.ImEncode(".png");
+        return (bytes, new SizeI(output.Width, output.Height));
+    }
+
     /// <summary>Decodes PNG/JPEG bytes into a BGRA frame.</summary>
     public static Frame Decode(byte[] encoded, long sequence = 0)
     {

@@ -44,6 +44,12 @@ public sealed partial class SettingsPage : Page
                 expander.Items.Add(new SettingsCard { Header = _loc["Settings_SyncLink"], Content = link });
                 AddProperty(expander, group, value.GetType().GetProperty(nameof(SyncSettings.MaxClients))!);
             }
+            else if (group.Name == "Mcp")
+            {
+                // Enablement, port, token and tool groups live on the AI page (one place, applied immediately).
+                var link = Button("Settings_OpenAi", () => App.Current.MainWindow?.NavigateTo("ai"));
+                expander.Items.Add(new SettingsCard { Header = _loc["Settings_McpLink"], Content = link });
+            }
             else
             {
                 foreach (var property in value.GetType().GetProperties())
@@ -66,6 +72,11 @@ public sealed partial class SettingsPage : Page
                     if (group.Name == "Sync" && !App.IsSelfCheck)
                     {
                         await App.Current.Services.GetRequiredService<VariableSyncService>().SetEnabledAsync(false);
+                    }
+
+                    if (group.Name == "Mcp" && !App.IsSelfCheck)
+                    {
+                        await App.Current.Services.GetRequiredService<McpService>().SetEnabledAsync(false);
                     }
                     CheckLanguage();
                     BuildGroups();

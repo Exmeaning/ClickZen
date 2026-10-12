@@ -70,6 +70,8 @@ public partial class App : Application
         sc.AddSingleton(_ => new ClickZen.Core.Variables.VariableStore());
         sc.AddSingleton<VariableSyncService>();
         sc.AddSingleton<AutomationService>();
+        sc.AddSingleton<McpBackend>();
+        sc.AddSingleton<McpService>();
         sc.AddTransient<ClickZen.App.ViewModels.DevicesViewModel>();
         sc.AddTransient<ClickZen.App.ViewModels.LogsViewModel>();
 
@@ -142,12 +144,20 @@ public partial class App : Application
             return;
         }
 
+        if (IsMcpSelfTest)
+        {
+            // Needs no device and no adb: exercises the MCP server and the stdio bridge end to end.
+            _ = new McpSelfTest(_window, _services, _log).RunAsync();
+            return;
+        }
+
         if (!IsSelfCheck && _services.GetRequiredService<SettingsService>().Current.General.CheckForUpdates)
         {
             _ = _services.GetRequiredService<UpdateService>().CheckAsync(_window, false);
         }
         _ = StartDevicesAsync();
         _ = _services.GetRequiredService<VariableSyncService>().InitializeAsync(_window.DispatcherQueue);
+        _ = _services.GetRequiredService<McpService>().InitializeAsync(_window.DispatcherQueue);
 
         if (Environment.GetCommandLineArgs().Contains("--selftest-input", StringComparer.OrdinalIgnoreCase))
         {
@@ -185,6 +195,8 @@ public partial class App : Application
 
     public static bool IsSmokeTest { get; } = Environment.GetCommandLineArgs().Contains("--smoke", StringComparer.OrdinalIgnoreCase);
 
+    public static bool IsMcpSelfTest { get; } = Environment.GetCommandLineArgs().Contains("--selftest-mcp", StringComparer.OrdinalIgnoreCase);
+
     public static bool IsSelfCheck { get; } = IsSmokeTest || Environment.GetCommandLineArgs().Any(a => a.StartsWith("--selftest-", StringComparison.OrdinalIgnoreCase));
 
     private async Task StartDevicesAsync()
@@ -207,6 +219,7 @@ public partial class App : Application
             recording.StopRecording();
             recording.StopPlayback();
             await _services.GetRequiredService<AutomationService>().StopAsync();
+            await _services.GetRequiredService<McpService>().DisposeAsync();
             await _services.GetRequiredService<VariableSyncService>().DisposeAsync();
             await _services.GetRequiredService<DeviceHub>().DisposeAsync();
         }

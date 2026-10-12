@@ -542,12 +542,69 @@
   <data name="Editor_Sum_StopTask" xml:space="preserve"><value>停用本任务</value></data>
   <data name="Editor_Sum_StopScheme" xml:space="preserve"><value>停止方案</value></data>
   <data name="Editor_Sum_Delay" xml:space="preserve"><value>之后等待 {0} ms</value></data>
+  <data name="Nav_Ai" xml:space="preserve"><value>AI 接入</value></data>
+  <data name="Page_Ai_Title.Text" xml:space="preserve"><value>AI 接入</value></data>
+  <data name="Page_Ai_Description.Text" xml:space="preserve"><value>通过 MCP（Model Context Protocol）让 Claude、Cursor、VS Code 等 AI 助手查看画面并操作设备、运行自动化方案。</value></data>
+  <data name="Status_McpOff" xml:space="preserve"><value>AI 接入：未启用</value></data>
+  <data name="Status_McpRunning" xml:space="preserve"><value>AI 接入：端口 {0}，{1} 次调用</value></data>
+  <data name="Status_McpFailed" xml:space="preserve"><value>AI 接入：启动失败</value></data>
+  <data name="Ai_ServerCard.Header" xml:space="preserve"><value>MCP 服务器</value></data>
+  <data name="Ai_ServerCard.Description" xml:space="preserve"><value>开启后，AI 客户端可以通过下方地址连接本机的 ClickZen</value></data>
+  <data name="Ai_Running" xml:space="preserve"><value>正在运行：{0}</value></data>
+  <data name="Ai_Stopped" xml:space="preserve"><value>服务未运行。开启后即可在 AI 客户端中使用 ClickZen。</value></data>
+  <data name="Ai_Failed" xml:space="preserve"><value>启动失败：{0}</value></data>
+  <data name="Ai_PortCard.Header" xml:space="preserve"><value>端口</value></data>
+  <data name="Ai_PortCard.Description" xml:space="preserve"><value>修改后点击“应用”</value></data>
+  <data name="Ai_RemoteCard.Header" xml:space="preserve"><value>允许局域网访问</value></data>
+  <data name="Ai_RemoteCard.Description" xml:space="preserve"><value>默认只接受本机连接。开启后同一网络中的设备也能连接（没有 TLS 加密，只在可信网络中使用）</value></data>
+  <data name="Ai_Apply.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="Ai_TokenCard.Header" xml:space="preserve"><value>访问令牌</value></data>
+  <data name="Ai_TokenCard.Description" xml:space="preserve"><value>AI 客户端须在请求头中携带：Authorization: Bearer 令牌。下方的客户端配置已自动包含</value></data>
+  <data name="Ai_TokenShow.ToolTipService.ToolTip" xml:space="preserve"><value>显示/隐藏令牌</value></data>
+  <data name="Ai_TokenCopy.ToolTipService.ToolTip" xml:space="preserve"><value>复制令牌</value></data>
+  <data name="Ai_TokenRegenerate.ToolTipService.ToolTip" xml:space="preserve"><value>生成新令牌，旧令牌立即失效</value></data>
+  <data name="Ai_TokenRegenerateText.Text" xml:space="preserve"><value>重新生成</value></data>
+  <data name="Ai_TokenRegenerated" xml:space="preserve"><value>已生成新令牌，请更新 AI 客户端中的配置。</value></data>
+  <data name="Ai_Copied" xml:space="preserve"><value>已复制到剪贴板。</value></data>
+  <data name="Ai_CapsHeader.Text" xml:space="preserve"><value>允许 AI 使用的功能</value></data>
+  <data name="Ai_CapsHint.Text" xml:space="preserve"><value>关闭的功能对 AI 隐藏，调用会被拒绝。修改即时生效，无需重启服务。</value></data>
+  <data name="Ai_CapObserve.Header" xml:space="preserve"><value>查看</value></data>
+  <data name="Ai_CapObserve.Description" xml:space="preserve"><value>设备列表、截图、界面元素树、找图与取色</value></data>
+  <data name="Ai_CapInput.Header" xml:space="preserve"><value>操作</value></data>
+  <data name="Ai_CapInput.Description" xml:space="preserve"><value>点击、滑动、按键、输入文字、启动与关闭应用</value></data>
+  <data name="Ai_CapAutomation.Header" xml:space="preserve"><value>自动化</value></data>
+  <data name="Ai_CapAutomation.Description" xml:space="preserve"><value>打开方案、开始与停止运行、启用或禁用任务、查看运行日志</value></data>
+  <data name="Ai_CapRecording.Header" xml:space="preserve"><value>录制回放</value></data>
+  <data name="Ai_CapRecording.Description" xml:space="preserve"><value>列出录制并在设备上回放</value></data>
+  <data name="Ai_CapVariables.Header" xml:space="preserve"><value>变量</value></data>
+  <data name="Ai_CapVariables.Description" xml:space="preserve"><value>读取和修改自动化变量</value></data>
+  <data name="Ai_CapShell.Header" xml:space="preserve"><value>ADB Shell</value></data>
+  <data name="Ai_CapShell.Description" xml:space="preserve"><value>在设备上执行任意 shell 命令（可修改系统设置、删除数据，风险最高）</value></data>
+  <data name="Ai_ClientHeader.Text" xml:space="preserve"><value>连接 AI 客户端</value></data>
+  <data name="Ai_ClientPicker.Header" xml:space="preserve"><value>客户端</value></data>
+  <data name="Ai_ClientClaudeCode" xml:space="preserve"><value>Claude Code（命令行）</value></data>
+  <data name="Ai_ClientCursor" xml:space="preserve"><value>Cursor（~/.cursor/mcp.json）</value></data>
+  <data name="Ai_ClientVsCode" xml:space="preserve"><value>VS Code（.vscode/mcp.json）</value></data>
+  <data name="Ai_ClientDesktop" xml:space="preserve"><value>Claude Desktop（stdio 桥接）</value></data>
+  <data name="Ai_ClientCodex" xml:space="preserve"><value>Codex CLI（~/.codex/config.toml）</value></data>
+  <data name="Ai_ClientGeneric" xml:space="preserve"><value>其他客户端（Streamable HTTP）</value></data>
+  <data name="Ai_HintClaudeCode" xml:space="preserve"><value>在终端中运行此命令。</value></data>
+  <data name="Ai_HintHttp" xml:space="preserve"><value>把这段配置合并到客户端的 MCP 配置文件中，然后重启或刷新客户端。</value></data>
+  <data name="Ai_HintStdio" xml:space="preserve"><value>该客户端通过 ClickZen.exe --mcp-stdio 连接：配置中不含令牌，令牌从本机设置自动读取；ClickZen 未运行时会自动启动。</value></data>
+  <data name="Ai_CopyConfig.Content" xml:space="preserve"><value>复制配置</value></data>
+  <data name="Ai_ConfigTokenNote.Text" xml:space="preserve"><value>配置中包含访问令牌，请勿公开分享。</value></data>
+  <data name="Ai_ActivityHeader.Text" xml:space="preserve"><value>最近调用</value></data>
+  <data name="Ai_ClearCalls.Content" xml:space="preserve"><value>清空</value></data>
+  <data name="Ai_NoCalls.Text" xml:space="preserve"><value>还没有 AI 调用。连接客户端后，这里会显示每次工具调用。</value></data>
+  <data name="Ai_CallLine" xml:space="preserve"><value>{0}  {1}  {2}  ·  {3} ms</value></data>
+  <data name="Ai_DocsLink.Content" xml:space="preserve"><value>查看 MCP 文档（工具说明与示例）</value></data>
   <data name="Settings_Group_Appearance" xml:space="preserve"><value>外观</value></data>
   <data name="Settings_Group_Devices" xml:space="preserve"><value>设备默认值</value></data>
   <data name="Settings_Group_Mirror" xml:space="preserve"><value>投屏</value></data>
   <data name="Settings_Group_Automation" xml:space="preserve"><value>自动化默认值</value></data>
   <data name="Settings_Group_Recording" xml:space="preserve"><value>录制</value></data>
   <data name="Settings_Group_Sync" xml:space="preserve"><value>变量同步</value></data>
+  <data name="Settings_Group_Mcp" xml:space="preserve"><value>AI 接入（MCP）</value></data>
   <data name="Settings_Group_Tools" xml:space="preserve"><value>工具</value></data>
   <data name="Settings_Group_General" xml:space="preserve"><value>常规</value></data>
   <data name="Settings_Appearance_Theme" xml:space="preserve"><value>主题</value></data>
@@ -595,6 +652,8 @@
   <data name="Settings_Off" xml:space="preserve"><value>关</value></data>
   <data name="Settings_OpenVariables" xml:space="preserve"><value>打开变量页</value></data>
   <data name="Settings_SyncLink" xml:space="preserve"><value>启用、端口与访问令牌在变量页管理</value></data>
+  <data name="Settings_OpenAi" xml:space="preserve"><value>打开 AI 接入页</value></data>
+  <data name="Settings_McpLink" xml:space="preserve"><value>启用、端口、访问令牌与允许的功能在 AI 接入页管理</value></data>
   <data name="Settings_ServerVersion" xml:space="preserve"><value>随包 scrcpy-server 版本</value></data>
   <data name="Settings_Browse" xml:space="preserve"><value>浏览</value></data>
   <data name="Settings_BundledAdb" xml:space="preserve"><value>留空使用随包 adb</value></data>

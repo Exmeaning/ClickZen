@@ -160,6 +160,26 @@ public sealed class OpenCvImageMatcherTests : IDisposable
         Assert.Equal(frame.Bgra, back.Bgra);
     }
 
+    [Fact]
+    public void Encode_scales_crops_and_picks_format()
+    {
+        var frame = NoiseFrame(400, 200);
+
+        var (jpeg, jpegSize) = ImageCodec.Encode(frame, new RectI(0, 0, 400, 200), maxSize: 100, jpegQuality: 80);
+        Assert.Equal(new SizeI(100, 50), jpegSize);
+        Assert.Equal(0xFF, jpeg[0]);
+        Assert.Equal(0xD8, jpeg[1]);
+        Assert.Equal(jpegSize, ImageCodec.MeasurePng(jpeg));
+
+        var (png, pngSize) = ImageCodec.Encode(frame, new RectI(10, 20, 30, 40), maxSize: 0, jpegQuality: 0);
+        Assert.Equal(new SizeI(30, 40), pngSize);
+        Assert.Equal(0x89, png[0]);
+        var crop = ImageCodec.Decode(png);
+        Assert.Equal(frame.PixelAt(10, 20), crop.PixelAt(0, 0));
+
+        Assert.Throws<ArgumentException>(() => ImageCodec.Encode(frame, new RectI(500, 500, 10, 10), 0, 0));
+    }
+
     private static Frame Blur(Frame f)
     {
         using var src = Mat.FromPixelData(f.Height, f.Width, MatType.CV_8UC4, f.Bgra);

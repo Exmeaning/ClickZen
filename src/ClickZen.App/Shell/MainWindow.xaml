@@ -71,6 +71,7 @@
                 <TextBlock x:Name="StatusEngine" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
                 <TextBlock x:Name="StatusRecording" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
                 <TextBlock x:Name="StatusSync" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                <TextBlock x:Name="StatusMcp" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
                 <TextBlock x:Name="StatusVersion" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
             </StackPanel>
         </Border>

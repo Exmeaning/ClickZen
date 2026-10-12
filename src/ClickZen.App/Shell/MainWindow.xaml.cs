@@ -62,6 +62,12 @@ public sealed partial class MainWindow : Window
             : sync.LastError is not null ? _loc["Status_SyncFailed"] : _loc["Status_SyncOff"];
         UpdateSync();
         sync.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(UpdateSync);
+        var mcp = services.GetRequiredService<McpService>();
+        void UpdateMcp() => StatusMcp.Text = mcp.IsRunning
+            ? _loc.Format("Status_McpRunning", mcp.Port, mcp.CallCount)
+            : mcp.LastError is not null ? _loc["Status_McpFailed"] : _loc["Status_McpOff"];
+        UpdateMcp();
+        mcp.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(UpdateMcp);
 
         DeviceSwitcher.ItemsSource = _hub.Devices;
         DeviceSwitcher.PlaceholderText = _loc["TitleBar_NoDevice"];

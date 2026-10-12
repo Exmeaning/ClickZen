@@ -1,0 +1,62 @@
+# key	zh-CN	en-US
+# ---- AI access (MCP server) ----
+Nav_Ai	AI 接入	AI access
+Page_Ai_Title.Text	AI 接入	AI access
+Page_Ai_Description.Text	通过 MCP（Model Context Protocol）让 Claude、Cursor、VS Code 等 AI 助手查看画面并操作设备、运行自动化方案。	Let AI assistants such as Claude, Cursor and VS Code see the screen, control devices and run automation schemes through MCP (Model Context Protocol).
+Status_McpOff	AI 接入：未启用	AI access: off
+Status_McpRunning	AI 接入：端口 {0}，{1} 次调用	AI access: port {0}, {1} call(s)
+Status_McpFailed	AI 接入：启动失败	AI access: failed to start
+# Server card
+Ai_ServerCard.Header	MCP 服务器	MCP server
+Ai_ServerCard.Description	开启后，AI 客户端可以通过下方地址连接本机的 ClickZen	When on, AI clients can connect to this ClickZen at the address below
+Ai_Running	正在运行：{0}	Running: {0}
+Ai_Stopped	服务未运行。开启后即可在 AI 客户端中使用 ClickZen。	The server is not running. Turn it on to use ClickZen from AI clients.
+Ai_Failed	启动失败：{0}	Could not start: {0}
+Ai_PortCard.Header	端口	Port
+Ai_PortCard.Description	修改后点击“应用”	Click "Apply" after changing
+Ai_RemoteCard.Header	允许局域网访问	Allow network access
+Ai_RemoteCard.Description	默认只接受本机连接。开启后同一网络中的设备也能连接（没有 TLS 加密，只在可信网络中使用）	Only this PC can connect by default. When on, other devices on the network can connect too (no TLS encryption – trusted networks only)
+Ai_Apply.Content	应用	Apply
+Ai_TokenCard.Header	访问令牌	Access token
+Ai_TokenCard.Description	AI 客户端须在请求头中携带：Authorization: Bearer 令牌。下方的客户端配置已自动包含	AI clients must send it as "Authorization: Bearer <token>". The client configurations below already contain it
+Ai_TokenShow.ToolTipService.ToolTip	显示/隐藏令牌	Show or hide the token
+Ai_TokenCopy.ToolTipService.ToolTip	复制令牌	Copy the token
+Ai_TokenRegenerate.ToolTipService.ToolTip	生成新令牌，旧令牌立即失效	Generate a new token; the old one stops working immediately
+Ai_TokenRegenerateText.Text	重新生成	Regenerate
+Ai_TokenRegenerated	已生成新令牌，请更新 AI 客户端中的配置。	A new token was generated. Update the configuration of your AI clients.
+Ai_Copied	已复制到剪贴板。	Copied to the clipboard.
+# Capabilities
+Ai_CapsHeader.Text	允许 AI 使用的功能	What AI may do
+Ai_CapsHint.Text	关闭的功能对 AI 隐藏，调用会被拒绝。修改即时生效，无需重启服务。	Disabled groups are hidden from AI and calls are refused. Changes apply immediately.
+Ai_CapObserve.Header	查看	Observe
+Ai_CapObserve.Description	设备列表、截图、界面元素树、找图与取色	Device list, screenshots, UI element tree, image search and pixel colours
+Ai_CapInput.Header	操作	Control
+Ai_CapInput.Description	点击、滑动、按键、输入文字、启动与关闭应用	Taps, swipes, keys, text input, launching and stopping apps
+Ai_CapAutomation.Header	自动化	Automation
+Ai_CapAutomation.Description	打开方案、开始与停止运行、启用或禁用任务、查看运行日志	Open schemes, start and stop runs, enable or disable tasks, read the run log
+Ai_CapRecording.Header	录制回放	Recordings
+Ai_CapRecording.Description	列出录制并在设备上回放	List recordings and play them back on devices
+Ai_CapVariables.Header	变量	Variables
+Ai_CapVariables.Description	读取和修改自动化变量	Read and change automation variables
+Ai_CapShell.Header	ADB Shell	ADB shell
+Ai_CapShell.Description	在设备上执行任意 shell 命令（可修改系统设置、删除数据，风险最高）	Run any shell command on the device (can change settings or delete data – the most powerful group)
+# Client configuration
+Ai_ClientHeader.Text	连接 AI 客户端	Connect an AI client
+Ai_ClientPicker.Header	客户端	Client
+Ai_ClientClaudeCode	Claude Code（命令行）	Claude Code (command line)
+Ai_ClientCursor	Cursor（~/.cursor/mcp.json）	Cursor (~/.cursor/mcp.json)
+Ai_ClientVsCode	VS Code（.vscode/mcp.json）	VS Code (.vscode/mcp.json)
+Ai_ClientDesktop	Claude Desktop（stdio 桥接）	Claude Desktop (stdio bridge)
+Ai_ClientCodex	Codex CLI（~/.codex/config.toml）	Codex CLI (~/.codex/config.toml)
+Ai_ClientGeneric	其他客户端（Streamable HTTP）	Other clients (Streamable HTTP)
+Ai_HintClaudeCode	在终端中运行此命令。	Run this command in a terminal.
+Ai_HintHttp	把这段配置合并到客户端的 MCP 配置文件中，然后重启或刷新客户端。	Merge this into the client's MCP configuration file, then restart or reload the client.
+Ai_HintStdio	该客户端通过 ClickZen.exe --mcp-stdio 连接：配置中不含令牌，令牌从本机设置自动读取；ClickZen 未运行时会自动启动。	This client connects through ClickZen.exe --mcp-stdio: the configuration contains no token (it is read from this PC's settings) and ClickZen is started when it is not running.
+Ai_CopyConfig.Content	复制配置	Copy configuration
+Ai_ConfigTokenNote.Text	配置中包含访问令牌，请勿公开分享。	The configuration contains the access token – do not share it publicly.
+# Activity
+Ai_ActivityHeader.Text	最近调用	Recent calls
+Ai_ClearCalls.Content	清空	Clear
+Ai_NoCalls.Text	还没有 AI 调用。连接客户端后，这里会显示每次工具调用。	No AI calls yet. Every tool call shows up here once a client is connected.
+Ai_CallLine	{0}  {1}  {2}  ·  {3} ms	{0}  {1}  {2}  ·  {3} ms
+Ai_DocsLink.Content	查看 MCP 文档（工具说明与示例）	MCP documentation (tools and examples)

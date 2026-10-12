@@ -17,13 +17,21 @@
     <DefaultLanguage>zh-CN</DefaultLanguage>
     <!-- XAML-generated code is not under our control -->
     <NoWarn>$(NoWarn);CS8618;CA1416</NoWarn>
+    <!-- Program.cs is the entry point (adds the headless MCP stdio bridge mode). -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The MCP server (AI access) hosts Kestrel in process; self-contained publish carries ASP.NET Core. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ClickZen.Core\ClickZen.Core.csproj" />
     <ProjectReference Include="..\ClickZen.Device\ClickZen.Device.csproj" />
     <ProjectReference Include="..\ClickZen.Platform\ClickZen.Platform.csproj" />
     <ProjectReference Include="..\ClickZen.Vision\ClickZen.Vision.csproj" />
+    <ProjectReference Include="..\ClickZen.Mcp\ClickZen.Mcp.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,7 +45,6 @@
     <PackageReference Include="CommunityToolkit.WinUI.Converters" />
     <PackageReference Include="CommunityToolkit.WinUI.Extensions" />
     <PackageReference Include="WinUIEx" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.File" />

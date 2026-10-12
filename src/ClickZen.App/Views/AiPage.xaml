@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ClickZen.App.Views.AiPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:ClickZen.App.ViewModels"
+    xmlns:local="using:ClickZen.App.Views"
+    xmlns:ctk="using:CommunityToolkit.WinUI.Controls">
+
+    <Grid Padding="{StaticResource PagePadding}" RowSpacing="12" ColumnSpacing="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="420" />
+            <ColumnDefinition Width="*" MinWidth="360" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.ColumnSpan="2" Spacing="4">
+            <TextBlock x:Uid="Page_Ai_Title" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock x:Uid="Page_Ai_Description" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+        </StackPanel>
+
+        <!-- Left: server, token, capabilities -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="4" Padding="0,0,12,0">
+                <ctk:SettingsCard x:Uid="Ai_ServerCard">
+                    <ctk:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE99A;" />
+                    </ctk:SettingsCard.HeaderIcon>
+                    <ToggleSwitch x:Name="ServerToggle" IsOn="{x:Bind ViewModel.ServerEnabled, Mode=TwoWay}" />
+                </ctk:SettingsCard>
+                <InfoBar IsOpen="True" IsClosable="False" Message="{x:Bind ViewModel.StatusText, Mode=OneWay}"
+                         Severity="{x:Bind local:AiPage.StatusSeverity(ViewModel.IsRunning, ViewModel.LastError), Mode=OneWay}" />
+
+                <ctk:SettingsCard x:Uid="Ai_PortCard">
+                    <NumberBox Value="{x:Bind ViewModel.Port, Mode=TwoWay}" Minimum="1024" Maximum="65535" SpinButtonPlacementMode="Compact" MinWidth="120" />
+                </ctk:SettingsCard>
+                <ctk:SettingsCard x:Uid="Ai_RemoteCard">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AllowRemote, Mode=TwoWay}" />
+                </ctk:SettingsCard>
+                <Button x:Uid="Ai_Apply" Command="{x:Bind ViewModel.ApplyCommand}" HorizontalAlignment="Right" />
+
+                <ctk:SettingsExpander x:Uid="Ai_TokenCard" IsExpanded="True">
+                    <ctk:SettingsExpander.HeaderIcon>
+                        <FontIcon Glyph="&#xE8D7;" />
+                    </ctk:SettingsExpander.HeaderIcon>
+                    <ctk:SettingsExpander.Items>
+                        <ctk:SettingsCard ContentAlignment="Left">
+                            <StackPanel Spacing="8">
+                                <PasswordBox x:Name="TokenBox" Password="{x:Bind ViewModel.Token, Mode=OneWay}" IsEnabled="True"
+                                             PasswordRevealMode="Hidden" MinWidth="320" FontFamily="{StaticResource MonoFontFamily}" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <ToggleButton x:Uid="Ai_TokenShow" Click="OnShowTokenClick">
+                                        <FontIcon Glyph="&#xE7B3;" FontSize="14" />
+                                    </ToggleButton>
+                                    <Button x:Uid="Ai_TokenCopy" Click="OnCopyTokenClick">
+                                        <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                                    </Button>
+                                    <Button x:Uid="Ai_TokenRegenerate" Click="OnRegenerateClick">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                                            <TextBlock x:Uid="Ai_TokenRegenerateText" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </ctk:SettingsCard>
+                    </ctk:SettingsExpander.Items>
+                </ctk:SettingsExpander>
+
+                <TextBlock x:Uid="Ai_CapsHeader" Style="{StaticResource SectionHeaderTextBlockStyle}" />
+                <TextBlock x:Uid="Ai_CapsHint" Style="{StaticResource SecondaryCaptionTextBlockStyle}" Margin="0,0,0,4" />
+                <ctk:SettingsCard x:Uid="Ai_CapObserve">
+                    <ctk:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE7B3;" />
+                    </ctk:SettingsCard.HeaderIcon>
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AllowObserve, Mode=TwoWay}" />
+                </ctk:SettingsCard>
+                <ctk:SettingsCard x:Uid="Ai_CapInput">
+                    <ctk:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE7C9;" />
+                    </ctk:SettingsCard.HeaderIcon>
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AllowInput, Mode=TwoWay}" />
+                </ctk:SettingsCard>
+                <ctk:SettingsCard x:Uid="Ai_CapAutomation">
+                    <ctk:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE945;" />
+                    </ctk:SettingsCard.HeaderIcon>
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AllowAutomation, Mode=TwoWay}" />
+                </ctk:SettingsCard>
+                <ctk:SettingsCard x:Uid="Ai_CapRecording">
+                    <ctk:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE7C8;" />
+                    </ctk:SettingsCard.HeaderIcon>
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AllowRecording, Mode=TwoWay}" />
+                </ctk:SettingsCard>
+                <ctk:SettingsCard x:Uid="Ai_CapVariables">
+                    <ctk:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE943;" />
+                    </ctk:SettingsCard.HeaderIcon>
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AllowVariables, Mode=TwoWay}" />
+                </ctk:SettingsCard>
+                <ctk:SettingsCard x:Uid="Ai_CapShell">
+                    <ctk:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE756;" />
+                    </ctk:SettingsCard.HeaderIcon>
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AllowShell, Mode=TwoWay}" />
+                </ctk:SettingsCard>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Right: client configuration and activity -->
+        <Grid Grid.Row="1" Grid.Column="1" RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock x:Uid="Ai_ClientHeader" Style="{StaticResource BodyStrongTextBlockStyle}" />
+            <Border Grid.Row="1" Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <ComboBox x:Uid="Ai_ClientPicker" ItemsSource="{x:Bind ViewModel.Clients}" SelectedItem="{x:Bind ViewModel.SelectedClient, Mode=TwoWay}"
+                              DisplayMemberPath="Label" HorizontalAlignment="Stretch" />
+                    <TextBlock Text="{x:Bind ViewModel.ConfigHint, Mode=OneWay}" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                    <TextBox Text="{x:Bind ViewModel.ConfigText, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                             FontFamily="{StaticResource MonoFontFamily}" FontSize="12" MaxHeight="220"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Uid="Ai_ConfigTokenNote" VerticalAlignment="Center" Style="{StaticResource SecondaryCaptionTextBlockStyle}"
+                                   Visibility="{x:Bind ViewModel.ShowsToken, Mode=OneWay}" />
+                        <Button Grid.Column="1" x:Uid="Ai_CopyConfig" Click="OnCopyConfigClick" Style="{StaticResource AccentButtonStyle}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Grid Grid.Row="2" Margin="0,8,0,0">
+                <TextBlock x:Uid="Ai_ActivityHeader" VerticalAlignment="Center" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <Button x:Uid="Ai_ClearCalls" HorizontalAlignment="Right" Command="{x:Bind ViewModel.ClearCallsCommand}" />
+            </Grid>
+            <Border Grid.Row="3" Style="{StaticResource CardBorderStyle}" Padding="0">
+                <Grid>
+                    <ListView ItemsSource="{x:Bind ViewModel.CallLines}" SelectionMode="None" Padding="0,4">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{x:Bind}" TextWrapping="Wrap" FontFamily="{StaticResource MonoFontFamily}" FontSize="12"
+                                           IsTextSelectionEnabled="True" Margin="0,2" />
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <TextBlock x:Uid="Ai_NoCalls" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" MaxWidth="320"
+                               Style="{StaticResource SecondaryCaptionTextBlockStyle}"
+                               Visibility="{x:Bind local:AiPage.CollapsedIf(ViewModel.HasCalls), Mode=OneWay}" />
+                </Grid>
+            </Border>
+            <HyperlinkButton Grid.Row="4" x:Uid="Ai_DocsLink" Click="OnDocsClick" />
+        </Grid>
+    </Grid>
+</Page>

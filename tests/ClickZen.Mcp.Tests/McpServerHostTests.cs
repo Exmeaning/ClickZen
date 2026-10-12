@@ -94,6 +94,43 @@ public sealed class McpServerHostTests : IAsyncLifetime
         await Assert.ThrowsAnyAsync<Exception>(() => ConnectAsync(token: null));
     }
 
+    [Theory]
+    [InlineData("2025-06-18")]
+    [InlineData("2025-11-25")]
+    [InlineData("2025-03-26")]
+    public async Task Initialize_handshake_clients_work_over_raw_http(string protocol)
+    {
+        using var http = new HttpClient();
+
+        async Task<string> PostAsync(string json, bool withVersionHeader)
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Post, _host.LocalUrl) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+            req.Headers.Accept.ParseAdd("application/json");
+            req.Headers.Accept.ParseAdd("text/event-stream");
+            if (withVersionHeader)
+            {
+                req.Headers.Add("MCP-Protocol-Version", protocol);
+            }
+
+            var res = await http.SendAsync(req, TestContext.Current.CancellationToken);
+            var body = await res.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            Assert.True(res.IsSuccessStatusCode, $"{(int)res.StatusCode}: {body}");
+            return body;
+        }
+
+        var init = await PostAsync("""{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":""" + "\"" + protocol + "\"" + ""","capabilities":{},"clientInfo":{"name":"legacy","version":"1"}}}""", false);
+        Assert.Contains("\"protocolVersion\":\"" + protocol + "\"", init, StringComparison.Ordinal);
+        Assert.Contains("clickzen", init, StringComparison.Ordinal);
+
+        var list = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list"}""", true);
+        Assert.Contains("\"take_screenshot\"", list, StringComparison.Ordinal);
+
+        var call = await PostAsync("""{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"press_key","arguments":{"key":"back"}}}""", true);
+        Assert.Contains("key code 4", call, StringComparison.Ordinal);
+        Assert.Contains("key 4", _backend.Calls);
+    }
+
     [Fact]
     public async Task Foreign_origin_is_rejected_with_403()
     {

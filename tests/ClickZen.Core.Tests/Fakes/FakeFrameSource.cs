@@ -11,7 +11,8 @@ public sealed class FakeFrameSource : IFrameSource
 
     public FakeFrameSource(int width = 100, int height = 200) => Size = new SizeI(width, height);
 
-    public SizeI Size { get; }
+    /// <summary>Size of the frames SetColor produces (changed by <see cref="Rotate"/>).</summary>
+    public SizeI Size { get; private set; }
 
     public int WaitCalls { get; private set; }
 
@@ -19,6 +20,13 @@ public sealed class FakeFrameSource : IFrameSource
     public Action<FakeFrameSource>? OnWaitForNewer { get; set; }
 
     public Frame? Latest => _latest;
+
+    /// <summary>Turns the screen by 90°: the next frames have width and height swapped (a new black frame is published).</summary>
+    public void Rotate()
+    {
+        Size = Size.Transposed;
+        SetColor(0, 0, 0);
+    }
 
     public void SetColor(byte r, byte g, byte b)
     {

@@ -370,4 +370,165 @@ public sealed class AutomationEngineTests
         await Engine(scheme).RunAsync(Ct, maxRounds: 1);
         Assert.Equal("{n} = 3", _input.Calls[0].Text);
     }
+
+    // ------------------------------------------------------------------ screen orientation
+
+    /// <summary>An engine whose device screen follows the frames' orientation (like a real device), 10 px per frame px.</summary>
+    private AutomationEngine RotatingEngine(Scheme s, List<EngineLogEntry>? logs = null)
+    {
+        var engine = new AutomationEngine(s, new EngineEnvironment
+        {
+            Frames = _frames,
+            Input = _input,
+            Matcher = _matcher,
+            ScreenSize = () => new SizeI(_frames.Size.Width * 10, _frames.Size.Height * 10),
+            Clock = _clock,
+            Random = new Random(1),
+        });
+        if (logs is not null)
+        {
+            engine.Log += (_, e) => logs.Add(e);
+        }
+
+        return engine;
+    }
+
+    [Fact]
+    public async Task Tasks_of_the_other_orientation_are_skipped_without_cooldown_or_run_count()
+    {
+        // Scheme authored in portrait (1000x2000); the screen is landscape.
+        _frames.Rotate();
+        var portraitTask = Task("portrait", Always, new TapAction { Target = Target.At(100, 200) });
+        portraitTask.CooldownMs = 5000;
+        var engine = RotatingEngine(NewScheme(portraitTask));
+
+        await engine.RunAsync(Ct, maxRounds: 3);
+        Assert.Empty(_input.Calls);
+        Assert.Equal(0, engine.Runtime["portrait"].RunCount);
+
+        // Back to portrait: it runs at once (the skipped rounds did not start a cooldown).
+        _frames.Rotate();
+        await engine.RunRoundAsync(Ct);
+        Assert.Equal(new PointI(100, 200), Assert.Single(_input.Calls).Point);
+    }
+
+    [Fact]
+    public async Task Landscape_task_uses_the_transposed_reference_on_any_landscape_screen()
+    {
+        // Scheme RefSize 1000x2000 (portrait); a landscape task authored at 2000x1000 runs on a 4000x2000 screen.
+        _frames.Rotate(); // 200x100 frames → 2000x1000 screen
+        var task = Task("land", Always, new TapAction { Target = Target.At(1500, 250) });
+        task.Orientation = TaskOrientation.Landscape;
+        var engine = new AutomationEngine(NewScheme(task), new EngineEnvironment
+        {
+            Frames = _frames,
+            Input = _input,
+            Matcher = _matcher,
+            ScreenSize = () => new SizeI(4000, 2000),
+            Clock = _clock,
+            Random = new Random(1),
+        });
+
+        await engine.RunAsync(Ct, maxRounds: 1);
+
+        Assert.Equal(new PointI(3000, 500), Assert.Single(_input.Calls).Point);
+    }
+
+    [Fact]
+    public async Task Tasks_without_coordinates_run_in_both_orientations()
+    {
+        var engine = RotatingEngine(NewScheme(Task("key", Always, new KeyAction { KeyCode = KeyCodes.Back })));
+
+        await engine.RunRoundAsync(Ct);
+        _frames.Rotate();
+        await engine.RunRoundAsync(Ct);
+
+        Assert.Equal(2, _input.Calls.Count(c => c.Kind == "key"));
+    }
+
+    [Fact]
+    public async Task Image_search_on_the_other_orientation_uses_the_transposed_reference_scale()
+    {
+        // Template cut at the portrait reference (1000x2000) for 100x200 frames → scale 0.1, also on landscape frames.
+        _frames.Rotate();
+        var task = Task("img", Image(), new TapAction { Target = new Target { Kind = TargetKind.LastMatch } });
+        task.Orientation = TaskOrientation.Landscape;
+        await RotatingEngine(NewScheme(task)).RunAsync(Ct, maxRounds: 1);
+
+        var call = Assert.Single(_matcher.Calls);
+        Assert.Equal(0.1, call.Scale, 6);
+        Assert.Equal(new RectI(0, 0, 200, 100), call.Area);
+    }
+
+    [Fact]
+    public async Task Skipped_tasks_are_logged_once_per_orientation_change()
+    {
+        var logs = new List<EngineLogEntry>();
+        var portrait = Task("Portrait task", Always, new TapAction { Target = Target.At(100, 200) });
+        var both = Task("Both", Always, new KeyAction());
+        both.CooldownMs = 0;
+        var engine = RotatingEngine(NewScheme(portrait, both), logs);
+
+        _frames.Rotate();
+        await engine.RunAsync(Ct, maxRounds: 4);
+        bool Skip(EngineLogEntry l) => l.Message.Contains("skipping", StringComparison.Ordinal);
+        var skip = Assert.Single(logs, Skip);
+        Assert.Contains("Portrait task", skip.Message, StringComparison.Ordinal);
+        Assert.Contains("landscape", skip.Message, StringComparison.Ordinal);
+
+        // Turning back to portrait skips nothing; turning to landscape again logs again.
+        logs.Clear();
+        _frames.Rotate();
+        await engine.RunRoundAsync(Ct);
+        Assert.DoesNotContain(logs, Skip);
+        _frames.Rotate();
+        await engine.RunRoundAsync(Ct);
+        Assert.Single(logs, Skip);
+    }
+
+    [Fact]
+    public async Task A_rotation_caused_by_an_action_stops_the_remaining_rules_of_the_task()
+    {
+        // First rule taps (the screen turns to landscape), second rule would tap a portrait coordinate.
+        var task = new AutomationTask
+        {
+            Id = "t",
+            Name = "t",
+            CooldownMs = 0,
+            Rules =
+            [
+                new Rule { Name = "open", Then = [new TapAction { Target = Target.At(100, 200) }] },
+                new Rule { Name = "next", Then = [new TapAction { Target = Target.At(300, 400) }] },
+            ],
+        };
+        _frames.OnWaitForNewer = f => f.Rotate();
+        var engine = RotatingEngine(NewScheme(task));
+
+        await engine.RunRoundAsync(Ct);
+
+        Assert.Equal(new PointI(100, 200), Assert.Single(_input.Calls).Point);
+        Assert.Equal(1, engine.Runtime["t"].RunCount);
+    }
+
+    [Fact]
+    public async Task Screen_size_follows_the_frame_orientation_right_after_a_rotation()
+    {
+        // The device still reports portrait while the newest frame is already landscape: no stretched taps.
+        _frames.Rotate();
+        var task = Task("t", Always, new TapAction { Target = Target.At(1500, 250) });
+        task.Orientation = TaskOrientation.Landscape;
+        var engine = new AutomationEngine(NewScheme(task), new EngineEnvironment
+        {
+            Frames = _frames,
+            Input = _input,
+            Matcher = _matcher,
+            ScreenSize = () => Device, // 1000x2000, stale
+            Clock = _clock,
+            Random = new Random(1),
+        });
+
+        await engine.RunAsync(Ct, maxRounds: 1);
+
+        Assert.Equal(new PointI(1500, 250), Assert.Single(_input.Calls).Point);
+    }
 }

@@ -259,7 +259,6 @@
   <data name="Auto_Imported" xml:space="preserve"><value>Imported {0} task(s) and {1} template(s).</value></data>
   <data name="Auto_ImportRescaled" xml:space="preserve"><value>The reference sizes differ; coordinates and templates were rescaled.</value></data>
   <data name="Auto_ImportFailed" xml:space="preserve"><value>Import failed: {0}</value></data>
-  <data name="Auto_ImportOrientation" xml:space="preserve"><value>That scheme was made for the other screen orientation and cannot be imported.</value></data>
   <data name="Auto_Exported" xml:space="preserve"><value>Task "{0}" was exported to {1}</value></data>
   <data name="Auto_StopFirst" xml:space="preserve"><value>Stop the running scheme first.</value></data>
   <data name="Auto_TasksHeader.Text" xml:space="preserve"><value>Tasks</value></data>
@@ -292,9 +291,18 @@
   <data name="Auto_DeleteTemplateTitle" xml:space="preserve"><value>Delete template?</value></data>
   <data name="Auto_DeleteTemplateMessage" xml:space="preserve"><value>Template "{0}" will be deleted.</value></data>
   <data name="Auto_DeleteTemplateInUse" xml:space="preserve"><value>Template "{0}" is used by {1} task(s) ({2}). After deleting it those image conditions have no template and always count as "not found". Delete anyway?</value></data>
-  <data name="Auto_OrientationAuthoring" xml:space="preserve"><value>The scheme's reference size is {0} but the device is now {1} (other orientation). Rotate the device to the scheme's orientation before picking.</value></data>
-  <data name="Auto_OrientationMismatch" xml:space="preserve"><value>The device is in another orientation than the scheme; test results may be wrong.</value></data>
-  <data name="Auto_OrientationRunWarning" xml:space="preserve"><value>The device orientation differs from the scheme's reference size; coordinates will be stretched.</value></data>
+  <data name="Auto_Orientation_Portrait" xml:space="preserve"><value>Portrait</value></data>
+  <data name="Auto_Orientation_Landscape" xml:space="preserve"><value>Landscape</value></data>
+  <data name="Auto_OrientationWord_Auto" xml:space="preserve"><value>any orientation</value></data>
+  <data name="Auto_OrientationWord_Portrait" xml:space="preserve"><value>portrait</value></data>
+  <data name="Auto_OrientationWord_Landscape" xml:space="preserve"><value>landscape</value></data>
+  <data name="Auto_TaskBoundToOrientation" xml:space="preserve"><value>Task "{0}" is now a {1} task and only runs on {1} screens.</value></data>
+  <data name="Auto_SwitchOrientationTitle" xml:space="preserve"><value>Switch the task's orientation?</value></data>
+  <data name="Auto_SwitchOrientationMessage" xml:space="preserve"><value>The coordinates of task "{0}" were picked on a {1} screen, but the picture is {2} now ({3}). As a {2} task it only runs on {2} screens; existing coordinates keep their numbers and need to be picked again on this picture.</value></data>
+  <data name="Auto_SwitchOrientationConfirm" xml:space="preserve"><value>Make it a {0} task</value></data>
+  <data name="Auto_SwitchOrientationTemplateOnly" xml:space="preserve"><value>Capture template only</value></data>
+  <data name="Auto_TaskSwitchedOrientation" xml:space="preserve"><value>Task "{0}" is now a {1} task. Pick its other coordinates again on this picture.</value></data>
+  <data name="Auto_TestOtherOrientation" xml:space="preserve"><value>This task only runs on {0} screens and the picture is {1}; the test result is only indicative.</value></data>
   <data name="Auto_ClearTest.ToolTipService.ToolTip" xml:space="preserve"><value>Clear test result</value></data>
   <data name="Auto_TestNoPicture" xml:space="preserve"><value>No picture. Start mirroring the current device first.</value></data>
   <data name="Auto_TestTemplateMissing" xml:space="preserve"><value>The condition's template does not exist.</value></data>
@@ -345,6 +353,7 @@
   <data name="Editor_Cooldown.Header" xml:space="preserve"><value>Cooldown (ms)</value></data>
   <data name="Editor_Priority.Header" xml:space="preserve"><value>Priority</value></data>
   <data name="Editor_RunLimit.Header" xml:space="preserve"><value>Run limit</value></data>
+  <data name="Editor_Orientation.Header" xml:space="preserve"><value>Screen orientation</value></data>
   <data name="Editor_PreconditionHeader.Text" xml:space="preserve"><value>Precondition</value></data>
   <data name="Editor_PreconditionHint.Text" xml:space="preserve"><value>Checked first every round; the rules below are only considered when it holds. Empty means always.</value></data>
   <data name="Editor_RulesHeader.Text" xml:space="preserve"><value>Rules</value></data>
@@ -360,6 +369,12 @@
   <data name="Editor_CopyOf" xml:space="preserve"><value>{0} copy</value></data>
   <data name="Editor_NotSet" xml:space="preserve"><value>(not set)</value></data>
   <data name="Editor_Err_Host" xml:space="preserve"><value>Operation failed: {0}</value></data>
+  <data name="Editor_Orientation_Auto" xml:space="preserve"><value>Automatic (follow the scheme)</value></data>
+  <data name="Editor_Orientation_Portrait" xml:space="preserve"><value>Portrait only</value></data>
+  <data name="Editor_Orientation_Landscape" xml:space="preserve"><value>Landscape only</value></data>
+  <data name="Editor_OrientationHint_Both" xml:space="preserve"><value>No coordinates yet: runs on portrait and landscape screens. The first point picked on the picture sets the task to that picture's orientation.</value></data>
+  <data name="Editor_OrientationHint_Follow" xml:space="preserve"><value>Runs on {0} screens only (reference size {1}), the orientation of the scheme's reference size.</value></data>
+  <data name="Editor_OrientationHint_Fixed" xml:space="preserve"><value>Runs on {0} screens only (reference size {1}); skipped while the screen is {2}. Changing the orientation does not convert existing coordinates.</value></data>
   <data name="Editor_X" xml:space="preserve"><value>X</value></data>
   <data name="Editor_Y" xml:space="preserve"><value>Y</value></data>
   <data name="Editor_W" xml:space="preserve"><value>Width</value></data>

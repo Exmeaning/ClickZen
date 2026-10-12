@@ -31,7 +31,6 @@ Auto_SaveFailed	保存失败：{0}	Saving failed: {0}
 Auto_Imported	已导入 {0} 个任务、{1} 个模板。	Imported {0} task(s) and {1} template(s).
 Auto_ImportRescaled	参考分辨率不同，坐标和模板已按比例换算。	The reference sizes differ; coordinates and templates were rescaled.
 Auto_ImportFailed	导入失败：{0}	Import failed: {0}
-Auto_ImportOrientation	该方案的屏幕方向与当前方案不同，无法导入。	That scheme was made for the other screen orientation and cannot be imported.
 Auto_Exported	已把任务“{0}”导出到 {1}	Task "{0}" was exported to {1}
 Auto_StopFirst	请先停止正在运行的方案。	Stop the running scheme first.
 # ---- Tasks ----
@@ -67,9 +66,18 @@ Auto_DeleteTemplateTitle	删除模板？	Delete template?
 Auto_DeleteTemplateMessage	模板“{0}”将被删除。	Template "{0}" will be deleted.
 Auto_DeleteTemplateInUse	模板“{0}”正被 {1} 个任务使用（{2}）。删除后这些图像条件将找不到模板，始终视为“未找到”。仍要删除吗？	Template "{0}" is used by {1} task(s) ({2}). After deleting it those image conditions have no template and always count as "not found". Delete anyway?
 # ---- Coordinates / orientation ----
-Auto_OrientationAuthoring	方案的参考分辨率是 {0}，而设备当前为 {1}（方向不同）。请把设备旋转到与方案一致的方向后再取点。	The scheme's reference size is {0} but the device is now {1} (other orientation). Rotate the device to the scheme's orientation before picking.
-Auto_OrientationMismatch	设备方向与方案不同，测试结果可能不准确。	The device is in another orientation than the scheme; test results may be wrong.
-Auto_OrientationRunWarning	设备方向与方案的参考分辨率不同，坐标将被拉伸。	The device orientation differs from the scheme's reference size; coordinates will be stretched.
+Auto_Orientation_Portrait	竖屏	Portrait
+Auto_Orientation_Landscape	横屏	Landscape
+Auto_OrientationWord_Auto	任意方向	any orientation
+Auto_OrientationWord_Portrait	竖屏	portrait
+Auto_OrientationWord_Landscape	横屏	landscape
+Auto_TaskBoundToOrientation	任务“{0}”已设为{1}任务，只在{1}画面上执行。	Task "{0}" is now a {1} task and only runs on {1} screens.
+Auto_SwitchOrientationTitle	切换任务方向？	Switch the task's orientation?
+Auto_SwitchOrientationMessage	任务“{0}”的坐标是在{1}画面上选取的，而当前画面是{2}（{3}）。改为{2}任务后，它只在{2}画面上执行；已有坐标保留原数值，需要在当前画面上重新选取。	The coordinates of task "{0}" were picked on a {1} screen, but the picture is {2} now ({3}). As a {2} task it only runs on {2} screens; existing coordinates keep their numbers and need to be picked again on this picture.
+Auto_SwitchOrientationConfirm	改为{0}任务	Make it a {0} task
+Auto_SwitchOrientationTemplateOnly	只截取模板	Capture template only
+Auto_TaskSwitchedOrientation	任务“{0}”已改为{1}任务，请在当前画面上重新选取其余坐标。	Task "{0}" is now a {1} task. Pick its other coordinates again on this picture.
+Auto_TestOtherOrientation	此任务只在{0}画面上执行，当前画面是{1}，测试结果仅供参考。	This task only runs on {0} screens and the picture is {1}; the test result is only indicative.
 # ---- Live test ----
 Auto_ClearTest.ToolTipService.ToolTip	清除测试结果	Clear test result
 Auto_TestNoPicture	没有画面。请先让当前设备开始投屏。	No picture. Start mirroring the current device first.

@@ -39,7 +39,7 @@ public static class SchemePackage
     public static void Write(Stream output, Scheme scheme, IReadOnlyDictionary<string, RecordingDocument>? recordings = null)
     {
         ArgumentNullException.ThrowIfNull(scheme);
-        scheme.FormatVersion = Scheme.CurrentFormatVersion;
+        scheme.FormatVersion = TaskOrientations.RequiredFormatVersion(scheme);
         using var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true);
 
         var schemeEntry = zip.CreateEntry(SchemeEntry, CompressionLevel.Optimal);

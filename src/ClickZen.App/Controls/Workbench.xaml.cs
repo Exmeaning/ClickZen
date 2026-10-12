@@ -41,8 +41,9 @@ public sealed record WorkbenchPick(Frame Frame, SizeI Screen, RectI FrameRect, R
 /// <summary>
 /// The automation page's picture: the current device's live (or frozen) frame, letterboxed with Win2D,
 /// with overlays for highlighted areas / points and test results, and point / area picking.
-/// Overlay coordinates are in <see cref="RefSize"/> pixels (the scheme's space); when RefSize is empty,
-/// current device pixels.
+/// Overlay coordinates are in the scheme's reference pixels (<see cref="RefSize"/> in the orientation of the shown
+/// picture, see <see cref="OverlaySpace"/>); when RefSize is empty, current device pixels. Every picture-dependent
+/// size follows the picture that is shown, so a frozen picture keeps working after the device rotated.
 /// </summary>
 public sealed partial class Workbench : UserControl
 {
@@ -62,9 +63,11 @@ public sealed partial class Workbench : UserControl
     private TaskCompletionSource<WorkbenchPick?>? _pick;
     private RectI? _highlightArea;
     private PointI? _highlightPoint;
+    private TaskOrientation _highlightOrientation;
     private RectI? _resultBox;
     private string? _resultLabel;
     private bool _resultOk;
+    private TaskOrientation _resultOrientation;
 
     public Workbench()
     {
@@ -80,7 +83,10 @@ public sealed partial class Workbench : UserControl
     /// <summary>Device screen size of the shown picture (current orientation). Defaults to the frame size.</summary>
     public Func<SizeI>? ScreenProvider { get; set; }
 
-    /// <summary>Space of the overlay and hover coordinates (the scheme's RefSize); empty = device pixels.</summary>
+    /// <summary>
+    /// The scheme's reference size (overlay and hover coordinates are in it, in the orientation of the picture);
+    /// empty = device pixels.
+    /// </summary>
     public SizeI RefSize
     {
         get => _refSize;
@@ -109,18 +115,28 @@ public sealed partial class Workbench : UserControl
 
     public bool IsFrozen => _frozen;
 
-    /// <summary>Device size for the shown picture.</summary>
-    public SizeI Screen
+    /// <summary>Device size for the shown picture, in the picture's orientation.</summary>
+    public SizeI Screen => ScreenFor(CurrentFrame);
+
+    /// <summary>The effective overlay space: <see cref="RefSize"/> in the picture's orientation, or the device when it is empty.</summary>
+    public SizeI OverlaySpace => OverlaySpaceFor(CurrentFrame);
+
+    /// <summary>
+    /// Device size for <paramref name="frame"/>: the provider's size in the frame's orientation (they can disagree for a
+    /// moment after a rotation, and always when an old picture is frozen), or the frame size when unknown.
+    /// </summary>
+    private SizeI ScreenFor(Frame? frame)
     {
-        get
-        {
-            var s = ScreenProvider?.Invoke() ?? default;
-            return s.IsEmpty ? CurrentFrame?.Size ?? default : s;
-        }
+        var s = ScreenProvider?.Invoke() ?? default;
+        var f = frame?.Size ?? default;
+        return s.IsEmpty ? f : RefScaling.Oriented(s, f);
     }
 
-    /// <summary>The effective overlay space: <see cref="RefSize"/>, or the device when it is empty.</summary>
-    public SizeI OverlaySpace => _refSize.IsEmpty ? Screen : _refSize;
+    private SizeI OverlaySpaceFor(Frame? frame)
+    {
+        var screen = ScreenFor(frame);
+        return _refSize.IsEmpty ? screen : RefScaling.Oriented(_refSize, screen);
+    }
 
     /// <summary>Text shown when there is no picture.</summary>
     public string PlaceholderMessage
@@ -189,20 +205,25 @@ public sealed partial class Workbench : UserControl
         }
     }
 
-    /// <summary>Highlights an area and/or a point (RefSize pixels). Nulls clear.</summary>
-    public void Highlight(RectI? area, PointI? point)
+    /// <summary>
+    /// Highlights an area and/or a point (reference pixels). Nulls clear. With an <paramref name="orientation"/> the
+    /// coordinates belong to that screen orientation and are only drawn on a picture of that orientation.
+    /// </summary>
+    public void Highlight(RectI? area, PointI? point, TaskOrientation orientation = TaskOrientation.Auto)
     {
         _highlightArea = area is { IsEmpty: false } ? area : null;
         _highlightPoint = point;
+        _highlightOrientation = orientation;
         Canvas.Invalidate();
     }
 
-    /// <summary>Shows a test result box (RefSize pixels) with a caption; null box clears.</summary>
+    /// <summary>Shows a test result box (reference pixels of the shown picture) with a caption; null box clears.</summary>
     public void ShowResult(RectI? box, string? label, bool ok)
     {
         _resultBox = box;
         _resultLabel = label;
         _resultOk = ok;
+        _resultOrientation = TaskOrientations.Of(CurrentFrame?.Size ?? default);
         Canvas.Invalidate();
     }
 
@@ -391,19 +412,23 @@ public sealed partial class Workbench : UserControl
         var critical = BrushColor("SystemFillColorCriticalBrush", Colors.Crimson);
         var contrast = BrushColor("TextOnAccentFillColorPrimaryBrush", Colors.White);
 
-        if (_highlightArea is { } ha && ToViewport(ha) is { } hv)
+        // Overlays of the other screen orientation would land in the wrong places on this picture.
+        var showHighlight = TaskOrientations.Allows(_highlightOrientation, _shownFrame.Size);
+        var showResult = TaskOrientations.Allows(_resultOrientation, _shownFrame.Size);
+
+        if (showHighlight && _highlightArea is { } ha && ToViewport(ha) is { } hv)
         {
             ds.FillRectangle(hv, WithAlpha(accent, 40));
             ds.DrawRectangle(hv, contrast, 3f);
             ds.DrawRectangle(hv, accent, 1.5f);
         }
 
-        if (_highlightPoint is { } hp && ToViewport(new RectI(hp.X, hp.Y, 0, 0)) is { } pv)
+        if (showHighlight && _highlightPoint is { } hp && ToViewport(new RectI(hp.X, hp.Y, 0, 0)) is { } pv)
         {
             DrawMarker(ds, new Vector2((float)pv.X, (float)pv.Y), accent, contrast);
         }
 
-        if (_resultBox is { } rb && ToViewport(rb) is { } rv)
+        if (showResult && _resultBox is { } rb && ToViewport(rb) is { } rv)
         {
             var c = _resultOk ? success : critical;
             ds.DrawRectangle(rv, contrast, 3.5f);
@@ -413,7 +438,7 @@ public sealed partial class Workbench : UserControl
                 DrawLabel(ds, _resultLabel, new Vector2((float)rv.X, (float)rv.Y), c, contrast);
             }
         }
-        else if (_resultBox is null && !string.IsNullOrEmpty(_resultLabel))
+        else if (showResult && _resultBox is null && !string.IsNullOrEmpty(_resultLabel))
         {
             DrawLabel(ds, _resultLabel, new Vector2((float)dest.X + 6, (float)dest.Y + 26), _resultOk ? success : critical, contrast);
         }
@@ -468,7 +493,7 @@ public sealed partial class Workbench : UserControl
 
     // ------------------------------------------------------------------ coordinates
 
-    /// <summary>Overlay rectangle (RefSize pixels) → viewport rectangle.</summary>
+    /// <summary>Overlay rectangle (reference pixels of the shown picture's orientation) → viewport rectangle.</summary>
     private Rect? ToViewport(RectI overlay)
     {
         var frame = _shownFrame;
@@ -477,8 +502,8 @@ public sealed partial class Workbench : UserControl
             return null;
         }
 
-        var screen = Screen;
-        var device = AutomationCoords.RefToDevice(overlay, OverlaySpace, screen);
+        var screen = ScreenFor(frame);
+        var device = AutomationCoords.RefToDevice(overlay, OverlaySpaceFor(frame), screen);
         var map = new FrameToDevice(frame.Size, screen);
         var a = map.DeviceToFramePoint(new PointD(device.X, device.Y));
         var b = map.DeviceToFramePoint(new PointD(device.Right, device.Bottom));
@@ -494,7 +519,7 @@ public sealed partial class Workbench : UserControl
 
     private WorkbenchPick? MakePick(Frame frame, RectI frameRect)
     {
-        var screen = Screen;
+        var screen = ScreenFor(frame);
         if (screen.IsEmpty)
         {
             return null;
@@ -657,10 +682,10 @@ public sealed partial class Workbench : UserControl
         }
 
         _hoverFrame = p;
-        var screen = Screen;
+        var screen = ScreenFor(frame);
         var map = new FrameToDevice(frame.Size, screen);
         var device = map.ClampToDevice(map.FrameToDevicePoint(p));
-        var space = OverlaySpace;
+        var space = OverlaySpaceFor(frame);
         var refPt = AutomationCoords.DeviceToRef(device, screen, space);
         var fx = Math.Clamp((int)p.X, 0, frame.Width - 1);
         var fy = Math.Clamp((int)p.Y, 0, frame.Height - 1);

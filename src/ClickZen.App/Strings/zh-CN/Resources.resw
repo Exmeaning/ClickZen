@@ -259,7 +259,6 @@
   <data name="Auto_Imported" xml:space="preserve"><value>已导入 {0} 个任务、{1} 个模板。</value></data>
   <data name="Auto_ImportRescaled" xml:space="preserve"><value>参考分辨率不同，坐标和模板已按比例换算。</value></data>
   <data name="Auto_ImportFailed" xml:space="preserve"><value>导入失败：{0}</value></data>
-  <data name="Auto_ImportOrientation" xml:space="preserve"><value>该方案的屏幕方向与当前方案不同，无法导入。</value></data>
   <data name="Auto_Exported" xml:space="preserve"><value>已把任务“{0}”导出到 {1}</value></data>
   <data name="Auto_StopFirst" xml:space="preserve"><value>请先停止正在运行的方案。</value></data>
   <data name="Auto_TasksHeader.Text" xml:space="preserve"><value>任务</value></data>
@@ -292,9 +291,18 @@
   <data name="Auto_DeleteTemplateTitle" xml:space="preserve"><value>删除模板？</value></data>
   <data name="Auto_DeleteTemplateMessage" xml:space="preserve"><value>模板“{0}”将被删除。</value></data>
   <data name="Auto_DeleteTemplateInUse" xml:space="preserve"><value>模板“{0}”正被 {1} 个任务使用（{2}）。删除后这些图像条件将找不到模板，始终视为“未找到”。仍要删除吗？</value></data>
-  <data name="Auto_OrientationAuthoring" xml:space="preserve"><value>方案的参考分辨率是 {0}，而设备当前为 {1}（方向不同）。请把设备旋转到与方案一致的方向后再取点。</value></data>
-  <data name="Auto_OrientationMismatch" xml:space="preserve"><value>设备方向与方案不同，测试结果可能不准确。</value></data>
-  <data name="Auto_OrientationRunWarning" xml:space="preserve"><value>设备方向与方案的参考分辨率不同，坐标将被拉伸。</value></data>
+  <data name="Auto_Orientation_Portrait" xml:space="preserve"><value>竖屏</value></data>
+  <data name="Auto_Orientation_Landscape" xml:space="preserve"><value>横屏</value></data>
+  <data name="Auto_OrientationWord_Auto" xml:space="preserve"><value>任意方向</value></data>
+  <data name="Auto_OrientationWord_Portrait" xml:space="preserve"><value>竖屏</value></data>
+  <data name="Auto_OrientationWord_Landscape" xml:space="preserve"><value>横屏</value></data>
+  <data name="Auto_TaskBoundToOrientation" xml:space="preserve"><value>任务“{0}”已设为{1}任务，只在{1}画面上执行。</value></data>
+  <data name="Auto_SwitchOrientationTitle" xml:space="preserve"><value>切换任务方向？</value></data>
+  <data name="Auto_SwitchOrientationMessage" xml:space="preserve"><value>任务“{0}”的坐标是在{1}画面上选取的，而当前画面是{2}（{3}）。改为{2}任务后，它只在{2}画面上执行；已有坐标保留原数值，需要在当前画面上重新选取。</value></data>
+  <data name="Auto_SwitchOrientationConfirm" xml:space="preserve"><value>改为{0}任务</value></data>
+  <data name="Auto_SwitchOrientationTemplateOnly" xml:space="preserve"><value>只截取模板</value></data>
+  <data name="Auto_TaskSwitchedOrientation" xml:space="preserve"><value>任务“{0}”已改为{1}任务，请在当前画面上重新选取其余坐标。</value></data>
+  <data name="Auto_TestOtherOrientation" xml:space="preserve"><value>此任务只在{0}画面上执行，当前画面是{1}，测试结果仅供参考。</value></data>
   <data name="Auto_ClearTest.ToolTipService.ToolTip" xml:space="preserve"><value>清除测试结果</value></data>
   <data name="Auto_TestNoPicture" xml:space="preserve"><value>没有画面。请先让当前设备开始投屏。</value></data>
   <data name="Auto_TestTemplateMissing" xml:space="preserve"><value>条件引用的模板不存在。</value></data>
@@ -345,6 +353,7 @@
   <data name="Editor_Cooldown.Header" xml:space="preserve"><value>冷却 (ms)</value></data>
   <data name="Editor_Priority.Header" xml:space="preserve"><value>优先级</value></data>
   <data name="Editor_RunLimit.Header" xml:space="preserve"><value>运行次数上限</value></data>
+  <data name="Editor_Orientation.Header" xml:space="preserve"><value>屏幕方向</value></data>
   <data name="Editor_PreconditionHeader.Text" xml:space="preserve"><value>前置条件</value></data>
   <data name="Editor_PreconditionHint.Text" xml:space="preserve"><value>每一轮先判断前置条件，满足后才会依次判断下面的规则。留空表示总是满足。</value></data>
   <data name="Editor_RulesHeader.Text" xml:space="preserve"><value>规则</value></data>
@@ -360,6 +369,12 @@
   <data name="Editor_CopyOf" xml:space="preserve"><value>{0} 副本</value></data>
   <data name="Editor_NotSet" xml:space="preserve"><value>（未设置）</value></data>
   <data name="Editor_Err_Host" xml:space="preserve"><value>操作失败：{0}</value></data>
+  <data name="Editor_Orientation_Auto" xml:space="preserve"><value>自动（跟随方案）</value></data>
+  <data name="Editor_Orientation_Portrait" xml:space="preserve"><value>仅竖屏</value></data>
+  <data name="Editor_Orientation_Landscape" xml:space="preserve"><value>仅横屏</value></data>
+  <data name="Editor_OrientationHint_Both" xml:space="preserve"><value>还没有坐标：横屏、竖屏画面上都会执行。第一次在画面上取点时，自动设为当时画面的方向。</value></data>
+  <data name="Editor_OrientationHint_Follow" xml:space="preserve"><value>只在{0}画面上执行（参考分辨率 {1}），与方案的参考分辨率方向一致。</value></data>
+  <data name="Editor_OrientationHint_Fixed" xml:space="preserve"><value>只在{0}画面上执行（参考分辨率 {1}），{2}时跳过。更改方向不会换算已有坐标。</value></data>
   <data name="Editor_X" xml:space="preserve"><value>X</value></data>
   <data name="Editor_Y" xml:space="preserve"><value>Y</value></data>
   <data name="Editor_W" xml:space="preserve"><value>宽</value></data>

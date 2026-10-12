@@ -157,4 +157,69 @@ public sealed class SchemePackageTests
             File.Delete(path);
         }
     }
+
+    private static string SchemeJson(Scheme scheme)
+    {
+        using var ms = new MemoryStream();
+        SchemePackage.Write(ms, scheme);
+        ms.Position = 0;
+        using var zip = new System.IO.Compression.ZipArchive(ms);
+        using var reader = new StreamReader(zip.GetEntry("scheme.json")!.Open());
+        return reader.ReadToEnd();
+    }
+
+    [Fact]
+    public void Single_orientation_schemes_stay_format_1_without_orientation_fields()
+    {
+        var json = SchemeJson(Sample());
+
+        Assert.Contains("\"formatVersion\": 1", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("orientation", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Task_and_template_orientations_round_trip_and_raise_the_format()
+    {
+        var scheme = Sample(); // RefSize 2400x1080: landscape is the main orientation
+        scheme.Tasks[0].Orientation = TaskOrientation.Portrait;
+        scheme.Templates[0].SourceOrientation = TaskOrientation.Portrait;
+        using var ms = new MemoryStream();
+        SchemePackage.Write(ms, scheme);
+        ms.Position = 0;
+
+        var s = SchemePackage.Read(ms).Scheme;
+
+        Assert.Equal(2, s.FormatVersion);
+        Assert.Equal(TaskOrientation.Portrait, s.Tasks[0].Orientation);
+        Assert.Equal(TaskOrientation.Portrait, s.Templates[0].SourceOrientation);
+        Assert.Contains("\"orientation\": \"portrait\"", SchemeJson(scheme), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Old_scheme_json_reads_as_automatic_orientation()
+    {
+        var scheme = Sample();
+        using var ms = new MemoryStream();
+        SchemePackage.Write(ms, scheme);
+        ms.Position = 0;
+
+        var s = SchemePackage.Read(ms).Scheme;
+
+        Assert.Equal(TaskOrientation.Auto, s.Tasks[0].Orientation);
+        Assert.Equal(TaskOrientation.Auto, s.Templates[0].SourceOrientation);
+    }
+
+    [Fact]
+    public void Newer_formats_are_still_rejected()
+    {
+        using var ms = new MemoryStream();
+        using (var zip = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        using (var w = new StreamWriter(zip.CreateEntry("scheme.json").Open()))
+        {
+            w.Write("{\"formatVersion\": 3, \"name\": \"future\"}");
+        }
+
+        ms.Position = 0;
+        Assert.Throws<InvalidDataException>(() => SchemePackage.Read(ms));
+    }
 }

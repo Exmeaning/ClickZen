@@ -213,7 +213,9 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
         DocTitle.Text = Service.IsDirty ? Service.DisplayName + " *" : Service.DisplayName;
         var s = Service.Scheme;
         var where = Service.FilePath ?? _loc["Auto_NotSaved"];
-        var refText = s.RefSize.IsEmpty ? "-" : s.RefSize.ToString();
+        // One reference size covers both orientations (the other one is its transpose).
+        var r = s.RefSize;
+        var refText = r.IsEmpty ? "-" : r.Width == r.Height ? r.ToString() : $"{r} / {r.Transposed}";
         DocSummary.Text = _loc.Format("Auto_DocSummary", s.Tasks.Count, s.Templates.Count, refText, where);
         NoTasksText.Visibility = Service.Tasks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         NoTemplatesText.Visibility = Service.Templates.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -313,13 +315,14 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
         UpdateDocument();
         if (SelectedTemplate is { } t && !t.Template.SourceRect.IsEmpty)
         {
-            Bench.Highlight(t.Template.SourceRect, null);
+            Bench.Highlight(t.Template.SourceRect, null, TaskOrientations.Effective(t.Template, Scheme.RefSize));
         }
     }
 
     private async void OnCaptureTemplateClick(object sender, RoutedEventArgs e)
     {
-        var result = await CaptureTemplateAsync();
+        // The template list button only adds a template; no task (and no task orientation) is involved.
+        var result = await CaptureTemplateCoreAsync(forTask: null);
         if (result is { } r)
         {
             ShowMessage(_loc.Format("Auto_TemplateCaptured", r.Template.Name, r.Template.Size.Width, r.Template.Size.Height));
@@ -392,13 +395,13 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
 
         ShowMessage(_loc["Workbench_PickPointHint"]);
         var pick = await Bench.PickPointAsync();
-        if (pick is null || !PrepareAuthoring(pick.Screen))
+        if (pick is null || await PrepareAuthoringAsync(pick.Screen, EditedTask, allowTemplateOnly: false) is not { Ref: var refSize })
         {
             return null;
         }
 
-        var p = AutomationCoords.DeviceToRef(pick.DevicePoint, pick.Screen, Scheme.RefSize);
-        Bench.Highlight(null, p);
+        var p = AutomationCoords.DeviceToRef(pick.DevicePoint, pick.Screen, refSize);
+        Bench.Highlight(null, p, TaskOrientations.Of(pick.Screen));
         return p;
     }
 
@@ -411,17 +414,23 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
 
         ShowMessage(_loc["Workbench_PickAreaHint"]);
         var pick = await Bench.PickAreaAsync();
-        if (pick is null || !PrepareAuthoring(pick.Screen))
+        if (pick is null || await PrepareAuthoringAsync(pick.Screen, EditedTask, allowTemplateOnly: false) is not { Ref: var refSize })
         {
             return null;
         }
 
-        var r = AutomationCoords.DeviceToRef(pick.DeviceRect, pick.Screen, Scheme.RefSize);
-        Bench.Highlight(r, null);
+        var r = AutomationCoords.DeviceToRef(pick.DeviceRect, pick.Screen, refSize);
+        Bench.Highlight(r, null, TaskOrientations.Of(pick.Screen));
         return r;
     }
 
-    public async Task<(TemplateAsset Template, RectI Area)?> CaptureTemplateAsync()
+    /// <summary>
+    /// Capture for a condition of the edited task: the returned area seeds the condition's search area, so the task's
+    /// orientation is checked like for any other coordinate. "Template only" returns an empty area (nothing is seeded).
+    /// </summary>
+    public Task<(TemplateAsset Template, RectI Area)?> CaptureTemplateAsync() => CaptureTemplateCoreAsync(EditedTask);
+
+    private async Task<(TemplateAsset Template, RectI Area)?> CaptureTemplateCoreAsync(AutomationTask? forTask)
     {
         if (!EnsurePicture())
         {
@@ -430,12 +439,12 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
 
         ShowMessage(_loc["Workbench_CaptureHint"]);
         var pick = await Bench.PickAreaAsync();
-        if (pick is null || !PrepareAuthoring(pick.Screen))
+        if (pick is null || await PrepareAuthoringAsync(pick.Screen, forTask, allowTemplateOnly: true) is not { } prep)
         {
             return null;
         }
 
-        var area = AutomationCoords.DeviceToRef(pick.DeviceRect, pick.Screen, Scheme.RefSize);
+        var area = AutomationCoords.DeviceToRef(pick.DeviceRect, pick.Screen, prep.Ref);
         if (area.Width < 4 || area.Height < 4)
         {
             ShowMessage(_loc["Auto_TemplateTooSmall"], isError: true);
@@ -461,18 +470,20 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
             return null;
         }
 
+        var orientation = TaskOrientations.Of(pick.Screen);
         var template = new TemplateAsset
         {
             Id = SchemeTools.NewId(),
             Name = string.IsNullOrWhiteSpace(name) ? defaultName : name.Trim(),
             Size = size,
             SourceRect = area,
+            SourceOrientation = TaskOrientations.StoredFor(orientation, Scheme.RefSize),
             Png = png,
         };
         Service.AddTemplate(template);
-        Bench.Highlight(area, null);
+        Bench.Highlight(area, null, orientation);
         TemplateList.SelectedItem = Service.Templates.FirstOrDefault(t => t.Template == template);
-        return (template, area);
+        return (template, prep.TemplateOnly ? default : area);
     }
 
     public async Task<ConditionTestResult> TestConditionAsync(Condition condition)
@@ -487,10 +498,11 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
         }
 
         var screen = Bench.Screen;
-        var refSize = Scheme.RefSize;
-        if (RefScaling.OrientationDiffers(refSize, screen))
+        var refSize = Scheme.RefSize; // The probes pick the reference of the picture's orientation.
+        if (EditedTask is { } task && !TaskOrientations.RunsOn(task, Scheme.RefSize, screen))
         {
-            ShowMessage(_loc["Auto_OrientationMismatch"], isError: true);
+            ShowMessage(_loc.Format("Auto_TestOtherOrientation",
+                OrientationWord(TaskOrientations.Effective(task, Scheme.RefSize)), OrientationWord(TaskOrientations.Of(screen))), isError: true);
         }
 
         switch (condition)
@@ -545,7 +557,8 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
         }
     }
 
-    public void Highlight(RectI? area, PointI? point = null) => Bench.Highlight(area, point);
+    /// <summary>Highlights coordinates of the edited task; they are only drawn on a picture of the task's orientation.</summary>
+    public void Highlight(RectI? area, PointI? point = null) => Bench.Highlight(area, point, EditedOrientation);
 
     public void ShowMessage(string message, bool isError = false) =>
         App.Current.MainWindow?.ShowInfo(message, isError ? InfoBarSeverity.Error : InfoBarSeverity.Informational);
@@ -562,15 +575,29 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
         return false;
     }
 
+    /// <summary>The task shown in the editor (the one picked coordinates are for).</summary>
+    private AutomationTask? EditedTask => _editor?.Task;
+
+    /// <summary>Orientation of the edited task's coordinates (Auto = none yet: shown on any picture).</summary>
+    private TaskOrientation EditedOrientation => EditedTask is { } t ? TaskOrientations.Effective(t, Scheme.RefSize) : TaskOrientation.Auto;
+
+    private string OrientationWord(TaskOrientation o) => _loc["Auto_OrientationWord_" + o];
+
+    /// <summary>Outcome of <see cref="PrepareAuthoringAsync"/>.</summary>
+    /// <param name="Ref">Reference size the picked coordinates are converted into (the scheme's, in the screen's orientation).</param>
+    /// <param name="TemplateOnly">The user chose to keep only the captured template (no coordinates go into the task).</param>
+    private readonly record struct AuthoringTarget(SizeI Ref, bool TemplateOnly);
+
     /// <summary>
-    /// Adopts the current screen as the scheme's RefSize when it has none; refuses when the scheme was
-    /// authored in the other orientation (coordinates would be distorted).
+    /// Gets ready to store a coordinate picked on <paramref name="screen"/>: adopts the screen as the scheme's RefSize when
+    /// it has none, gives an unbound <paramref name="forTask"/> the screen's orientation, and asks before moving a task of the
+    /// other orientation to this one. Returns the reference size to convert into, or null when cancelled.
     /// </summary>
-    private bool PrepareAuthoring(SizeI screen)
+    private async Task<AuthoringTarget?> PrepareAuthoringAsync(SizeI screen, AutomationTask? forTask, bool allowTemplateOnly)
     {
         if (screen.IsEmpty)
         {
-            return false;
+            return null;
         }
 
         if (Scheme.RefSize.IsEmpty)
@@ -579,17 +606,77 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
             Bench.RefSize = screen;
             MarkDirty();
             UpdateDocument();
-            return true;
         }
 
-        if (!AutomationCoords.CanAuthor(Scheme.RefSize, screen))
+        var target = new AuthoringTarget(AutomationCoords.EffectiveRef(Scheme.RefSize, screen), false);
+        var orientation = TaskOrientations.Of(screen);
+        if (forTask is null || orientation == TaskOrientation.Auto)
         {
-            ShowMessage(_loc.Format("Auto_OrientationAuthoring", Scheme.RefSize, screen), isError: true);
-            return false;
+            return target;
         }
 
-        return true;
+        switch (TaskOrientations.Fit(forTask, Scheme.RefSize, screen))
+        {
+            case OrientationFit.Unbound:
+                // First coordinate of the task: it now belongs to this orientation (stored explicitly only when it is not
+                // the scheme's main one, so single-orientation schemes stay format 1).
+                forTask.Orientation = TaskOrientations.StoredFor(orientation, Scheme.RefSize);
+            if (forTask.Orientation != TaskOrientation.Auto)
+            {
+                ShowMessage(_loc.Format("Auto_TaskBoundToOrientation", TaskLabel(forTask), OrientationWord(orientation)));
+            }
+
+            OnTaskOrientationChanged(forTask);
+            return target;
+
+            case OrientationFit.OtherOrientation:
+            {
+                var from = TaskOrientations.Effective(forTask, Scheme.RefSize);
+                var dialog = new ContentDialog
+                {
+                    XamlRoot = XamlRoot,
+                    Title = _loc["Auto_SwitchOrientationTitle"],
+                    Content = new TextBlock
+                    {
+                        Text = _loc.Format("Auto_SwitchOrientationMessage", TaskLabel(forTask), OrientationWord(from), OrientationWord(orientation), screen),
+                        TextWrapping = TextWrapping.Wrap,
+                    },
+                PrimaryButtonText = _loc.Format("Auto_SwitchOrientationConfirm", OrientationWord(orientation)),
+                SecondaryButtonText = allowTemplateOnly ? _loc["Auto_SwitchOrientationTemplateOnly"] : "",
+                CloseButtonText = _loc["Common_Cancel"],
+                DefaultButton = ContentDialogButton.Primary,
+            };
+            switch (await ShowDialogAsync(dialog))
+                {
+                    case ContentDialogResult.Primary:
+                        // Coordinates keep their numbers: the other orientation's layout differs, so they are re-picked, not converted.
+                    forTask.Orientation = TaskOrientations.StoredFor(orientation, Scheme.RefSize);
+                    OnTaskOrientationChanged(forTask);
+                    ShowMessage(_loc.Format("Auto_TaskSwitchedOrientation", TaskLabel(forTask), OrientationWord(orientation)));
+                    return target;
+                case ContentDialogResult.Secondary when allowTemplateOnly:
+                    return target with { TemplateOnly = true };
+                default:
+                    return null;
+            }
+        }
+
+        default:
+            return target;
     }
+}
+
+/// <summary>Marks the document dirty and refreshes the editor's orientation field and the task's list row.</summary>
+private void OnTaskOrientationChanged(AutomationTask task)
+{
+    MarkDirty();
+    _editor?.RefreshOrientation();
+    FindItem(task)?.Refresh();
+}
+
+    private string TaskLabel(AutomationTask task) => string.IsNullOrWhiteSpace(task.Name) ? _loc["Auto_UnnamedTask"] : task.Name;
+
+    private TaskItem? FindItem(AutomationTask task) => Service.Tasks.FirstOrDefault(t => ReferenceEquals(t.Task, task));
 
     private void ShowTest(bool ok, string text)
     {
@@ -758,12 +845,12 @@ public sealed partial class AutomationPage : Page, IAutomationEditorHost
 
     private void OnTaskFired(object? sender, TaskFiredInfo e)
     {
-        // Show where a match was clicked on the workbench (the engine reports device pixels).
+        // Show where a match was clicked on the workbench (the engine reports device pixels of the current screen).
         if (e.Args.Match is { } m && ReferenceEquals(e.Run.Entry, _entry))
         {
             var screen = Bench.Screen;
             var p = AutomationCoords.DeviceToRef(new PointI(m.Location.X, m.Location.Y), screen, Bench.OverlaySpace);
-            Bench.Highlight(null, p);
+            Bench.Highlight(null, p, TaskOrientations.Of(screen));
         }
     }
 

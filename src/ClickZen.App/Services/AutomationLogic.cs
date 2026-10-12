@@ -14,11 +14,11 @@ namespace ClickZen.App.Services;
 /// <summary>Conversions between frame pixels, current device pixels and a scheme's RefSize pixels.</summary>
 public static class AutomationCoords
 {
-    /// <summary>The RefSize the engine will use: the scheme's, or the current screen when the scheme has none.</summary>
-    public static SizeI EffectiveRef(SizeI schemeRef, SizeI screen) => schemeRef.IsEmpty ? screen : schemeRef;
-
-    /// <summary>False when the scheme was authored in the other orientation than the screen is in now.</summary>
-    public static bool CanAuthor(SizeI refSize, SizeI screen) => !RefScaling.OrientationDiffers(refSize, screen);
+    /// <summary>
+    /// The reference size coordinates on <paramref name="screen"/> are relative to: the scheme's RefSize in the screen's
+    /// orientation (its transpose for the other orientation), or the screen itself when the scheme has none.
+    /// </summary>
+    public static SizeI EffectiveRef(SizeI schemeRef, SizeI screen) => schemeRef.IsEmpty ? screen : RefScaling.Oriented(schemeRef, screen);
 
     /// <summary>Current device pixel → RefSize pixel (inverse of <see cref="RefScaling.Scale(PointI, SizeI, SizeI)"/>), clamped into RefSize.</summary>
     public static PointI DeviceToRef(PointI p, SizeI screen, SizeI refSize)
@@ -291,8 +291,9 @@ public static class SchemeTools
 
     /// <summary>
     /// Copies every task of <paramref name="source"/> into <paramref name="target"/>. Ids that already exist get
-    /// fresh ones (and references are remapped); identical templates / recordings are shared. When the RefSizes
-    /// differ (same orientation), coordinates and template images are rescaled to the target's RefSize.
+    /// fresh ones (and references are remapped); identical templates / recordings are shared. Every task and template
+    /// keeps its screen orientation: when the RefSizes differ, its coordinates (and template images) are rescaled from
+    /// the source's reference of that orientation to the target's (see <see cref="TaskOrientations.ForImport"/>).
     /// </summary>
     public static TaskImportResult MergeTasks(Scheme target, IDictionary<string, RecordingDocument> targetRecordings,
         Scheme source, IReadOnlyDictionary<string, RecordingDocument>? sourceRecordings, Func<byte[], SizeI, byte[]>? resizePng = null)
@@ -302,27 +303,31 @@ public static class SchemeTools
         ArgumentNullException.ThrowIfNull(source);
         var src = Clone(source);
 
-        var rescale = !src.RefSize.IsEmpty && !target.RefSize.IsEmpty && src.RefSize != target.RefSize;
         if (target.RefSize.IsEmpty)
         {
             target.RefSize = src.RefSize;
         }
+
+        var rescaled = false;
 
         // Templates
         var templateMap = new Dictionary<string, string>(StringComparer.Ordinal);
         var addedTemplates = 0;
         foreach (var t in src.Templates)
         {
-            if (rescale)
+            var move = TaskOrientations.ForImport(t.SourceOrientation, TaskOrientations.Effective(t, src.RefSize), src.RefSize, target.RefSize);
+            t.SourceOrientation = move.Orientation;
+            if (move.Rescales)
             {
-                var size = ScaleSize(t.Size.IsEmpty ? Vision.ImageCodec.MeasurePng(t.Png) : t.Size, src.RefSize, target.RefSize);
+                var size = ScaleSize(t.Size.IsEmpty ? Vision.ImageCodec.MeasurePng(t.Png) : t.Size, move.From, move.To);
                 if (resizePng is not null && !size.IsEmpty)
                 {
                     t.Png = resizePng(t.Png, size);
                 }
 
                 t.Size = size;
-                t.SourceRect = RefScaling.Scale(t.SourceRect, src.RefSize, target.RefSize);
+                t.SourceRect = RefScaling.Scale(t.SourceRect, move.From, move.To);
+                rescaled = true;
             }
 
             var existing = target.Templates.FirstOrDefault(x => x.Id == t.Id);
@@ -400,16 +405,19 @@ public static class SchemeTools
                 }
             }
 
-            if (rescale)
+            var move = TaskOrientations.ForImport(task.Orientation, TaskOrientations.Effective(task, src.RefSize), src.RefSize, target.RefSize);
+            task.Orientation = move.Orientation;
+            if (move.Rescales)
             {
-                RescaleTask(task, src.RefSize, target.RefSize);
+                RescaleTask(task, move.From, move.To);
+                rescaled = true;
             }
 
             target.Tasks.Add(task);
             added.Add(task);
         }
 
-        return new TaskImportResult(added, addedTemplates, addedRecordings, rescale);
+        return new TaskImportResult(added, addedTemplates, addedRecordings, rescaled);
     }
 
     /// <summary>Rescales every coordinate of a task from one RefSize to another.</summary>

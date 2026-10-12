@@ -436,7 +436,8 @@ public sealed class McpBackend : IClickZenBackend
         }
 
         var (frame, screen) = await FreshFrameAsync(entry, ct);
-        var effectiveRef = refSize.IsEmpty ? screen : refSize;
+        // Scheme templates are sized for the scheme's reference in the screen's orientation (either orientation works).
+        var effectiveRef = AutomationCoords.EffectiveRef(refSize, screen);
         var condition = new ImageCondition
         {
             TemplateId = template.Id,

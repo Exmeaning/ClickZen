@@ -127,6 +127,11 @@
                                        Minimum="0" Maximum="1000000" SmallChange="1" LargeChange="10"
                                        ValueChanged="OnRunLimitChanged" />
                         </Grid>
+                        <StackPanel Spacing="4">
+                            <ComboBox x:Name="OrientationBox" x:Uid="Editor_Orientation" HorizontalAlignment="Stretch" MinWidth="0"
+                                      SelectionChanged="OnOrientationChanged" />
+                            <TextBlock x:Name="OrientationHint" Style="{StaticResource SecondaryCaptionTextBlockStyle}" TextWrapping="Wrap" />
+                        </StackPanel>
                         <TextBlock x:Uid="Editor_BasicHint" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
                     </StackPanel>
                 </Border>

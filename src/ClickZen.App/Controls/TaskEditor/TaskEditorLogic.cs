@@ -319,9 +319,31 @@ public static class TaskEditorLogic
     }
 
     /// <summary>
+    /// Explains where a task runs, for the line under the orientation box.
+    /// </summary>
+    /// <param name="stored">The orientation set on the task.</param>
+    /// <param name="effective">Its effective orientation (<see cref="TaskOrientations.Effective(AutomationTask, SizeI)"/>).</param>
+    /// <param name="refSize">The reference size of <paramref name="effective"/> (empty when the scheme has none yet).</param>
+    public static string OrientationHint(ILocalizer loc, TaskOrientation stored, TaskOrientation effective, SizeI refSize)
+    {
+        if (effective == TaskOrientation.Auto)
+        {
+            return loc["Editor_OrientationHint_Both"];
+        }
+
+        var word = loc["Auto_OrientationWord_" + effective];
+        var other = loc["Auto_OrientationWord_" + TaskOrientations.Other(effective)];
+        var refText = refSize.IsEmpty ? "-" : refSize.ToString();
+        return stored == TaskOrientation.Auto
+            ? loc.Format("Editor_OrientationHint_Follow", word, refText)
+            : loc.Format("Editor_OrientationHint_Fixed", word, refText, other);
+    }
+
+    /// <summary>
     /// Search area seeded from the rectangle a template was cut from: grown by a margin so small UI
     /// shifts still match, and clamped to the reference screen when it is known.
     /// </summary>
+    /// <param name="refSize">Reference size of the orientation the rectangle was picked in.</param>
     public static RectI SeedSearchArea(RectI source, SizeI refSize)
     {
         if (source.IsEmpty)

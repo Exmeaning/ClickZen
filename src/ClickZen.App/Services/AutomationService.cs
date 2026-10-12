@@ -485,15 +485,13 @@ public sealed partial class AutomationService : ObservableObject, IDisposable
         _log.LogInformation("Task {Task} exported to {Path}", item.Task.Name, path);
     }
 
-    /// <summary>Adds every task of another package to this scheme.</summary>
+    /// <summary>
+    /// Adds every task of another package to this scheme. Tasks keep their screen orientation, so a landscape scheme
+    /// can be imported into a portrait one (its tasks run on landscape screens only).
+    /// </summary>
     public TaskImportResult ImportTasks(string path)
     {
         var contents = SchemePackage.Load(path);
-        if (RefScaling.OrientationDiffers(contents.Scheme.RefSize, Scheme.RefSize))
-        {
-            throw new InvalidOperationException(Loc["Auto_ImportOrientation"]);
-        }
-
         var result = SchemeTools.MergeTasks(Scheme, Recordings, contents.Scheme, contents.Recordings, TemplateImaging.ResizePng);
         RebuildTasks();
         RebuildTemplates();
@@ -702,11 +700,7 @@ public sealed partial class AutomationService : ObservableObject, IDisposable
 
         var scheme = SchemeTools.Clone(Scheme);
         var screen = RecordingService.CurrentScreen(entry);
-        if (RefScaling.OrientationDiffers(scheme.RefSize, screen))
-        {
-            AddLog(LogLevel.Warning, label, Loc["Auto_OrientationRunWarning"]);
-        }
-
+        // Tasks made for the other orientation are skipped (and logged) by the engine itself.
         var input = await _hub.GetInjectorAsync(entry, ct);
         var recordings = new Dictionary<string, RecordingDocument>(Recordings, StringComparer.Ordinal);
         var baseDir = FilePath is null ? null : Path.GetDirectoryName(FilePath);

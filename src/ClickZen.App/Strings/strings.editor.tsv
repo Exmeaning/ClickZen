@@ -11,6 +11,7 @@ Editor_TaskName.PlaceholderText	例如：领取每日奖励	e.g. Collect daily r
 Editor_Cooldown.Header	冷却 (ms)	Cooldown (ms)
 Editor_Priority.Header	优先级	Priority
 Editor_RunLimit.Header	运行次数上限	Run limit
+Editor_Orientation.Header	屏幕方向	Screen orientation
 Editor_PreconditionHeader.Text	前置条件	Precondition
 Editor_PreconditionHint.Text	每一轮先判断前置条件，满足后才会依次判断下面的规则。留空表示总是满足。	Checked first every round; the rules below are only considered when it holds. Empty means always.
 Editor_RulesHeader.Text	规则	Rules
@@ -27,6 +28,13 @@ Editor_Delete	删除	Delete
 Editor_CopyOf	{0} 副本	{0} copy
 Editor_NotSet	（未设置）	(not set)
 Editor_Err_Host	操作失败：{0}	Operation failed: {0}
+# ---- Orientation ----
+Editor_Orientation_Auto	自动（跟随方案）	Automatic (follow the scheme)
+Editor_Orientation_Portrait	仅竖屏	Portrait only
+Editor_Orientation_Landscape	仅横屏	Landscape only
+Editor_OrientationHint_Both	还没有坐标：横屏、竖屏画面上都会执行。第一次在画面上取点时，自动设为当时画面的方向。	No coordinates yet: runs on portrait and landscape screens. The first point picked on the picture sets the task to that picture's orientation.
+Editor_OrientationHint_Follow	只在{0}画面上执行（参考分辨率 {1}），与方案的参考分辨率方向一致。	Runs on {0} screens only (reference size {1}), the orientation of the scheme's reference size.
+Editor_OrientationHint_Fixed	只在{0}画面上执行（参考分辨率 {1}），{2}时跳过。更改方向不会换算已有坐标。	Runs on {0} screens only (reference size {1}); skipped while the screen is {2}. Changing the orientation does not convert existing coordinates.
 # ---- Coordinates ----
 Editor_X	X	X
 Editor_Y	Y	Y

@@ -38,8 +38,17 @@ public sealed partial class TaskItem : ObservableObject
         }
     }
 
-    public string Summary => _owner.Loc.Format("Auto_TaskSummary", Task.Rules.Count,
-        (Task.CooldownMs / 1000.0).ToString("0.##", CultureInfo.CurrentCulture));
+    /// <summary>Rules, cooldown and – when the task is limited to one screen orientation – that orientation.</summary>
+    public string Summary
+    {
+        get
+        {
+            var text = _owner.Loc.Format("Auto_TaskSummary", Task.Rules.Count,
+                (Task.CooldownMs / 1000.0).ToString("0.##", CultureInfo.CurrentCulture));
+            var o = TaskOrientations.Effective(Task, _owner.Scheme.RefSize);
+            return o == TaskOrientation.Auto ? text : text + " · " + _owner.Loc["Auto_Orientation_" + o];
+        }
+    }
 
     /// <summary>Times the task fired in the current (or last) run, all devices together.</summary>
     [ObservableProperty]

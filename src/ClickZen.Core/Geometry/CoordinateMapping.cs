@@ -87,13 +87,22 @@ public readonly record struct FrameToDevice(SizeI Frame, SizeI Device)
 }
 
 /// <summary>
-/// Persisted coordinates carry the screen size they were authored on (<see cref="RefSize"/>).
-/// At run time they are rescaled to the current screen. When orientation differs
-/// (portrait-authored script on a landscape screen) we do not rotate – the script almost
-/// certainly expects the authored orientation – callers are expected to warn instead.
+/// Persisted coordinates carry the screen size they were authored on (a reference size).
+/// At run time they are rescaled to the current screen. A reference size stands for both orientations of the
+/// device: the other orientation's reference is its transpose (<see cref="Oriented"/>). Coordinates are never
+/// rotated – callers pick the reference of the screen's orientation first, so only same-orientation sizes are scaled.
 /// </summary>
 public static class RefScaling
 {
+    /// <summary>
+    /// <paramref name="size"/> in the orientation of <paramref name="like"/>: transposed when one is landscape and the
+    /// other portrait. Square or empty sizes have no orientation and leave <paramref name="size"/> unchanged.
+    /// </summary>
+    public static SizeI Oriented(SizeI size, SizeI like) =>
+        size.IsEmpty || like.IsEmpty || size.Width == size.Height || like.Width == like.Height || size.IsLandscape == like.IsLandscape
+            ? size
+            : size.Transposed;
+
     public static PointI Scale(PointI p, SizeI refSize, SizeI current)
     {
         if (refSize.IsEmpty || current.IsEmpty || refSize == current)

@@ -19,6 +19,9 @@ public sealed partial class TaskEditor : UserControl
     // Expanded cards are remembered per task so switching tasks back and forth keeps the layout.
     private static readonly ConditionalWeakTable<AutomationTask, HashSet<object>> ExpandedByTask = new();
 
+    // Order of the orientation combo box items.
+    private static readonly TaskOrientation[] Orientations = [TaskOrientation.Auto, TaskOrientation.Portrait, TaskOrientation.Landscape];
+
     private readonly ILocalizer _loc;
     private IAutomationEditorHost? _host;
     private AutomationTask? _task;
@@ -30,6 +33,11 @@ public sealed partial class TaskEditor : UserControl
         InitializeComponent();
         Ui.SetTip(ExpandAllButton, _loc["Editor_ExpandAll"]);
         Ui.SetTip(CollapseAllButton, _loc["Editor_CollapseAll"]);
+        foreach (var o in Orientations)
+        {
+            OrientationBox.Items.Add(_loc["Editor_Orientation_" + o]);
+        }
+
         Unloaded += (_, _) => _host?.Highlight(null);
         Rebuild();
     }
@@ -69,6 +77,30 @@ public sealed partial class TaskEditor : UserControl
     /// <summary>Rebuilds the whole editor from the model (e.g. after the host changed the task or templates externally).</summary>
     public void Refresh() => Rebuild();
 
+    /// <summary>
+    /// Re-reads only the orientation field and its explanation (the host changed the task's orientation while a
+    /// coordinate was being picked; a full rebuild would discard the field that is about to receive the value).
+    /// </summary>
+    public void RefreshOrientation()
+    {
+        if (_task is null)
+        {
+            return;
+        }
+
+        _loading = true;
+        try
+        {
+            OrientationBox.SelectedIndex = Array.IndexOf(Orientations, _task.Orientation);
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        UpdateOrientationHint();
+    }
+
     private void Rebuild()
     {
         PreconditionHost.Content = null;
@@ -91,12 +123,14 @@ public sealed partial class TaskEditor : UserControl
             CooldownBox.Value = _task.CooldownMs;
             PriorityBox.Value = _task.Priority;
             RunLimitBox.Value = _task.RunLimit;
+            OrientationBox.SelectedIndex = Array.IndexOf(Orientations, _task.Orientation);
         }
         finally
         {
             _loading = false;
         }
 
+        UpdateOrientationHint();
         var ctx = new EditorContext(_loc, _host, Resources, ExpandedByTask.GetValue(_task, _ => []), OnChanged);
         PreconditionHost.Content = ConditionEditors.Group(ctx, _task.Precondition, OnChanged);
         RulesHost.Content = RuleEditors.List(ctx, _task.Rules, OnChanged);
@@ -109,8 +143,42 @@ public sealed partial class TaskEditor : UserControl
             return;
         }
 
+        UpdateOrientationHint(); // Adding the first coordinate changes what "Auto" means.
         _host?.MarkDirty();
         TaskChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ------------------------------------------------------------------ orientation
+
+    private void OnOrientationChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_task is null || _loading || OrientationBox.SelectedIndex < 0)
+        {
+            return;
+        }
+
+        var value = Orientations[OrientationBox.SelectedIndex];
+        if (_task.Orientation == value)
+        {
+            return;
+        }
+
+        // Coordinates keep their numbers; highlights of the old orientation would no longer apply.
+        _task.Orientation = value;
+        _host?.Highlight(null);
+        OnChanged();
+    }
+
+    private void UpdateOrientationHint()
+    {
+        if (_task is null)
+        {
+            return;
+        }
+
+        var schemeRef = _host?.Scheme.RefSize ?? default;
+        var effective = TaskOrientations.Effective(_task, schemeRef);
+        OrientationHint.Text = TaskEditorLogic.OrientationHint(_loc, _task.Orientation, effective, TaskOrientations.RefFor(schemeRef, effective));
     }
 
     // ------------------------------------------------------------------ basic info

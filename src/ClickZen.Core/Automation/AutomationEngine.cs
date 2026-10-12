@@ -34,6 +34,7 @@ public sealed class AutomationEngine
     private long _startMs;
     private bool _needFreshFrame;
     private long _actionFrameSequence = -1;
+    private TaskOrientation? _seenOrientation;
     private EngineState _state = EngineState.Idle;
 
     public AutomationEngine(Scheme scheme, EngineEnvironment env)
@@ -109,6 +110,7 @@ public sealed class AutomationEngine
         _startMs = _env.Clock.ElapsedMs;
         _needFreshFrame = false;
         _actionFrameSequence = -1;
+        _seenOrientation = null;
     }
 
     /// <summary>Runs until cancelled, a Stop action fires, the time limit elapses, or <paramref name="maxRounds"/> is reached.</summary>
@@ -196,7 +198,15 @@ public sealed class AutomationEngine
                 continue;
             }
 
-            var ctx = new EvalContext(frame, ScreenSize(frame), task, rt);
+            // Tasks made for the other screen orientation wait (no run count, no cooldown) until the screen turns.
+            var screen = ScreenSize(frame);
+            NoteOrientation(screen);
+            if (!TaskOrientations.RunsOn(task, _scheme.RefSize, screen))
+            {
+                continue;
+            }
+
+            var ctx = new EvalContext(frame, screen, task, rt);
             if (!EvalGroup(task.Precondition, ctx))
             {
                 continue;
@@ -230,14 +240,19 @@ public sealed class AutomationEngine
                     return false;
                 }
 
+                var rotated = false;
                 if (ctx.TouchedScreen)
                 {
                     frame = await NextFrameAsync(ct) ?? frame;
                     ctx.Frame = frame;
                     ctx.TouchedScreen = false;
+                    var after = ScreenSize(frame);
+                    rotated = TaskOrientations.Of(after) != TaskOrientations.Of(ctx.Screen);
+                    ctx.Screen = after;
                 }
 
-                if (rule.StopAfterMatch || rt.Disabled)
+                // After a rotation the task's coordinates (and the precondition's match) belong to the old orientation.
+                if (rule.StopAfterMatch || rt.Disabled || rotated)
                 {
                     break;
                 }
@@ -266,20 +281,51 @@ public sealed class AutomationEngine
         return _env.Frames.Latest ?? await _env.Frames.WaitForFrameAsync(-1, _env.FreshFrameTimeout, ct);
     }
 
+    /// <summary>
+    /// Device screen for <paramref name="frame"/>, in the frame's orientation: right after a rotation the reported
+    /// screen size and the newest frame can disagree for a moment.
+    /// </summary>
     private SizeI ScreenSize(Frame frame)
     {
         var s = _env.ScreenSize();
-        return s.IsEmpty ? frame.Size : s;
+        return s.IsEmpty ? frame.Size : RefScaling.Oriented(s, frame.Size);
     }
 
-    private SizeI RefSize(SizeI screen) => _scheme.RefSize.IsEmpty ? screen : _scheme.RefSize;
+    /// <summary>The reference size for coordinates on <paramref name="screen"/>: the scheme's, in the screen's orientation.</summary>
+    private SizeI RefSize(SizeI screen) => _scheme.RefSize.IsEmpty ? screen : RefScaling.Oriented(_scheme.RefSize, screen);
+
+    /// <summary>Logs, once per change of the screen orientation, which tasks wait because they were made for the other one.</summary>
+    private void NoteOrientation(SizeI screen)
+    {
+        var o = TaskOrientations.Of(screen);
+        if (_seenOrientation == o)
+        {
+            return;
+        }
+
+        _seenOrientation = o;
+        var enabled = _scheme.Tasks.Where(t => t.Enabled).ToList();
+        var skipped = enabled.Where(t => !TaskOrientations.RunsOn(t, _scheme.RefSize, screen))
+            .Select(t => string.IsNullOrWhiteSpace(t.Name) ? t.Id : t.Name)
+            .ToList();
+        if (skipped.Count == 0)
+        {
+            return;
+        }
+
+        var names = string.Join(", ", skipped.Take(5)) + (skipped.Count > 5 ? $" (+{skipped.Count - 5})" : "");
+        var other = o == TaskOrientation.Landscape ? "portrait" : "landscape";
+        Emit(skipped.Count == enabled.Count ? LogLevel.Warning : LogLevel.Information,
+            $"Screen is {o.ToString().ToLowerInvariant()} ({screen}): skipping {skipped.Count} task(s) made for {other}: {names}", null);
+    }
 
     // ------------------------------------------------------------------ conditions
 
     private sealed class EvalContext(Frame frame, SizeI screen, AutomationTask task, TaskRuntime runtime)
     {
         public Frame Frame { get; set; } = frame;
-        public SizeI Screen { get; } = screen;
+        /// <summary>Device screen of <see cref="Frame"/> (updated with it).</summary>
+        public SizeI Screen { get; set; } = screen;
         public AutomationTask Task { get; } = task;
         public TaskRuntime Runtime { get; } = runtime;
 

@@ -7,9 +7,11 @@ namespace ClickZen.App.Services;
 // editor control. The editor edits Core model objects in place and reports every change through
 // IAutomationEditorHost.MarkDirty; it never touches frames or devices directly.
 //
-// Coordinate space: every PointI / RectI stored in a scheme is in device pixels at Scheme.RefSize
-// (the engine rescales to the live screen). The host converts workbench clicks into that space and
-// sets Scheme.RefSize from the current device the first time a coordinate is authored.
+// Coordinate space: every PointI / RectI stored in a scheme is in device pixels at Scheme.RefSize in the
+// orientation of the task it belongs to (the other orientation's reference is the transpose of RefSize); the
+// engine rescales to the live screen. The host converts workbench clicks into that space, sets Scheme.RefSize
+// from the current device the first time a coordinate is authored, and binds the edited task to the picture's
+// orientation (asking before it moves a task to the other orientation).
 
 /// <summary>What the task editor needs from the page that hosts it.</summary>
 public interface IAutomationEditorHost
@@ -23,16 +25,17 @@ public interface IAutomationEditorHost
     /// <summary>Call after any edit; marks the document unsaved and refreshes list summaries.</summary>
     void MarkDirty();
 
-    /// <summary>Lets the user click a point on the workbench. Null when cancelled or no picture.</summary>
+    /// <summary>Lets the user click a point on the workbench (reference pixels of the edited task's orientation). Null when cancelled or no picture.</summary>
     Task<PointI?> PickPointAsync();
 
-    /// <summary>Lets the user drag a rectangle on the workbench. Null when cancelled or no picture.</summary>
+    /// <summary>Lets the user drag a rectangle on the workbench (reference pixels of the edited task's orientation). Null when cancelled or no picture.</summary>
     Task<RectI?> PickAreaAsync();
 
     /// <summary>
-    /// Lets the user drag a rectangle, crops it from the current frame, scales it to RefSize device
+    /// Lets the user drag a rectangle, crops it from the current frame, scales it to reference device
     /// pixels, adds it to <see cref="Scheme.Templates"/> (unique id, user-editable name) and returns it.
-    /// The returned area is the rectangle it was cut from (useful as the condition's search area seed).
+    /// The returned area is the rectangle it was cut from (useful as the condition's search area seed); it is empty
+    /// when the user kept only the template because the edited task belongs to the other orientation.
     /// </summary>
     Task<(TemplateAsset Template, RectI Area)?> CaptureTemplateAsync();
 

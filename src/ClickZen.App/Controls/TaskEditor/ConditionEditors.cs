@@ -228,9 +228,12 @@ internal static class ConditionEditors
             }
 
             ic.TemplateId = got.Template.Id;
-            if (ic.Area.IsEmpty)
+            if (ic.Area.IsEmpty && !got.Area.IsEmpty)
             {
-                ic.Area = TaskEditorLogic.SeedSearchArea(got.Area, ctx.Scheme?.RefSize ?? default);
+                // Clamp to the reference of the orientation the template was cut in (the transpose of RefSize for the other one).
+                var schemeRef = ctx.Scheme?.RefSize ?? default;
+                var refSize = TaskOrientations.RefFor(schemeRef, TaskOrientations.Effective(got.Template, schemeRef));
+                ic.Area = TaskEditorLogic.SeedSearchArea(got.Area, refSize);
                 BuildArea();
             }
 

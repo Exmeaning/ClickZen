@@ -8,18 +8,26 @@ namespace ClickZen.Core.Automation;
 // =====================================================================================
 //  Scheme  →  Task  →  Rule (When: ConditionGroup, Then: actions)
 //  All coordinates are device pixels relative to Scheme.RefSize (the screen they were
-//  authored on) and are rescaled at run time.
+//  authored on) in the task's orientation – the other orientation's reference is the
+//  transpose of RefSize – and are rescaled at run time.
 // =====================================================================================
 
 /// <summary>An automation scheme (saved as a .czscheme package).</summary>
 public sealed class Scheme
 {
-    public const int CurrentFormatVersion = 1;
+    /// <summary>
+    /// Newest package format this version reads. 2 = tasks may be set to the orientation other than RefSize's;
+    /// packages without such tasks are still written as 1 (see <see cref="TaskOrientations.RequiredFormatVersion"/>).
+    /// </summary>
+    public const int CurrentFormatVersion = 2;
 
     public int FormatVersion { get; set; } = CurrentFormatVersion;
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
-    /// <summary>Screen size (current orientation) all coordinates were authored against.</summary>
+    /// <summary>
+    /// Screen size the coordinates were authored against, in the scheme's main orientation (the screen of the first
+    /// pick). Tasks of the other orientation use its transpose.
+    /// </summary>
     public SizeI RefSize { get; set; }
     public SchemeSettings Settings { get; set; } = new();
     public List<VariableDefinition> Variables { get; set; } = [];
@@ -71,10 +79,16 @@ public sealed class TemplateAsset
 {
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
-    /// <summary>Size of the template in device pixels at <see cref="Scheme.RefSize"/>.</summary>
+    /// <summary>
+    /// Size of the template in device pixels at the reference size of <see cref="SourceOrientation"/>. Both orientations
+    /// of a device have the same pixel density, so a template matches in either orientation.
+    /// </summary>
     public SizeI Size { get; set; }
-    /// <summary>Where it was cut from, for display ("re-capture" support).</summary>
+    /// <summary>Where it was cut from, for display ("re-capture" support), in the reference of <see cref="SourceOrientation"/>.</summary>
     public RectI SourceRect { get; set; }
+    /// <summary>Orientation of the picture it was cut from; Auto = the orientation of <see cref="Scheme.RefSize"/>.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public TaskOrientation SourceOrientation { get; set; }
 
     /// <summary>PNG bytes. Not serialized into scheme.json – stored as assets/{Id}.png.</summary>
     [JsonIgnore]
@@ -86,6 +100,13 @@ public sealed class AutomationTask
     public string Id { get; set; } = Guid.NewGuid().ToString("N")[..12];
     public string Name { get; set; } = "";
     public bool Enabled { get; set; } = true;
+    /// <summary>
+    /// Screen orientation the task's coordinates belong to; it only runs on screens of that orientation.
+    /// Auto: follows <see cref="Scheme.RefSize"/> when the task has coordinates, runs in both orientations otherwise
+    /// (see <see cref="TaskOrientations.Effective(AutomationTask, SizeI)"/>).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public TaskOrientation Orientation { get; set; }
     /// <summary>Minimum time between two executions of this task, measured from the end of the previous one.</summary>
     public int CooldownMs { get; set; } = 1000;
     /// <summary>Higher runs first within a round; ties keep list order.</summary>

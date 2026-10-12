@@ -17,9 +17,10 @@
 - **AI 接入（MCP）**：内置 MCP 服务器，AI 可以截图、读取界面元素、点击、滑动、输入、启停应用，运行自动化方案、回放录制、读写变量、执行 adb shell。支持 Streamable HTTP 和 stdio 桥接，可按功能分组授权，每次调用都有记录。
 - **应用内投屏**：内置 scrcpy-server 协议客户端与 FFmpeg 解码，毫秒级触控注入，支持多指与连续滑动。
 - **多设备**：同时连接多台真机/模拟器，每台设备独立运行自动化方案，变量可跨设备共享。
+- **模拟器助手**：自动检测正在运行的 MuMu、雷电、夜神、逍遥、蓝叠、Android Studio 模拟器，从模拟器配置读出每个实例准确的 ADB 端口，一键连接、一键绑定窗口。
 - **录制与回放**：在投屏画面上直接操作即可录制，保存完整轨迹，按原节奏或变速回放。
 - **图像识别自动化**：方案 → 任务 → 规则（条件组 + 动作），支持模板匹配、颜色、变量表达式，可点击匹配到的位置。
-- **模拟器窗口模式**：直接捕获模拟器窗口画面（支持后台和被遮挡窗口）。
+- **模拟器窗口模式**：直接捕获模拟器窗口画面（支持后台和被遮挡窗口），可一键自动定位画面区域。
 - **变量网络同步**：TCP 服务，让外部程序或其他实例读写自动化变量。
 - **深色/浅色主题、中英双语界面**。
 
@@ -39,8 +40,8 @@ adb、scrcpy-server 和 FFmpeg 均已随程序附带，无需另外安装。
 
 ## 快速上手
 
-1. 启动 ClickZen，连接 USB 或无线 Android 设备。
-2. 在「投屏」页确认画面；模拟器也可在设备页绑定为窗口模式。
+1. 启动 ClickZen，连接 USB 或无线 Android 设备；模拟器在设备页「检测到的模拟器」里点「连接」即可。
+2. 在「投屏」页确认画面；模拟器也可在设备页一键绑定为窗口模式。
 3. 在「录制」页操作并保存 `.czrec`，或在「自动化」页创建方案并运行。
 4. 变量页可以启用变量同步服务；协议与示例见 [变量同步协议](docs/variable-sync-protocol.md)。
 5. 想让 AI 操作设备：在「AI 接入」页打开 MCP 服务器，复制对应客户端的配置，详见 [MCP 文档](docs/mcp.md)。
@@ -60,9 +61,13 @@ adb、scrcpy-server 和 FFmpeg 均已随程序附带，无需另外安装。
 ![设置页](docs/images/settings.png)
 
 
+### 模拟器助手
+
+打开设备页时，ClickZen 会检测正在运行的模拟器，并从模拟器自己的配置里读出每个实例的 ADB 端口（如 MuMu 第二个实例的 16416、蓝叠 Hyper-V 版每次启动都会变的端口），不再依赖固定的端口表。每个实例都可以一键连接，也可以一键绑定窗口：ClickZen 会自动定位窗口里的 Android 画面，并关联 ADB、读取分辨率，然后保存档案。支持列表、端口来源和常见问题见 [模拟器助手](docs/emulators.md)。
+
 ### 模拟器窗口模式
 
-在设备页选择「绑定模拟器窗口」，选择窗口并裁剪 Android 画面，关联 ADB 设备（可选），确认参考分辨率后保存档案。窗口画面采用 Windows.Graphics.Capture / PrintWindow 捕获；通过关联 ADB 可以使用 scrcpy、adb 或 Root 输入。没有关联 ADB 时使用窗口输入，受模拟器自身后台输入能力限制。档案会记住窗口匹配规则与裁剪范围。
+在设备页选择「绑定模拟器窗口」，选择窗口并裁剪 Android 画面，关联 ADB 设备（可选），确认参考分辨率后保存档案；检测到的模拟器可以直接点「绑定窗口」一键完成。窗口画面采用 Windows.Graphics.Capture / PrintWindow 捕获；通过关联 ADB 可以使用 scrcpy、adb 或 Root 输入。没有关联 ADB 时使用窗口输入，受模拟器自身后台输入能力限制。档案会记住窗口匹配规则与裁剪范围。
 
 ### 变量同步
 
@@ -82,7 +87,7 @@ ClickZen 内置 [Model Context Protocol](https://modelcontextprotocol.io/) 服�
    Claude Desktop、Codex 等只支持 stdio 的客户端使用 `ClickZen.exe --mcp-stdio`。这种方式不需要在配置中写令牌，ClickZen 未运行时会自动启动。
 3. 对 AI 说：「截一张图，找到设置并打开 WLAN 页面」。
 
-共 30 个工具，分为查看、操作、自动化、录制回放、变量、ADB Shell 六组，每组都能单独关闭，修改即时生效。页面会实时列出 AI 的每次调用。坐标约定、工具参考与安全说明见 [MCP 文档](docs/mcp.md)。
+共 33 个工具，分为查看、操作、自动化、录制回放、变量、ADB Shell 六组，每组都能单独关闭，修改即时生效。AI 也能自己发现、连接和绑定模拟器（`list_emulators` / `connect_emulator` / `bind_emulator_window`）。页面会实时列出 AI 的每次调用。坐标约定、工具参考与安全说明见 [MCP 文档](docs/mcp.md)。
 
 ## 从源码构建
 
@@ -108,7 +113,7 @@ $env:CLICKZEN_DATA_DIR = "$env:TEMP\cz-smoke"
 
 `--lang zh-CN` / `--lang en-US` 临时覆盖本次启动语言，不改用户设置。`--page mirror` 可直接导航到页面。冒烟不联网、不启动 ADB。
 
-设备自检参数：`--selftest-input`、`--selftest-recording`、`--selftest-automation`、`--selftest-window`、`--selftest-variables`。前四项需要在线 Android 设备或 Android Emulator；窗口自检需要可捕获的模拟器窗口。`--selftest-mcp` 不需要设备，会在随机端口上启动 MCP 服务，用官方 SDK 客户端分别经 HTTP 和 `--mcp-stdio` 桥接验证工具调用。每次自检应指定全新的 `CLICKZEN_DATA_DIR`；通过退出 0，失败非零。自检不会检查更新。
+设备自检参数：`--selftest-input`、`--selftest-recording`、`--selftest-automation`、`--selftest-window`、`--selftest-variables`、`--selftest-emulator`。前四项需要在线 Android 设备或 Android Emulator；窗口自检需要可捕获的模拟器窗口；模拟器自检需要运行中且带窗口的 Android Studio 模拟器（检测 → 一键连接 → 一键绑定）。`--selftest-mcp` 不需要设备，会在随机端口上启动 MCP 服务，用官方 SDK 客户端分别经 HTTP 和 `--mcp-stdio` 桥接验证工具调用。每次自检应指定全新的 `CLICKZEN_DATA_DIR`；通过退出 0，失败非零。自检不会检查更新。
 
 快捷键：F9 录制/停止，F10 回放/停止（录制页）；F5 运行/停止（自动化页）；Ctrl+S 保存、Ctrl+O 打开当前文档；Ctrl+Shift+S 保存当前设备截图；Ctrl+, 打开设置。设置即时保存，语言需重启，设备/自动化默认值用于下一次连接或新建方案。
 
@@ -116,9 +121,9 @@ $env:CLICKZEN_DATA_DIR = "$env:TEMP\cz-smoke"
 
 ```
 src/
-  ClickZen.Core/      领域模型与纯逻辑（坐标、手势、自动化引擎、变量、序列化），不依赖 Windows
+  ClickZen.Core/      领域模型与纯逻辑（坐标、手势、自动化引擎、变量、序列化、模拟器目录与配置解析），不依赖 Windows
   ClickZen.Device/    ADB、scrcpy 协议、视频解码、输入注入、设备会话
-  ClickZen.Platform/  Win32/WinRT：窗口枚举与窗口捕获
+  ClickZen.Platform/  Win32/WinRT：窗口枚举与窗口捕获、模拟器进程检测
   ClickZen.Vision/    OpenCV 模板匹配与图像编解码
   ClickZen.Mcp/       MCP 服务器：工具定义、Streamable HTTP 服务端（Kestrel）、stdio 桥接，只依赖 Core
   ClickZen.App/       WinUI 3 界面
@@ -160,6 +165,7 @@ AGPL-3.0，见 [LICENSE](LICENSE)。第三方组件见 [THIRD-PARTY-NOTICES.md](
 - [scrcpy](https://github.com/Genymobile/scrcpy)
 - [AdvancedSharpAdbClient](https://github.com/SharpAdb/AdvancedSharpAdbClient)
 - [Klick'r](https://github.com/Nain57/Smart-AutoClicker)：自动化功能的主要参考
+- [MaaFramework](https://github.com/MaaXYZ/MaaFramework)、[MAA](https://github.com/MaaAssistantArknights/MaaAssistantArknights)、[ALAS](https://github.com/LmeSzinc/AzurLaneAutoScript)：模拟器进程、配置与端口规则的参考
 - [FFmpeg](https://ffmpeg.org/)、[OpenCV](https://opencv.org/) / [OpenCvSharp](https://github.com/shimat/opencvsharp)
 - [Model Context Protocol C# SDK](https://github.com/modelcontextprotocol/csharp-sdk)
 

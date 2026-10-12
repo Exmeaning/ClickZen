@@ -23,8 +23,15 @@ C# / WinUI 3 完全重写，不兼容 1.x 数据格式。
 |---|---|---|
 | M10 | MCP 服务器（AI 接入）：30 个工具（截图、UI 树、找图取色、触控与按键、应用启停、自动化方案、录制回放、变量、adb shell）、Streamable HTTP + 令牌鉴权、stdio 桥接、能力分组开关、AI 接入页 | 完成 |
 
+### 2.2
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| M11 | 模拟器助手：进程自动检测（MuMu 12、雷电、夜神、逍遥、蓝叠 5、Android Studio），从模拟器配置读取每个实例的准确 ADB 端口；设备页一键连接 / 全部连接；一键绑定窗口（自动定位画面区域：宽高比、渲染子窗口、设备截图匹配、边栏裁剪）；MCP 新增 `list_emulators` / `connect_emulator` / `bind_emulator_window`（共 33 个工具） | 完成（AVD 实机验证；其余模拟器待实机验证） |
+
 ### 之后
 
+- 模拟器：启动 / 关闭实例（MuMuManager、ldconsole、memuc 等）、检测到后自动连接
 - 1.x 方案与录制的迁移工具
 - 变量同步客户端模式（连接到另一台 ClickZen）
 - MCP：resources（截图 / 方案作为资源）、prompts、让 AI 编写与保存自动化方案

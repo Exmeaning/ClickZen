@@ -121,7 +121,7 @@ AI 接入页上可以分组开关工具。关闭的分组不会出现在工具�
 
 | 分组 | 工具 |
 |---|---|
-| 查看 | `get_status` `list_devices` `connect_device` `take_screenshot` `dump_ui` `find_image` `get_pixel_color` `wait_for_text` `list_apps` |
+| 查看 | `get_status` `list_devices` `connect_device` `list_emulators` `connect_emulator` `bind_emulator_window` `take_screenshot` `dump_ui` `find_image` `get_pixel_color` `wait_for_text` `list_apps` |
 | 操作 | `tap` `tap_element` `swipe` `scroll` `press_key` `input_text` `launch_app` `stop_app` |
 | 自动化 | `get_scheme` `list_schemes` `open_scheme` `start_automation` `stop_automation` `get_automation_log` `set_task_enabled` |
 | 录制回放 | `list_recordings` `play_recording` `stop_playback` |
@@ -146,6 +146,9 @@ AI 接入页上可以分组开关工具。关闭的分组不会出现在工具�
 | `get_status` | — | 版本、adb 是否可用、当前设备、打开的方案、自动化/录制/回放状态、已启用的工具分组 |
 | `list_devices` | — | 设备 id、名称、连接方式、状态、屏幕尺寸、密度、是否有实时画面、使用的输入方式 |
 | `connect_device` | `device`、`makeCurrent` | 启动投屏或窗口捕获，并等待画面就绪；可以同时设为当前设备 |
+| `list_emulators` | — | 检测这台电脑上正在运行的模拟器（MuMu、雷电、夜神、逍遥、蓝叠、Android Studio），返回每个实例的 id、准确的 adb 地址、端口来源、是否已连接、是否已绑定窗口；没有运行中的模拟器时列出已安装的。只读取进程和模拟器配置，不需要 adb。详见[模拟器助手](emulators.md) |
+| `connect_emulator` | `emulator`（`list_emulators` 返回的 id、实例名或名称；只运行一个时可省略）、`makeCurrent`（默认 true） | 按准确端口 `adb connect`，之后就能像普通设备一样使用 |
+| `bind_emulator_window` | `emulator` | 一键把模拟器窗口绑定为窗口设备：自动定位 Android 画面、关联 adb、保存档案，返回窗口设备 id（`window:…`）和定位方法。无法可靠定位时返回错误，请到 ClickZen 设备页确认 |
 | `take_screenshot` | `format`（`jpeg`/`png`）、`maxSize`（默认 1280，0 = 原始分辨率）、`quality`、`x/y/width/height`（裁剪区域） | 返回图片和坐标换算说明。没有画面时会自动开始投屏；截图会等待最近一次 AI 操作之后的新帧 |
 | `dump_ui` | `filter`、`maxNodes`（默认 250）、`includeAll` | 原生界面元素：类名、文字、描述、资源 id、可点击/可滚动/勾选等状态，以及中心点和边界。游戏、视频、画布类界面返回的内容很少 |
 | `find_image` | `template`（方案中的模板名）或 `imageBase64`、`imageScale`、`threshold`（默认 0.85）、`grayscale`、`multiScale`、搜索区域 | OpenCV 模板匹配，返回是否找到、相似度、位置和中心点。`imageBase64` 若是从缩放后的截图上裁下来的，需要传 `imageScale` = 设备宽度 ÷ 截图宽度（截图返回的文字说明里会直接给出这个值），否则尺寸对不上会找不到 |

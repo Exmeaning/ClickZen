@@ -118,6 +118,13 @@ public sealed class EmulatorProfile
 
     public WindowCaptureMethod CaptureMethod { get; set; } = WindowCaptureMethod.Auto;
 
+    /// <summary>
+    /// The detected emulator instance this profile was created for ("mumu:MuMuPlayer-12.0-0", see
+    /// <see cref="Emulators.EmulatorCatalog.KeyOf"/>); null for profiles bound by hand. Lets one-click binding update
+    /// the existing profile instead of adding a second one.
+    /// </summary>
+    public string? EmulatorKey { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.Now;
 
     /// <summary>Frame (cropped capture) ↔ device mapping for a frame of <paramref name="frameSize"/>.</summary>

@@ -76,6 +76,26 @@ public sealed class EmulatorProfileStoreTests : IDisposable
     }
 
     [Fact]
+    public void Emulator_key_round_trips_and_old_files_have_none()
+    {
+        var path = Path.Combine(_dir, "keys.json");
+        var store = new EmulatorProfileStore(path);
+        var p = Sample();
+        p.EmulatorKey = "mumu:MuMuPlayerGlobal-12.0-0";
+        store.Upsert(p);
+        Assert.Contains("\"emulatorKey\": \"mumu:MuMuPlayerGlobal-12.0-0\"", File.ReadAllText(path));
+        Assert.Equal("mumu:MuMuPlayerGlobal-12.0-0", new EmulatorProfileStore(path).Get(p.Id)!.EmulatorKey);
+
+        // Files written before the key existed (2.1) load with no key, and a profile without one writes none.
+        var old = Path.Combine(_dir, "old.json");
+        File.WriteAllText(old, """{ "formatVersion": 1, "profiles": [ { "id": "a", "name": "Hand made", "match": { "title": "MuMu" } } ] }""");
+        var legacy = new EmulatorProfileStore(old);
+        Assert.Null(Assert.Single(legacy.GetAll()).EmulatorKey);
+        legacy.Upsert(legacy.Get("a")!);
+        Assert.DoesNotContain("emulatorKey", File.ReadAllText(old));
+    }
+
+    [Fact]
     public void Upsert_replaces_and_remove_deletes()
     {
         var store = new EmulatorProfileStore(Path.Combine(_dir, "p.json"));

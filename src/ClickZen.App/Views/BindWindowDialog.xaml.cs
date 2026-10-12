@@ -576,10 +576,7 @@ public sealed partial class BindWindowDialog : ContentDialog
     }
 
     /// <summary>Transposes <paramref name="size"/> when the picture has the other orientation.</summary>
-    internal static SizeI OrientLike(SizeI size, SizeI picture) =>
-        !picture.IsEmpty && picture.Width != picture.Height && size.Width != size.Height && picture.IsLandscape != size.IsLandscape
-            ? size.Transposed
-            : size;
+    internal static SizeI OrientLike(SizeI size, SizeI picture) => ClickZen.Core.Emulators.ScreenOrientation.OrientLike(size, picture);
 
     private void OnRefFromFrame(object sender, RoutedEventArgs e)
     {

@@ -26,6 +26,9 @@
                 <TextBlock x:Uid="Page_Devices_Description" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
             </StackPanel>
             <CommandBar Grid.Column="1" DefaultLabelPosition="Right" Background="Transparent" VerticalAlignment="Center">
+                <AppBarButton x:Uid="Emu_DetectButton" Command="{x:Bind ViewModel.DetectEmulatorsCommand}">
+                    <AppBarButton.Icon><FontIcon Glyph="&#xE721;" /></AppBarButton.Icon>
+                </AppBarButton>
                 <AppBarButton x:Uid="Devices_AddWireless" Click="OnAddWirelessClick">
                     <AppBarButton.Icon><FontIcon Glyph="&#xE701;" /></AppBarButton.Icon>
                 </AppBarButton>
@@ -48,6 +51,52 @@
 
         <ScrollViewer Grid.Row="3">
             <StackPanel Spacing="24">
+                <!-- Detected emulators -->
+                <StackPanel Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Uid="Emu_Header" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                        <ProgressRing Grid.Column="1" Width="16" Height="16" IsActive="{x:Bind ViewModel.Emulators.IsDetecting, Mode=OneWay}" />
+                        <Button Grid.Column="3" x:Uid="Emu_ConnectAll" Command="{x:Bind ViewModel.ConnectAllEmulatorsCommand}"
+                                Visibility="{x:Bind ViewModel.HasEmulators, Mode=OneWay}" />
+                    </Grid>
+                    <StackPanel Spacing="2" Visibility="{x:Bind svc:DeviceUi.NotTrue(ViewModel.HasEmulators), Mode=OneWay}">
+                        <TextBlock x:Uid="Emu_Empty" Style="{StaticResource SecondaryCaptionTextBlockStyle}" TextWrapping="Wrap" />
+                        <TextBlock Text="{x:Bind ViewModel.InstalledText, Mode=OneWay}" Style="{StaticResource SecondaryCaptionTextBlockStyle}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.EmulatorInstances}">
+                        <ItemsRepeater.Layout>
+                            <StackLayout Spacing="4" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="svc:DetectedEmulator">
+                                <ctk:SettingsCard Header="{x:Bind svc:EmulatorUi.Title(Instance), Mode=OneWay}"
+                                                  Description="{x:Bind svc:EmulatorUi.Details(Instance), Mode=OneWay}">
+                                    <ctk:SettingsCard.HeaderIcon>
+                                        <FontIcon Glyph="{x:Bind svc:EmulatorUi.KindGlyph(Instance.Kind), Mode=OneWay}" />
+                                    </ctk:SettingsCard.HeaderIcon>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <ProgressRing Width="16" Height="16" IsActive="{x:Bind IsBusy, Mode=OneWay}" />
+                                        <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="{x:Bind svc:EmulatorUi.StateBrush(State), Mode=OneWay}" />
+                                        <TextBlock Text="{x:Bind svc:EmulatorUi.StateText(State, ConnectedSerial), Mode=OneWay}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" MaxWidth="260" TextTrimming="CharacterEllipsis" />
+                                        <Button Content="{x:Bind svc:EmulatorUi.ConnectText(State), Mode=OneWay}"
+                                                IsEnabled="{x:Bind svc:EmulatorUi.CanConnect(State, IsBusy), Mode=OneWay}"
+                                                Click="OnConnectEmulatorClick" Tag="{x:Bind}" />
+                                        <Button Content="{x:Bind svc:EmulatorUi.BindText(IsBound), Mode=OneWay}"
+                                                IsEnabled="{x:Bind svc:EmulatorUi.CanBind(Instance, IsBusy), Mode=OneWay}"
+                                                Click="OnBindEmulatorClick" Tag="{x:Bind}" x:Uid="Emu_BindButton" />
+                                    </StackPanel>
+                                </ctk:SettingsCard>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
                 <!-- Connected devices -->
                 <StackPanel Spacing="8">
                     <TextBlock x:Uid="Devices_ConnectedHeader" Style="{StaticResource BodyStrongTextBlockStyle}" />

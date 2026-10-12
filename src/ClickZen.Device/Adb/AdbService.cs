@@ -396,8 +396,13 @@ public sealed class AdbService : IDisposable
     /// the addresses that are now connected. Ports already served by an <c>emulator-NNNN</c> device are skipped
     /// so the same emulator does not show up twice.
     /// </summary>
-    public async Task<IReadOnlyList<string>> ScanEmulatorsAsync(CancellationToken ct = default)
+    public Task<IReadOnlyList<string>> ScanEmulatorsAsync(CancellationToken ct = default) =>
+        ScanEmulatorsAsync(EmulatorPresets.AllPorts, ct);
+
+    /// <summary>Like <see cref="ScanEmulatorsAsync(CancellationToken)"/> for the given ports only.</summary>
+    public async Task<IReadOnlyList<string>> ScanEmulatorsAsync(IEnumerable<int> portsToTry, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(portsToTry);
         var skip = new HashSet<int>();
         try
         {
@@ -414,7 +419,7 @@ public sealed class AdbService : IDisposable
             _logger.LogDebug(ex, "Could not list devices before emulator scan");
         }
 
-        var ports = EmulatorPresets.AllPorts.Where(p => !skip.Contains(p)).ToArray();
+        var ports = portsToTry.Where(p => p is > 0 and < 65536 && !skip.Contains(p)).Distinct().ToArray();
         var results = await Task.WhenAll(ports.Select(p => ConnectCoreAsync($"127.0.0.1:{p}", EmulatorProbeTimeout, ct)));
         var found = results.Where(r => r.Success).Select(r => r.Address).ToArray();
         _logger.LogInformation("Emulator scan: {Found} of {Count} ports answered ({Addresses})", found.Length, ports.Length, string.Join(", ", found));
@@ -422,6 +427,33 @@ public sealed class AdbService : IDisposable
     }
 
     // ------------------------------------------------------------------ files / network
+
+    /// <summary>
+    /// The device screen as PNG via <c>screencap -p</c> (exec service, binary-safe). Used where no live picture exists,
+    /// e.g. to find an emulator's Android screen inside its window. Default timeout 15 s.
+    /// </summary>
+    public Task<byte[]> ScreencapPngAsync(string serial, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(serial);
+        return RunAsync(serial, "screencap", DefaultShellTimeout, async t =>
+        {
+            using var socket = new AdbSocket(_client.EndPoint, null);
+            await socket.SetDeviceAsync(Device(serial), t);
+            await socket.SendAdbRequestAsync("exec:screencap -p", t);
+            _ = await socket.ReadAdbResponseAsync(t);
+            await using var stream = socket.GetShellStream();
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms, t);
+
+            var png = ms.ToArray();
+            if (png.Length < 8 || png[0] != 0x89 || png[1] != (byte)'P' || png[2] != (byte)'N' || png[3] != (byte)'G')
+            {
+                throw new IOException("screencap did not return a PNG image.");
+            }
+
+            return png;
+        }, ct);
+    }
 
     /// <summary>Pushes a local file to the device using the sync service.</summary>
     public async Task PushAsync(string serial, string localPath, string remotePath, int mode = DefaultPushMode, CancellationToken ct = default)

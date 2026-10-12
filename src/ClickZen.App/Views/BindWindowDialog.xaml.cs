@@ -52,6 +52,7 @@ public sealed partial class BindWindowDialog : ContentDialog
     private readonly ILocalizer _loc;
     private readonly ILogger _log;
     private readonly EmulatorProfile? _existing;
+    private readonly nint _preferredWindow;
     private readonly DispatcherQueueTimer _thumbTimer;
     private readonly List<WindowChoice> _allWindows = [];
     private readonly string[] _stepKeys = ["Window_StepWindow", "Window_StepArea", "Window_StepDevice", "Window_StepName"];
@@ -69,9 +70,21 @@ public sealed partial class BindWindowDialog : ContentDialog
     private bool _refEdited;
 
     public BindWindowDialog(DeviceHub hub, EmulatorProfile? existing = null)
+        : this(hub, existing, null, 0)
+    {
+    }
+
+    /// <param name="existing">A saved profile to edit (title "Edit emulator profile").</param>
+    /// <param name="prefill">
+    /// Or: a proposed profile from one-click binding to review (window, area, device and name filled in, title "Bind
+    /// emulator window"). Saving upserts it, so a proposal for an already bound instance updates that profile.
+    /// </param>
+    /// <param name="preferredWindow">Window to select first (the detected emulator's window).</param>
+    public BindWindowDialog(DeviceHub hub, EmulatorProfile? existing, EmulatorProfile? prefill, nint preferredWindow)
     {
         _hub = hub;
-        _existing = existing?.Clone();
+        _existing = (existing ?? prefill)?.Clone();
+        _preferredWindow = preferredWindow;
         var sp = App.Current.Services;
         _loc = sp.GetRequiredService<ILocalizer>();
         _log = sp.GetRequiredService<ILoggerFactory>().CreateLogger<BindWindowDialog>();
@@ -240,6 +253,11 @@ public sealed partial class BindWindowDialog : ContentDialog
         _allWindows.Clear();
         _allWindows.AddRange(WindowEnumerator.GetVisibleWindows((uint)Environment.ProcessId).Select(w => new WindowChoice(w)));
         ApplyFilter();
+
+        if (selected == 0 && _preferredWindow != 0 && _allWindows.Any(c => c.Window.Handle == _preferredWindow))
+        {
+            selected = _preferredWindow;
+        }
 
         if (selected == 0 && _existing is { } p)
         {

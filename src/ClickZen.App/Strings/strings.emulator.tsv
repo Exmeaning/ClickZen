@@ -1,0 +1,55 @@
+# key	zh-CN	en-US
+# ---- Emulator assistant (2.2): detected emulators, one-click connect and window binding. Prefix: Emu_ ----
+Emu_Header.Text	检测到的模拟器	Detected emulators
+Emu_Empty.Text	没有检测到正在运行的模拟器。启动 MuMu、雷电、夜神、逍遥、蓝叠或 Android Studio 模拟器后点击右上角“检测模拟器”。	No running emulator detected. Start MuMu, LDPlayer, Nox, MEmu, BlueStacks or the Android Studio emulator, then click "Detect emulators" above.
+Emu_DetectButton.Label	检测模拟器	Detect emulators
+Emu_ConnectAll.Content	全部连接	Connect all
+Emu_BindButton.ToolTipService.ToolTip	把这个模拟器窗口绑定为窗口设备：自动定位 Android 画面、关联 ADB 并保存模拟器档案。	Bind this emulator window as a window device: locates the Android screen, links ADB and saves an emulator profile.
+Emu_Installed	已安装：{0}	Installed: {0}
+Emu_NoneRunning	没有检测到正在运行的模拟器。	No running emulator detected.
+Emu_Found	检测到 {0} 个正在运行的模拟器实例。	Detected {0} running emulator instance(s).
+Emu_Connect	连接	Connect
+Emu_ConnectedButton	已连接	Connected
+Emu_Bind	绑定窗口	Bind window
+Emu_Rebind	重新绑定	Rebind window
+Emu_PortNone	端口未知	Port unknown
+Emu_Index	实例 {0}	Instance {0}
+Emu_NoWindow	未找到窗口	No window
+Emu_Minimized	窗口已最小化	Window minimized
+Emu_Unverified	未实机验证	Not verified on hardware
+Emu_Kind_MuMu	MuMu 模拟器	MuMu Player
+Emu_Kind_LDPlayer	雷电模拟器	LDPlayer
+Emu_Kind_Nox	夜神模拟器	NoxPlayer
+Emu_Kind_MEmu	逍遥模拟器	MEmu
+Emu_Kind_BlueStacks	蓝叠模拟器	BlueStacks
+Emu_Kind_AndroidStudio	Android Studio 模拟器	Android Studio Emulator
+Emu_Source_Config	端口来自配置	port from config
+Emu_Source_Runtime	端口来自运行信息	port from runtime info
+Emu_Source_Formula	端口按规则推断	port inferred
+Emu_Source_Unknown	无法确定端口	port not found
+Emu_State_NotConnected	未连接	Not connected
+Emu_State_Connected	已连接 {0}	Connected {0}
+Emu_State_Offline	离线或未授权	Offline or unauthorized
+Emu_State_AdbDisabled	模拟器未开启 ADB	ADB is off in the emulator
+Emu_State_PortUnknown	端口未知	Port unknown
+Emu_Connected	已连接 {0}（{1}）。	Connected {0} ({1}).
+Emu_AlreadyConnected	{0} 已连接（{1}）。	{0} is already connected ({1}).
+Emu_ConnectedCount	已连接 {0} 个模拟器。	Connected {0} emulator(s).
+Emu_AllConnected	检测到的模拟器都已连接。	All detected emulators are connected.
+Emu_PortUnknown	无法确定 {0} 的 ADB 端口。请确认模拟器已开启 ADB 调试，或在“添加无线设备”中手动输入地址。	Cannot tell the ADB port of {0}. Make sure ADB debugging is on in the emulator, or enter the address under "Add wireless device".
+Emu_ConnectFailed	无法连接 {0}：{1} {2}	Cannot connect {0}: {1} {2}
+Emu_HintEnableAdb	请在模拟器设置中开启 ADB（蓝叠：设置 → 高级 → Android 调试桥）后重试。	Turn on ADB in the emulator's settings (BlueStacks: Settings → Advanced → Android Debug Bridge) and retry.
+Emu_HintLdAdb	请在雷电模拟器设置 → 其他设置中把“ADB 调试”设为“开启本地连接”后重试。	In LDPlayer settings → Other settings, set "ADB debugging" to "Open local connection" and retry.
+Emu_HintStarting	模拟器可能还在启动，请等系统进入桌面后重试。	The emulator may still be starting; retry once Android has booted.
+Emu_BindNoWindow	没有找到 {0} 的窗口。请先打开模拟器窗口。	No window found for {0}. Open the emulator window first.
+Emu_BindMinimized	{0} 的窗口已最小化。请先还原窗口再绑定。	The window of {0} is minimized. Restore it before binding.
+Emu_BindCaptureFailed	无法捕获 {0} 的窗口画面。	Cannot capture the window of {0}.
+Emu_BindFailed	绑定 {0} 失败：{1}	Binding {0} failed: {1}
+Emu_BindReview	没能准确定位 {0} 的 Android 画面，请在向导中确认画面区域后保存。	Could not locate the Android screen of {0} reliably; check the screen area in the wizard and save.
+Emu_Bound	已绑定 {0} 的窗口（{1}），可以在投屏和自动化中使用。	Bound the window of {0} ({1}); it can now be used for mirroring and automation.
+Emu_BoundNoAdb	已绑定 {0} 的窗口（{1}），但没有连上 ADB：只能截图识别，不能点击。	Bound the window of {0} ({1}) without ADB: it can be captured and matched but not tapped.
+Emu_Method_AspectMatch	整个窗口就是画面	the whole window is the screen
+Emu_Method_RenderWindow	按模拟器渲染窗口定位	located by the emulator's render window
+Emu_Method_ScreenshotMatch	按设备截图定位	located by matching a device screenshot
+Emu_Method_EdgeDetection	按窗口边框定位	located by trimming the window bars
+Emu_Method_ClientArea	使用整个客户区	whole client area

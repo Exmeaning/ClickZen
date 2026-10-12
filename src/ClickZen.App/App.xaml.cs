@@ -65,6 +65,7 @@ public partial class App : Application
         sc.AddSingleton<AutoConnector>();
         sc.AddSingleton<IScrcpyTransport, AdbScrcpyTransport>();
         sc.AddSingleton<DeviceHub>();
+        sc.AddSingleton<EmulatorService>();
         sc.AddSingleton<RecordingService>();
         sc.AddSingleton<IDeviceTouchCapture, GeteventTouchCapture>();
         sc.AddSingleton(_ => new ClickZen.Core.Variables.VariableStore());

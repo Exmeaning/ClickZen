@@ -13,9 +13,42 @@ public sealed partial class DevicesPage : Page
     {
         ViewModel = App.Current.Services.GetRequiredService<DevicesViewModel>();
         InitializeComponent();
+        Loaded += OnLoaded;
     }
 
     public DevicesViewModel ViewModel { get; }
+
+    /// <summary>Detects emulators whenever the page is shown (cheap: processes and config files only, no adb).</summary>
+    private async void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await ViewModel.DetectQuietlyAsync();
+        }
+        catch (Exception ex)
+        {
+            ViewModel.Message = ex.Message;
+            ViewModel.MessageIsError = true;
+        }
+    }
+
+    private void OnConnectEmulatorClick(object sender, RoutedEventArgs e) => ViewModel.ConnectEmulatorCommand.Execute(Tagged<DetectedEmulator>(sender));
+
+    private async void OnBindEmulatorClick(object sender, RoutedEventArgs e)
+    {
+        var row = Tagged<DetectedEmulator>(sender);
+        var outcome = await ViewModel.BindEmulatorWindowAsync(row);
+        if (outcome is { NeedsReview: true, Profile: { } prefill })
+        {
+            // Could not locate the Android screen with confidence: let the user check the area in the wizard.
+            var dialog = new BindWindowDialog(ViewModel.Hub, null, prefill, row.Instance.WindowHandle) { XamlRoot = XamlRoot };
+            await dialog.ShowAsync();
+            if (dialog.SavedProfile is { } saved)
+            {
+                ViewModel.OnProfileSaved(saved);
+            }
+        }
+    }
 
     public bool Not(bool value) => !value;
 

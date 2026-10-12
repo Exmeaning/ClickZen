@@ -41,14 +41,16 @@ public sealed partial class DevicesViewModel : ObservableObject
     private readonly DeviceHub _hub;
     private readonly AdbService _adb;
     private readonly SavedDeviceStore _saved;
+    private readonly EmulatorService _emulators;
     private readonly ILocalizer _loc;
     private readonly ILogger<DevicesViewModel> _log;
 
-    public DevicesViewModel(DeviceHub hub, AdbService adb, SavedDeviceStore saved, ILocalizer loc, ILogger<DevicesViewModel> log)
+    public DevicesViewModel(DeviceHub hub, AdbService adb, SavedDeviceStore saved, EmulatorService emulators, ILocalizer loc, ILogger<DevicesViewModel> log)
     {
         _hub = hub;
         _adb = adb;
         _saved = saved;
+        _emulators = emulators;
         _loc = loc;
         _log = log;
         _hub.Devices.CollectionChanged += (_, _) =>
@@ -58,8 +60,80 @@ public sealed partial class DevicesViewModel : ObservableObject
         };
         _saved.Changed += (_, _) => App.Current.MainWindow?.DispatcherQueue.TryEnqueue(LoadSaved);
         _hub.Profiles.Changed += (_, _) => App.Current.MainWindow?.DispatcherQueue.TryEnqueue(LoadProfiles);
+        _emulators.Instances.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasEmulators));
+        _emulators.Installed.CollectionChanged += (_, _) => OnPropertyChanged(nameof(InstalledText));
         LoadSaved();
         LoadProfiles();
+    }
+
+    // ------------------------------------------------------------------ detected emulators
+
+    public EmulatorService Emulators => _emulators;
+
+    public ObservableCollection<DetectedEmulator> EmulatorInstances => _emulators.Instances;
+
+    public bool HasEmulators => _emulators.Instances.Count > 0;
+
+    /// <summary>"Installed: MuMu, LDPlayer" (registry) for the empty state; empty when nothing is installed.</summary>
+    public string InstalledText => _emulators.Installed.Count == 0
+        ? ""
+        : _loc.Format("Emu_Installed", string.Join(", ", _emulators.Installed.Select(i => EmulatorUi.KindName(i.Kind)).Distinct()));
+
+    [RelayCommand]
+    private async Task DetectEmulatorsAsync()
+    {
+        var found = await _emulators.DetectAsync();
+        Report(found.Count == 0 ? _loc["Emu_NoneRunning"] : _loc.Format("Emu_Found", found.Count), false);
+    }
+
+    /// <summary>Quiet detection when the page opens (no message).</summary>
+    public Task DetectQuietlyAsync() => _emulators.DetectAsync();
+
+    [RelayCommand]
+    private async Task ConnectEmulatorAsync(DetectedEmulator row)
+    {
+        var r = await _emulators.ConnectAsync(row);
+        Report(r.Message, !r.Success);
+    }
+
+    [RelayCommand]
+    private async Task ConnectAllEmulatorsAsync()
+    {
+        if (!HasEmulators)
+        {
+            await _emulators.DetectAsync();
+        }
+
+        var results = await _emulators.ConnectAllAsync();
+        var ok = results.Count(r => r.Success);
+        var failed = results.Where(r => !r.Success).Select(r => r.Message).ToList();
+        if (results.Count == 0)
+        {
+            Report(HasEmulators ? _loc["Emu_AllConnected"] : _loc["Emu_NoneRunning"], false);
+        }
+        else
+        {
+            Report(failed.Count == 0 ? _loc.Format("Emu_ConnectedCount", ok) : string.Join("\n", failed), failed.Count > 0);
+        }
+    }
+
+    /// <summary>
+    /// One-click binding of the instance's window as a window device. When the Android screen could not be located
+    /// with confidence the outcome asks for review and carries the prefilled profile for the wizard.
+    /// </summary>
+    public async Task<EmulatorBindResult> BindEmulatorWindowAsync(DetectedEmulator row)
+    {
+        var r = await _emulators.BindWindowAsync(row);
+        if (r.NeedsReview)
+        {
+            Report(r.Message, false);
+        }
+        else
+        {
+            Report(r.Message, !r.Success);
+        }
+
+        return r;
     }
 
     public ObservableCollection<EmulatorProfileItem> Profiles { get; } = [];
@@ -249,9 +323,19 @@ public sealed partial class DevicesViewModel : ObservableObject
         return r;
     }
 
+    /// <summary>
+    /// The scan tab: connect every detected emulator (exact ports from process detection), then try the port table for
+    /// emulators detection does not know. Returns the addresses / serials now connected.
+    /// </summary>
     public async Task<IReadOnlyList<string>> ScanEmulatorsAsync(CancellationToken ct = default)
     {
-        var found = await _adb.ScanEmulatorsAsync(ct);
+        await _emulators.DetectAsync(ct);
+        var detected = await _emulators.ConnectAllAsync(ct);
+        var already = _emulators.Instances.Where(i => i.IsConnected).Select(i => i.Serial).OfType<string>();
+        var known = _emulators.Instances.SelectMany(i => new[] { i.Instance.AdbPort }.Concat(i.Instance.FallbackPorts.Select(p => (int?)p))).OfType<int>().ToHashSet();
+        var scanned = await _adb.ScanEmulatorsAsync(EmulatorPresets.AllPorts.Where(p => !known.Contains(p)), ct);
+        var found = detected.Where(r => r.Success).Select(r => r.Serial).OfType<string>().Concat(already).Concat(scanned)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         Report(found.Count == 0 ? _loc["Devices_ScanNone"] : _loc.Format("Devices_ScanFound", found.Count), false);
         return found;
     }

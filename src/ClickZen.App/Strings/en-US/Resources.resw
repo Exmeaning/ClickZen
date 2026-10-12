@@ -68,7 +68,7 @@
   <data name="Devices_Disconnected" xml:space="preserve"><value>Disconnected {0}</value></data>
   <data name="Devices_Paired" xml:space="preserve"><value>Paired. Now enter the IP address and port shown on the phone's Wireless debugging screen to connect.</value></data>
   <data name="Devices_ScanNone" xml:space="preserve"><value>No local emulators found. Make sure the emulator is running with ADB enabled.</value></data>
-  <data name="Devices_ScanFound" xml:space="preserve"><value>Found and connected {0} emulator(s).</value></data>
+  <data name="Devices_ScanFound" xml:space="preserve"><value>Connected {0} emulator(s).</value></data>
   <data name="DeviceKind_Usb" xml:space="preserve"><value>USB</value></data>
   <data name="DeviceKind_Wireless" xml:space="preserve"><value>Wireless</value></data>
   <data name="DeviceKind_Emulator" xml:space="preserve"><value>Emulator</value></data>
@@ -100,7 +100,7 @@
   <data name="AddWireless_PairThenConnect.Text" xml:space="preserve"><value>After pairing, connect using the address and port shown at the top of the Wireless debugging screen (different from the pairing port).</value></data>
   <data name="AddWireless_ConnectAddress.Header" xml:space="preserve"><value>Connect address</value></data>
   <data name="AddWireless_ConnectAddress.PlaceholderText" xml:space="preserve"><value>192.168.1.20:41231</value></data>
-  <data name="AddWireless_ScanHint.Text" xml:space="preserve"><value>Tries the local ADB ports used by common emulators (MuMu, LDPlayer, Nox, MEmu, BlueStacks…).</value></data>
+  <data name="AddWireless_ScanHint.Text" xml:space="preserve"><value>First detects running emulators (MuMu, LDPlayer, Nox, MEmu, BlueStacks, Android Studio) and connects them on the ports from their own settings, then tries the local ADB ports of common emulators.</value></data>
   <data name="AddWireless_ScanButton.Content" xml:space="preserve"><value>Scan</value></data>
   <data name="AddWireless_PresetsHeader.Text" xml:space="preserve"><value>Common emulator ports</value></data>
   <data name="AddWireless_AddressRequired" xml:space="preserve"><value>Enter an address.</value></data>
@@ -542,6 +542,59 @@
   <data name="Editor_Sum_StopTask" xml:space="preserve"><value>disable this task</value></data>
   <data name="Editor_Sum_StopScheme" xml:space="preserve"><value>stop the scheme</value></data>
   <data name="Editor_Sum_Delay" xml:space="preserve"><value>then wait {0} ms</value></data>
+  <data name="Emu_Header.Text" xml:space="preserve"><value>Detected emulators</value></data>
+  <data name="Emu_Empty.Text" xml:space="preserve"><value>No running emulator detected. Start MuMu, LDPlayer, Nox, MEmu, BlueStacks or the Android Studio emulator, then click "Detect emulators" above.</value></data>
+  <data name="Emu_DetectButton.Label" xml:space="preserve"><value>Detect emulators</value></data>
+  <data name="Emu_ConnectAll.Content" xml:space="preserve"><value>Connect all</value></data>
+  <data name="Emu_BindButton.ToolTipService.ToolTip" xml:space="preserve"><value>Bind this emulator window as a window device: locates the Android screen, links ADB and saves an emulator profile.</value></data>
+  <data name="Emu_Installed" xml:space="preserve"><value>Installed: {0}</value></data>
+  <data name="Emu_NoneRunning" xml:space="preserve"><value>No running emulator detected.</value></data>
+  <data name="Emu_Found" xml:space="preserve"><value>Detected {0} running emulator instance(s).</value></data>
+  <data name="Emu_Connect" xml:space="preserve"><value>Connect</value></data>
+  <data name="Emu_ConnectedButton" xml:space="preserve"><value>Connected</value></data>
+  <data name="Emu_Bind" xml:space="preserve"><value>Bind window</value></data>
+  <data name="Emu_Rebind" xml:space="preserve"><value>Rebind window</value></data>
+  <data name="Emu_PortNone" xml:space="preserve"><value>Port unknown</value></data>
+  <data name="Emu_Index" xml:space="preserve"><value>Instance {0}</value></data>
+  <data name="Emu_NoWindow" xml:space="preserve"><value>No window</value></data>
+  <data name="Emu_Minimized" xml:space="preserve"><value>Window minimized</value></data>
+  <data name="Emu_Unverified" xml:space="preserve"><value>Not verified on hardware</value></data>
+  <data name="Emu_Kind_MuMu" xml:space="preserve"><value>MuMu Player</value></data>
+  <data name="Emu_Kind_LDPlayer" xml:space="preserve"><value>LDPlayer</value></data>
+  <data name="Emu_Kind_Nox" xml:space="preserve"><value>NoxPlayer</value></data>
+  <data name="Emu_Kind_MEmu" xml:space="preserve"><value>MEmu</value></data>
+  <data name="Emu_Kind_BlueStacks" xml:space="preserve"><value>BlueStacks</value></data>
+  <data name="Emu_Kind_AndroidStudio" xml:space="preserve"><value>Android Studio Emulator</value></data>
+  <data name="Emu_Source_Config" xml:space="preserve"><value>port from config</value></data>
+  <data name="Emu_Source_Runtime" xml:space="preserve"><value>port from runtime info</value></data>
+  <data name="Emu_Source_Formula" xml:space="preserve"><value>port inferred</value></data>
+  <data name="Emu_Source_Unknown" xml:space="preserve"><value>port not found</value></data>
+  <data name="Emu_State_NotConnected" xml:space="preserve"><value>Not connected</value></data>
+  <data name="Emu_State_Connected" xml:space="preserve"><value>Connected {0}</value></data>
+  <data name="Emu_State_Offline" xml:space="preserve"><value>Offline or unauthorized</value></data>
+  <data name="Emu_State_AdbDisabled" xml:space="preserve"><value>ADB is off in the emulator</value></data>
+  <data name="Emu_State_PortUnknown" xml:space="preserve"><value>Port unknown</value></data>
+  <data name="Emu_Connected" xml:space="preserve"><value>Connected {0} ({1}).</value></data>
+  <data name="Emu_AlreadyConnected" xml:space="preserve"><value>{0} is already connected ({1}).</value></data>
+  <data name="Emu_ConnectedCount" xml:space="preserve"><value>Connected {0} emulator(s).</value></data>
+  <data name="Emu_AllConnected" xml:space="preserve"><value>All detected emulators are connected.</value></data>
+  <data name="Emu_PortUnknown" xml:space="preserve"><value>Cannot tell the ADB port of {0}. Make sure ADB debugging is on in the emulator, or enter the address under "Add wireless device".</value></data>
+  <data name="Emu_ConnectFailed" xml:space="preserve"><value>Cannot connect {0}: {1} {2}</value></data>
+  <data name="Emu_HintEnableAdb" xml:space="preserve"><value>Turn on ADB in the emulator's settings (BlueStacks: Settings → Advanced → Android Debug Bridge) and retry.</value></data>
+  <data name="Emu_HintLdAdb" xml:space="preserve"><value>In LDPlayer settings → Other settings, set "ADB debugging" to "Open local connection" and retry.</value></data>
+  <data name="Emu_HintStarting" xml:space="preserve"><value>The emulator may still be starting; retry once Android has booted.</value></data>
+  <data name="Emu_BindNoWindow" xml:space="preserve"><value>No window found for {0}. Open the emulator window first.</value></data>
+  <data name="Emu_BindMinimized" xml:space="preserve"><value>The window of {0} is minimized. Restore it before binding.</value></data>
+  <data name="Emu_BindCaptureFailed" xml:space="preserve"><value>Cannot capture the window of {0}.</value></data>
+  <data name="Emu_BindFailed" xml:space="preserve"><value>Binding {0} failed: {1}</value></data>
+  <data name="Emu_BindReview" xml:space="preserve"><value>Could not locate the Android screen of {0} reliably; check the screen area in the wizard and save.</value></data>
+  <data name="Emu_Bound" xml:space="preserve"><value>Bound the window of {0} ({1}); it can now be used for mirroring and automation.</value></data>
+  <data name="Emu_BoundNoAdb" xml:space="preserve"><value>Bound the window of {0} ({1}) without ADB: it can be captured and matched but not tapped.</value></data>
+  <data name="Emu_Method_AspectMatch" xml:space="preserve"><value>the whole window is the screen</value></data>
+  <data name="Emu_Method_RenderWindow" xml:space="preserve"><value>located by the emulator's render window</value></data>
+  <data name="Emu_Method_ScreenshotMatch" xml:space="preserve"><value>located by matching a device screenshot</value></data>
+  <data name="Emu_Method_EdgeDetection" xml:space="preserve"><value>located by trimming the window bars</value></data>
+  <data name="Emu_Method_ClientArea" xml:space="preserve"><value>whole client area</value></data>
   <data name="Nav_Ai" xml:space="preserve"><value>AI access</value></data>
   <data name="Page_Ai_Title.Text" xml:space="preserve"><value>AI access</value></data>
   <data name="Page_Ai_Description.Text" xml:space="preserve"><value>Let AI assistants such as Claude, Cursor and VS Code see the screen, control devices and run automation schemes through MCP (Model Context Protocol).</value></data>

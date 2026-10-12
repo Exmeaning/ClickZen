@@ -68,7 +68,7 @@
   <data name="Devices_Disconnected" xml:space="preserve"><value>已断开 {0}</value></data>
   <data name="Devices_Paired" xml:space="preserve"><value>配对成功。请在下方输入手机“无线调试”页面上显示的 IP 地址和端口完成连接。</value></data>
   <data name="Devices_ScanNone" xml:space="preserve"><value>没有发现本地模拟器。请确认模拟器已启动并开启了 ADB 调试。</value></data>
-  <data name="Devices_ScanFound" xml:space="preserve"><value>发现 {0} 个模拟器，已连接。</value></data>
+  <data name="Devices_ScanFound" xml:space="preserve"><value>已连接 {0} 个模拟器。</value></data>
   <data name="DeviceKind_Usb" xml:space="preserve"><value>USB</value></data>
   <data name="DeviceKind_Wireless" xml:space="preserve"><value>无线</value></data>
   <data name="DeviceKind_Emulator" xml:space="preserve"><value>模拟器</value></data>
@@ -100,7 +100,7 @@
   <data name="AddWireless_PairThenConnect.Text" xml:space="preserve"><value>配对后，使用“无线调试”页面顶部显示的地址和端口连接（与配对端口不同）。</value></data>
   <data name="AddWireless_ConnectAddress.Header" xml:space="preserve"><value>连接地址</value></data>
   <data name="AddWireless_ConnectAddress.PlaceholderText" xml:space="preserve"><value>192.168.1.20:41231</value></data>
-  <data name="AddWireless_ScanHint.Text" xml:space="preserve"><value>依次尝试常见模拟器的本地 ADB 端口（MuMu、雷电、夜神、逍遥、蓝叠等）。</value></data>
+  <data name="AddWireless_ScanHint.Text" xml:space="preserve"><value>先检测正在运行的模拟器（MuMu、雷电、夜神、逍遥、蓝叠、Android Studio）并按各自配置的端口连接，再尝试常见模拟器的本地 ADB 端口。</value></data>
   <data name="AddWireless_ScanButton.Content" xml:space="preserve"><value>开始扫描</value></data>
   <data name="AddWireless_PresetsHeader.Text" xml:space="preserve"><value>常见模拟器端口</value></data>
   <data name="AddWireless_AddressRequired" xml:space="preserve"><value>请输入地址。</value></data>
@@ -542,6 +542,59 @@
   <data name="Editor_Sum_StopTask" xml:space="preserve"><value>停用本任务</value></data>
   <data name="Editor_Sum_StopScheme" xml:space="preserve"><value>停止方案</value></data>
   <data name="Editor_Sum_Delay" xml:space="preserve"><value>之后等待 {0} ms</value></data>
+  <data name="Emu_Header.Text" xml:space="preserve"><value>检测到的模拟器</value></data>
+  <data name="Emu_Empty.Text" xml:space="preserve"><value>没有检测到正在运行的模拟器。启动 MuMu、雷电、夜神、逍遥、蓝叠或 Android Studio 模拟器后点击右上角“检测模拟器”。</value></data>
+  <data name="Emu_DetectButton.Label" xml:space="preserve"><value>检测模拟器</value></data>
+  <data name="Emu_ConnectAll.Content" xml:space="preserve"><value>全部连接</value></data>
+  <data name="Emu_BindButton.ToolTipService.ToolTip" xml:space="preserve"><value>把这个模拟器窗口绑定为窗口设备：自动定位 Android 画面、关联 ADB 并保存模拟器档案。</value></data>
+  <data name="Emu_Installed" xml:space="preserve"><value>已安装：{0}</value></data>
+  <data name="Emu_NoneRunning" xml:space="preserve"><value>没有检测到正在运行的模拟器。</value></data>
+  <data name="Emu_Found" xml:space="preserve"><value>检测到 {0} 个正在运行的模拟器实例。</value></data>
+  <data name="Emu_Connect" xml:space="preserve"><value>连接</value></data>
+  <data name="Emu_ConnectedButton" xml:space="preserve"><value>已连接</value></data>
+  <data name="Emu_Bind" xml:space="preserve"><value>绑定窗口</value></data>
+  <data name="Emu_Rebind" xml:space="preserve"><value>重新绑定</value></data>
+  <data name="Emu_PortNone" xml:space="preserve"><value>端口未知</value></data>
+  <data name="Emu_Index" xml:space="preserve"><value>实例 {0}</value></data>
+  <data name="Emu_NoWindow" xml:space="preserve"><value>未找到窗口</value></data>
+  <data name="Emu_Minimized" xml:space="preserve"><value>窗口已最小化</value></data>
+  <data name="Emu_Unverified" xml:space="preserve"><value>未实机验证</value></data>
+  <data name="Emu_Kind_MuMu" xml:space="preserve"><value>MuMu 模拟器</value></data>
+  <data name="Emu_Kind_LDPlayer" xml:space="preserve"><value>雷电模拟器</value></data>
+  <data name="Emu_Kind_Nox" xml:space="preserve"><value>夜神模拟器</value></data>
+  <data name="Emu_Kind_MEmu" xml:space="preserve"><value>逍遥模拟器</value></data>
+  <data name="Emu_Kind_BlueStacks" xml:space="preserve"><value>蓝叠模拟器</value></data>
+  <data name="Emu_Kind_AndroidStudio" xml:space="preserve"><value>Android Studio 模拟器</value></data>
+  <data name="Emu_Source_Config" xml:space="preserve"><value>端口来自配置</value></data>
+  <data name="Emu_Source_Runtime" xml:space="preserve"><value>端口来自运行信息</value></data>
+  <data name="Emu_Source_Formula" xml:space="preserve"><value>端口按规则推断</value></data>
+  <data name="Emu_Source_Unknown" xml:space="preserve"><value>无法确定端口</value></data>
+  <data name="Emu_State_NotConnected" xml:space="preserve"><value>未连接</value></data>
+  <data name="Emu_State_Connected" xml:space="preserve"><value>已连接 {0}</value></data>
+  <data name="Emu_State_Offline" xml:space="preserve"><value>离线或未授权</value></data>
+  <data name="Emu_State_AdbDisabled" xml:space="preserve"><value>模拟器未开启 ADB</value></data>
+  <data name="Emu_State_PortUnknown" xml:space="preserve"><value>端口未知</value></data>
+  <data name="Emu_Connected" xml:space="preserve"><value>已连接 {0}（{1}）。</value></data>
+  <data name="Emu_AlreadyConnected" xml:space="preserve"><value>{0} 已连接（{1}）。</value></data>
+  <data name="Emu_ConnectedCount" xml:space="preserve"><value>已连接 {0} 个模拟器。</value></data>
+  <data name="Emu_AllConnected" xml:space="preserve"><value>检测到的模拟器都已连接。</value></data>
+  <data name="Emu_PortUnknown" xml:space="preserve"><value>无法确定 {0} 的 ADB 端口。请确认模拟器已开启 ADB 调试，或在“添加无线设备”中手动输入地址。</value></data>
+  <data name="Emu_ConnectFailed" xml:space="preserve"><value>无法连接 {0}：{1} {2}</value></data>
+  <data name="Emu_HintEnableAdb" xml:space="preserve"><value>请在模拟器设置中开启 ADB（蓝叠：设置 → 高级 → Android 调试桥）后重试。</value></data>
+  <data name="Emu_HintLdAdb" xml:space="preserve"><value>请在雷电模拟器设置 → 其他设置中把“ADB 调试”设为“开启本地连接”后重试。</value></data>
+  <data name="Emu_HintStarting" xml:space="preserve"><value>模拟器可能还在启动，请等系统进入桌面后重试。</value></data>
+  <data name="Emu_BindNoWindow" xml:space="preserve"><value>没有找到 {0} 的窗口。请先打开模拟器窗口。</value></data>
+  <data name="Emu_BindMinimized" xml:space="preserve"><value>{0} 的窗口已最小化。请先还原窗口再绑定。</value></data>
+  <data name="Emu_BindCaptureFailed" xml:space="preserve"><value>无法捕获 {0} 的窗口画面。</value></data>
+  <data name="Emu_BindFailed" xml:space="preserve"><value>绑定 {0} 失败：{1}</value></data>
+  <data name="Emu_BindReview" xml:space="preserve"><value>没能准确定位 {0} 的 Android 画面，请在向导中确认画面区域后保存。</value></data>
+  <data name="Emu_Bound" xml:space="preserve"><value>已绑定 {0} 的窗口（{1}），可以在投屏和自动化中使用。</value></data>
+  <data name="Emu_BoundNoAdb" xml:space="preserve"><value>已绑定 {0} 的窗口（{1}），但没有连上 ADB：只能截图识别，不能点击。</value></data>
+  <data name="Emu_Method_AspectMatch" xml:space="preserve"><value>整个窗口就是画面</value></data>
+  <data name="Emu_Method_RenderWindow" xml:space="preserve"><value>按模拟器渲染窗口定位</value></data>
+  <data name="Emu_Method_ScreenshotMatch" xml:space="preserve"><value>按设备截图定位</value></data>
+  <data name="Emu_Method_EdgeDetection" xml:space="preserve"><value>按窗口边框定位</value></data>
+  <data name="Emu_Method_ClientArea" xml:space="preserve"><value>使用整个客户区</value></data>
   <data name="Nav_Ai" xml:space="preserve"><value>AI 接入</value></data>
   <data name="Page_Ai_Title.Text" xml:space="preserve"><value>AI 接入</value></data>
   <data name="Page_Ai_Description.Text" xml:space="preserve"><value>通过 MCP（Model Context Protocol）让 Claude、Cursor、VS Code 等 AI 助手查看画面并操作设备、运行自动化方案。</value></data>

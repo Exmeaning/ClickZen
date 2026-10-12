@@ -382,6 +382,20 @@ public sealed class AdbServiceTests
     }
 
     [Fact]
+    public async Task Scan_emulators_with_explicit_ports_tries_only_those()
+    {
+        var (svc, fake, _) = Create();
+        fake.Devices.Add(new DeviceData { Serial = "emulator-5554", State = DeviceState.Online });
+        fake.Connect = (a, _) => Task.FromResult(a == "127.0.0.1:21503" ? $"connected to {a}" : $"cannot connect to {a}: refused (10061)");
+
+        var found = await svc.ScanEmulatorsAsync([21503, 62001, 5555, 21503, 0, 70000], Ct);
+
+        Assert.Equal(["127.0.0.1:21503"], found);
+        // 5555 belongs to emulator-5554 already; duplicates and invalid ports are dropped.
+        Assert.Equal(["127.0.0.1:21503", "127.0.0.1:62001"], fake.ConnectLog.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public async Task Scan_emulators_respects_per_port_timeout()
     {
         var (svc, fake, _) = Create();

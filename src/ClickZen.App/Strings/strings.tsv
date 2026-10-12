@@ -67,7 +67,7 @@ Devices_Connected	已连接 {0}	Connected to {0}
 Devices_Disconnected	已断开 {0}	Disconnected {0}
 Devices_Paired	配对成功。请在下方输入手机“无线调试”页面上显示的 IP 地址和端口完成连接。	Paired. Now enter the IP address and port shown on the phone's Wireless debugging screen to connect.
 Devices_ScanNone	没有发现本地模拟器。请确认模拟器已启动并开启了 ADB 调试。	No local emulators found. Make sure the emulator is running with ADB enabled.
-Devices_ScanFound	发现 {0} 个模拟器，已连接。	Found and connected {0} emulator(s).
+Devices_ScanFound	已连接 {0} 个模拟器。	Connected {0} emulator(s).
 DeviceKind_Usb	USB	USB
 DeviceKind_Wireless	无线	Wireless
 DeviceKind_Emulator	模拟器	Emulator
@@ -100,7 +100,7 @@ AddWireless_PairButton.Content	配对	Pair
 AddWireless_PairThenConnect.Text	配对后，使用“无线调试”页面顶部显示的地址和端口连接（与配对端口不同）。	After pairing, connect using the address and port shown at the top of the Wireless debugging screen (different from the pairing port).
 AddWireless_ConnectAddress.Header	连接地址	Connect address
 AddWireless_ConnectAddress.PlaceholderText	192.168.1.20:41231	192.168.1.20:41231
-AddWireless_ScanHint.Text	依次尝试常见模拟器的本地 ADB 端口（MuMu、雷电、夜神、逍遥、蓝叠等）。	Tries the local ADB ports used by common emulators (MuMu, LDPlayer, Nox, MEmu, BlueStacks…).
+AddWireless_ScanHint.Text	先检测正在运行的模拟器（MuMu、雷电、夜神、逍遥、蓝叠、Android Studio）并按各自配置的端口连接，再尝试常见模拟器的本地 ADB 端口。	First detects running emulators (MuMu, LDPlayer, Nox, MEmu, BlueStacks, Android Studio) and connects them on the ports from their own settings, then tries the local ADB ports of common emulators.
 AddWireless_ScanButton.Content	开始扫描	Scan
 AddWireless_PresetsHeader.Text	常见模拟器端口	Common emulator ports
 AddWireless_AddressRequired	请输入地址。	Enter an address.

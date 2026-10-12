@@ -37,8 +37,12 @@ public sealed partial class AiPage : Page
 
     public static Visibility CollapsedIf(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
-    private void OnShowTokenClick(object sender, RoutedEventArgs e) =>
-        TokenBox.PasswordRevealMode = sender is ToggleButton { IsChecked: true } ? PasswordRevealMode.Visible : PasswordRevealMode.Hidden;
+    private void OnShowTokenClick(object sender, RoutedEventArgs e)
+    {
+        var show = sender is ToggleButton { IsChecked: true };
+        TokenBox.PasswordRevealMode = show ? PasswordRevealMode.Visible : PasswordRevealMode.Hidden;
+        ViewModel.TokenVisible = show;
+    }
 
     private void OnCopyTokenClick(object sender, RoutedEventArgs e)
     {

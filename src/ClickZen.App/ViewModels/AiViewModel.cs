@@ -124,6 +124,7 @@ public sealed partial class AiViewModel : ObservableObject, IDisposable
         await _mcp.RegenerateTokenAsync();
         OnPropertyChanged(nameof(Token));
         OnPropertyChanged(nameof(ConfigText));
+        OnPropertyChanged(nameof(ConfigPreview));
         RaiseServerState();
     }
 
@@ -179,10 +180,21 @@ public sealed partial class AiViewModel : ObservableObject, IDisposable
     // ------------------------------------------------------------------ client configuration
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ConfigText), nameof(ConfigHint), nameof(ShowsToken))]
+    [NotifyPropertyChangedFor(nameof(ConfigText), nameof(ConfigPreview), nameof(ConfigHint), nameof(ShowsToken))]
     public partial AiClientOption SelectedClient { get; set; }
 
     public string ConfigText => McpClientConfig.Build(SelectedClient.Kind, _mcp.LocalUrl, Token, ExePath);
+
+    /// <summary>
+    /// What the page shows: <see cref="ConfigText"/> with the token masked unless <see cref="TokenVisible"/>,
+    /// so screenshots and screen sharing do not leak it. Copying always uses the real text.
+    /// </summary>
+    public string ConfigPreview => TokenVisible ? ConfigText : ConfigText.Replace(Token, new string('•', 12), StringComparison.Ordinal);
+
+    /// <summary>Whether the token is shown in clear text (token box and configuration preview).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ConfigPreview))]
+    public partial bool TokenVisible { get; set; }
 
     public string ConfigHint => SelectedClient.Kind switch
     {
@@ -236,6 +248,7 @@ public sealed partial class AiViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(LastError));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(ConfigText));
+        OnPropertyChanged(nameof(ConfigPreview));
     }
 
     public void Dispose()

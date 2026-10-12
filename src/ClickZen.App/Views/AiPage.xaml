@@ -127,7 +127,7 @@
                     <ComboBox x:Uid="Ai_ClientPicker" ItemsSource="{x:Bind ViewModel.Clients}" SelectedItem="{x:Bind ViewModel.SelectedClient, Mode=TwoWay}"
                               DisplayMemberPath="Label" HorizontalAlignment="Stretch" />
                     <TextBlock Text="{x:Bind ViewModel.ConfigHint, Mode=OneWay}" Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
-                    <TextBox Text="{x:Bind ViewModel.ConfigText, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                    <TextBox Text="{x:Bind ViewModel.ConfigPreview, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
                              FontFamily="{StaticResource MonoFontFamily}" FontSize="12" MaxHeight="220"
                              ScrollViewer.VerticalScrollBarVisibility="Auto" />
                     <Grid ColumnSpacing="8">
@@ -149,10 +149,16 @@
             <Border Grid.Row="3" Style="{StaticResource CardBorderStyle}" Padding="0">
                 <Grid>
                     <ListView ItemsSource="{x:Bind ViewModel.CallLines}" SelectionMode="None" Padding="0,4">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                                <Setter Property="MinHeight" Value="0" />
+                                <Setter Property="Padding" Value="12,3" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="x:String">
                                 <TextBlock Text="{x:Bind}" TextWrapping="Wrap" FontFamily="{StaticResource MonoFontFamily}" FontSize="12"
-                                           IsTextSelectionEnabled="True" Margin="0,2" />
+                                           IsTextSelectionEnabled="True" />
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>

@@ -1,0 +1,10 @@
+{
+  "name": "clickzen-promo-renderer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@fontpkg/sarasa-gothic-sc": "0.36.0",
+    "@napi-rs/canvas": "1.1.0"
+  }
+}

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClickZen 2.1 · 逐帧手绘线条沸腾短片 (Cel Animation & Line Boil)</title>
+  <style>
+    :root {
+      --paper: #F4EFE3;
+      --ink: #1B1D24;
+      --emerald: #00B876;
+      --tomato: #EE4B36;
+      --marigold: #F6B922;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      padding: 36px 24px 64px;
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; }
+    .badge {
+      display: inline-block;
+      background: var(--marigold);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--tomato);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-weight: 800;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: clamp(26px, 3.4vw, 42px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .sub {
+      font-size: 16px;
+      opacity: 0.82;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .stage {
+      background: #FFFDF7;
+      border: 4px solid var(--ink);
+      box-shadow: 8px 8px 0 var(--emerald);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    video { display: block; width: 100%; aspect-ratio: 16 / 9; background: var(--paper); }
+    .specs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .card {
+      background: #FFFDF7;
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 4px 4px 0 rgba(27,29,36,0.12);
+    }
+    .card strong { display: block; font-size: 13px; color: var(--tomato); margin-bottom: 4px; }
+    .card span { font-size: 16px; font-weight: 800; }
+    .actions { display: flex; flex-wrap: wrap; gap: 14px; }
+    .btn {
+      display: inline-block;
+      text-decoration: none;
+      color: var(--ink);
+      background: var(--emerald);
+      color: #FFFDF7;
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 800;
+    }
+    .btn.alt { background: #FFFDF7; color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="badge">✦ 手绘风线条沸腾 · ClickZen 2.1 完整介绍 (24fps)</div>
+    <h1>ClickZen 2.1 — 手绘风长介绍</h1>
+    <p class="sub">
+      中文配音 · 手绘风角色与线条沸腾 · 功能分章节介绍 · 暖米色纸张肌理
+    </p>
+    <div class="stage">
+      <video controls preload="metadata" poster="/ClickZen-Cel-Cover.png" src="/ClickZen-Cel-Long.mp4"></video>
+    </div>
+    <div class="specs">
+      <div class="card"><strong>精确规格</strong><span>1920×1080 · 24 fps · 114 秒 (2736 帧)</span></div>
+      <div class="card"><strong>母带响度 (EBU R128)</strong><span>约 -14.3 LUFS · True Peak -1.5 dBTP</span></div>
+      <div class="card"><strong>抽帧与残影节奏</strong><span>手绘风角色 · 一拍二 · 元素承载转场</span></div>
+      <div class="card"><strong>原声配乐与音效</strong><span>144 BPM 拨弦贝斯 + 马林巴 + 帧同步赛璐璐拟音</span></div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="/ClickZen-Cel-Long.mp4" download>下载 114 秒长介绍</a>
+      <a class="btn alt" href="/ClickZen-Cel-Film-10s.mp4" download>下载 10 秒短片</a>
+      <a class="btn alt" href="/ClickZen-Cel-Cover.png" download="ClickZen-Cel-Cover.png">下载手绘错位套色封面 (PNG)</a>
+    </div>
+  </div>
+</body>
+</html>

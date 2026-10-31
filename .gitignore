@@ -50,3 +50,9 @@ venv/
 screenshot_*.png
 raw_events_*.txt
 *.log
+
+# Generated promo renders and intermediate media (deliverables hosted externally)
+/promo/.render/
+/promo/*.mp4
+/video.mp4
+/promo/node_modules/

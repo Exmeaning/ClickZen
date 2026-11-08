@@ -20,39 +20,40 @@ public sealed class FixedRotationResolver(DisplayRotation rotation) : IDisplayRo
 }
 
 /// <summary>
-/// Reads the rotation from <c>dumpsys input</c> (viewport / SurfaceOrientation of the default display), falling
+/// Reads the rotation from <c>dumpsys input</c> (viewport / SurfaceOrientation of the target display), falling
 /// back to <c>dumpsys window displays</c>. Unknown output means <see cref="DisplayRotation.Rotation0"/>.
 /// </summary>
-public sealed class DumpsysRotationResolver(AdbService adb) : IDisplayRotationResolver
+public sealed class DumpsysRotationResolver(AdbService adb, Func<int>? displayId = null) : IDisplayRotationResolver
 {
     public const string InputCommand = "dumpsys input | grep -E 'Viewport|SurfaceOrientation'";
     public const string WindowCommand = "dumpsys window displays | grep -E 'mCurrentRotation|mRotation='";
 
     public async Task<DisplayRotation> GetRotationAsync(string serial, CancellationToken ct)
     {
-        if (DisplayRotationParser.TryParse(await adb.ShellAsync(serial, InputCommand, ct), out var rotation))
+        var targetDisplay = displayId is not null ? Math.Max(0, displayId()) : 0;
+        if (DisplayRotationParser.TryParse(await adb.ShellAsync(serial, InputCommand, ct), out var rotation, targetDisplay))
         {
             return rotation;
         }
 
-        return DisplayRotationParser.TryParse(await adb.ShellAsync(serial, WindowCommand, ct), out rotation)
+        return DisplayRotationParser.TryParse(await adb.ShellAsync(serial, WindowCommand, ct), out rotation, targetDisplay)
             ? rotation
             : DisplayRotation.Rotation0;
     }
 }
 
-/// <summary>Extracts the default display's rotation from various <c>dumpsys</c> formats.</summary>
+/// <summary>Extracts a display's rotation from various <c>dumpsys</c> formats.</summary>
 public static partial class DisplayRotationParser
 {
     /// <summary>
     /// Recognises, in order of preference:
     /// <list type="bullet">
-    /// <item><c>Viewport INTERNAL: displayId=0, … orientation=1, …</c> (dumpsys input, Android 10+)</item>
+    /// <item><c>Viewport …: displayId=&lt;id&gt;, … orientation=1, …</c> (dumpsys input, Android 10+)</item>
     /// <item><c>SurfaceOrientation: 1</c> (dumpsys input, touch mapper)</item>
     /// <item><c>mCurrentRotation=ROTATION_90</c> / <c>mRotation=1</c> (dumpsys window)</item>
     /// </list>
     /// </summary>
-    public static bool TryParse(string? output, out DisplayRotation rotation)
+    public static bool TryParse(string? output, out DisplayRotation rotation, int displayId = 0)
     {
         rotation = DisplayRotation.Rotation0;
         if (string.IsNullOrEmpty(output))
@@ -60,13 +61,34 @@ public static partial class DisplayRotationParser
             return false;
         }
 
-        // Prefer the viewport of display 0; inactive placeholder viewports have displayId=-1.
+        var target = Math.Max(0, displayId).ToString(CultureInfo.InvariantCulture);
+        DisplayRotation? displayZeroFallback = null;
+
+        // Prefer the viewport of target displayId, falling back to display 0; inactive placeholder viewports have displayId=-1.
         foreach (Match m in ViewportRegex().Matches(output))
         {
-            if (TryRotation(m.Groups["r"].Value, out rotation))
+            var id = m.Groups["id"].Value;
+            if (!TryRotation(m.Groups["r"].Value, out var r))
             {
+                continue;
+            }
+
+            if (id == target)
+            {
+                rotation = r;
                 return true;
             }
+
+            if (id == "0" && displayZeroFallback is null)
+            {
+                displayZeroFallback = r;
+            }
+        }
+
+        if (displayZeroFallback is { } zeroRot)
+        {
+            rotation = zeroRot;
+            return true;
         }
 
         foreach (var regex in new[] { SurfaceOrientationRegex(), CurrentRotationRegex(), RotationRegex() })
@@ -106,7 +128,7 @@ public static partial class DisplayRotationParser
         return false;
     }
 
-    [GeneratedRegex(@"Viewport\s+\w+:\s*displayId=0\b[^\n]*?\borientation=(?<r>\d+)")]
+    [GeneratedRegex(@"Viewport\s+\w+:\s*displayId=(?<id>\d+)\b[^\n]*?\borientation=(?<r>\d+)")]
     private static partial Regex ViewportRegex();
 
     [GeneratedRegex(@"SurfaceOrientation:\s*(?<r>\d+)")]

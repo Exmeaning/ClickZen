@@ -141,8 +141,8 @@
                                                 <TextBlock x:Uid="Devices_CurrentBadge" Style="{StaticResource CaptionTextBlockStyle}" />
                                             </Border>
                                         </Grid>
-                                        <TextBlock Grid.Row="1" Text="{x:Bind svc:DeviceUi.Details(Info), Mode=OneWay}"
-                                                   Style="{StaticResource SecondaryCaptionTextBlockStyle}" />
+                                        <TextBlock Grid.Row="1" Text="{x:Bind svc:DeviceUi.EntryDetails(Info, ActiveDisplayId, ForegroundPackage), Mode=OneWay}"
+                                                   Style="{StaticResource SecondaryCaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" />
                                         <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
                                             <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="{x:Bind svc:DeviceUi.StateBrush(Info.State, SessionState), Mode=OneWay}" />
                                             <TextBlock Text="{x:Bind svc:DeviceUi.StateText(Info.State, SessionState, SessionError), Mode=OneWay}"

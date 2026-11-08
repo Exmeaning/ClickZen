@@ -155,7 +155,9 @@ public sealed class McpBackend : IClickZenBackend
             e.Info.Density,
             string.IsNullOrEmpty(e.Info.AndroidVersion) ? null : e.Info.AndroidVersion,
             input,
-            e.SessionError);
+            e.SessionError,
+            e.ForegroundComponent,
+            e.ActiveDisplayId);
     }
 
     public Task<McpStatus> GetStatusAsync(CancellationToken ct) => OnUi(() => new McpStatus(
@@ -508,6 +510,28 @@ public sealed class McpBackend : IClickZenBackend
         return size.IsEmpty && entry.Frames?.Latest is { } f ? f.Size : size;
     });
 
+    public async Task<McpForegroundApp> GetForegroundAppAsync(string? device, CancellationToken ct)
+    {
+        var (entry, serial) = await OnUi(() =>
+        {
+            var e = Resolve(device);
+            var s = e.AdbSerial ?? throw new McpToolException($"{e.Info.DisplayName} has no linked adb device, so the foreground app cannot be queried.");
+            return (e, s);
+        });
+
+        var active = await _hub.RefreshActiveDisplayAsync(entry, ct);
+        var screen = await OnUi(() => entry.ScreenSize);
+        var effectiveSize = !active.Size.IsEmpty ? active.Size : screen;
+        return new McpForegroundApp(
+            serial,
+            active.DisplayId,
+            active.ForegroundPackage,
+            active.ForegroundActivity,
+            active.ForegroundComponent,
+            effectiveSize.Width,
+            effectiveSize.Height);
+    }
+
     public async Task<IReadOnlyList<McpApp>> ListAppsAsync(string? device, bool includeSystem, CancellationToken ct)
     {
         var serial = await AdbSerialAsync(device);
@@ -648,6 +672,7 @@ public sealed class McpBackend : IClickZenBackend
 
     public async Task<string> LaunchAppAsync(string? device, string package, CancellationToken ct)
     {
+        var entry = await OnUi(() => Resolve(device));
         var serial = await AdbSerialAsync(device);
         var output = await _hub.Adb.ShellAsync(serial, $"monkey -p {ShellQuoting.Quote(package)} -c android.intent.category.LAUNCHER 1", TimeSpan.FromSeconds(20), ct);
         if (output.Contains("No activities found", StringComparison.OrdinalIgnoreCase) || output.Contains("monkey aborted", StringComparison.OrdinalIgnoreCase))
@@ -655,13 +680,18 @@ public sealed class McpBackend : IClickZenBackend
             throw new McpToolException($"{package} has no launcher activity or is not installed. Use list_apps to check the package name.");
         }
 
+        // Multi-display emulators (MuMu 12) spawn a secondary virtual display when launching an app; refresh immediately.
+        await Task.Delay(350, ct);
+        _ = await _hub.RefreshActiveDisplayAsync(entry, ct);
         return "";
     }
 
     public async Task StopAppAsync(string? device, string package, CancellationToken ct)
     {
+        var entry = await OnUi(() => Resolve(device));
         var serial = await AdbSerialAsync(device);
         await _hub.Adb.ShellAsync(serial, "am force-stop " + ShellQuoting.Quote(package), ct);
+        _ = await _hub.RefreshActiveDisplayAsync(entry, ct);
     }
 
     private Task<string> AdbSerialAsync(string? device) => OnUi(() =>

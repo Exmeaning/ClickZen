@@ -465,4 +465,18 @@ public sealed class McpServerHostTests : IAsyncLifetime
         Assert.Contains("\"method\":\"screenshotMatch\"", text, StringComparison.Ordinal);
         Assert.Contains("bind-emulator mumu:MuMuPlayer-12.0-0", _backend.Calls);
     }
+
+    [Fact]
+    public async Task Get_foreground_app_returns_package_activity_and_display_id()
+    {
+        await using var client = await ConnectAsync();
+
+        var r = await CallAsync(client, "get_foreground_app");
+
+        Assert.NotEqual(true, r.IsError);
+        var text = Text(r);
+        Assert.Contains("\"package\":\"com.demo.game\"", text, StringComparison.Ordinal);
+        Assert.Contains("\"component\":\"com.demo.game/.MainActivity\"", text, StringComparison.Ordinal);
+        Assert.Contains("foreground ", _backend.Calls);
+    }
 }

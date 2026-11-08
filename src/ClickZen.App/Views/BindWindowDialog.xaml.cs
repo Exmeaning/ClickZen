@@ -2,7 +2,9 @@ using System.Globalization;
 using System.Runtime.InteropServices.WindowsRuntime;
 using ClickZen.App.Services;
 using ClickZen.Core.Devices;
+using ClickZen.Core.Emulators;
 using ClickZen.Core.Geometry;
+using ClickZen.Device.Adb.Parsing;
 using ClickZen.Platform.Capture;
 using ClickZen.Platform.Windows;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,15 +23,26 @@ using Frame = ClickZen.Core.Automation.Frame;
 namespace ClickZen.App.Views;
 
 /// <summary>A row of the window list.</summary>
-public sealed class WindowChoice(DesktopWindowInfo window)
+public sealed class WindowChoice(DesktopWindowInfo window, string? emulatorSummary = null, string? suggestedAdbSerial = null, bool isEmulator = false)
 {
     public DesktopWindowInfo Window { get; } = window;
 
     public string Title => Window.Title;
 
-    public string Details => string.IsNullOrEmpty(Window.ProcessName) ? Window.ClassName : $"{Window.ProcessName}  ·  {Window.ClassName}";
+    public bool IsEmulator { get; } = isEmulator;
 
-    public string Glyph => "\uE737";
+    public string? SuggestedAdbSerial { get; } = suggestedAdbSerial;
+
+    public string Details
+    {
+        get
+        {
+            var baseInfo = string.IsNullOrEmpty(Window.ProcessName) ? Window.ClassName : $"{Window.ProcessName}  ·  {Window.ClassName}";
+            return string.IsNullOrWhiteSpace(emulatorSummary) ? baseInfo : $"{emulatorSummary}  ·  {baseInfo}";
+        }
+    }
+
+    public string Glyph => IsEmulator ? "\uE7F4" : "\uE737";
 }
 
 /// <summary>A row of the linked-adb-device picker (null serial = capture only).</summary>
@@ -250,8 +263,56 @@ public sealed partial class BindWindowDialog : ContentDialog
     private void RefreshWindows()
     {
         var selected = _window?.Handle ?? 0;
+        var emulators = App.Current.Services.GetService<EmulatorService>();
+        var detectedRows = emulators?.Instances.ToList() ?? [];
+        var onlineAdb = _hub.Devices.Where(d => !d.IsWindow && d.Info.State == DeviceAdbState.Online).ToList();
+
         _allWindows.Clear();
-        _allWindows.AddRange(WindowEnumerator.GetVisibleWindows((uint)Environment.ProcessId).Select(w => new WindowChoice(w)));
+        var visible = WindowEnumerator.GetVisibleWindows((uint)Environment.ProcessId);
+        foreach (var w in visible)
+        {
+            var detected = detectedRows.FirstOrDefault(r => r.Instance.WindowHandle == w.Handle)
+                ?? (w.ProcessId != 0 ? detectedRows.FirstOrDefault(r => r.Instance.ProcessId == (int)w.ProcessId) : null);
+            var catalogDef = detected is not null
+                ? EmulatorCatalog.Get(detected.Instance.Kind)
+                : EmulatorCatalog.All.FirstOrDefault(d => d.IsPlayerProcess(w.ProcessName));
+
+            string? summary = null;
+            string? suggestedSerial = null;
+            if (catalogDef is not null)
+            {
+                var parts = new List<string> { EmulatorUi.KindName(catalogDef.Kind) };
+                DeviceEntry? linkedEntry = null;
+                if (detected?.Serial is { } serial)
+                {
+                    suggestedSerial = detected.ConnectedSerial ?? serial;
+                    parts.Add(serial);
+                    linkedEntry = onlineAdb.FirstOrDefault(d => string.Equals(d.Serial, detected.ConnectedSerial ?? serial, StringComparison.OrdinalIgnoreCase));
+                }
+                else if (onlineAdb.Where(d => d.Info.Kind == ConnectionKind.Emulator).ToList() is { Count: 1 } singleEmu)
+                {
+                    suggestedSerial = singleEmu[0].Serial;
+                    parts.Add(singleEmu[0].Serial);
+                    linkedEntry = singleEmu[0];
+                }
+
+                if (linkedEntry?.ForegroundPackage is { Length: > 0 } pkg && !DisplayFocusParser.IsLauncherComponent(pkg))
+                {
+                    parts.Add(pkg);
+                }
+
+                summary = string.Join("  ·  ", parts);
+            }
+
+            _allWindows.Add(new WindowChoice(w, summary, suggestedSerial, catalogDef is not null));
+        }
+
+        _allWindows.Sort((a, b) =>
+        {
+            var emuCmp = b.IsEmulator.CompareTo(a.IsEmulator);
+            return emuCmp != 0 ? emuCmp : string.Compare(a.Title, b.Title, StringComparison.CurrentCultureIgnoreCase);
+        });
+
         ApplyFilter();
 
         if (selected == 0 && _preferredWindow != 0 && _allWindows.Any(c => c.Window.Handle == _preferredWindow))
@@ -262,6 +323,11 @@ public sealed partial class BindWindowDialog : ContentDialog
         if (selected == 0 && _existing is { } p)
         {
             selected = WindowMatcher.FindBestMatch(p, _allWindows.Select(c => c.Window))?.Handle ?? 0;
+        }
+
+        if (selected == 0 && _existing is null && _allWindows.Where(c => c.IsEmulator).ToList() is { Count: 1 } soleEmulator)
+        {
+            selected = soleEmulator[0].Window.Handle;
         }
 
         if (selected != 0 && ((IEnumerable<WindowChoice>)WindowList.ItemsSource).FirstOrDefault(c => c.Window.Handle == selected) is { } again)
@@ -280,7 +346,8 @@ public sealed partial class BindWindowDialog : ContentDialog
         WindowList.ItemsSource = f.Length == 0
             ? _allWindows.ToList()
             : _allWindows.Where(c => c.Title.Contains(f, StringComparison.CurrentCultureIgnoreCase)
-                || c.Window.ProcessName.Contains(f, StringComparison.OrdinalIgnoreCase)).ToList();
+                || c.Window.ProcessName.Contains(f, StringComparison.OrdinalIgnoreCase)
+                || c.Details.Contains(f, StringComparison.OrdinalIgnoreCase)).ToList();
         if (keep is not null && ((List<WindowChoice>)WindowList.ItemsSource).Contains(keep))
         {
             WindowList.SelectedItem = keep;
@@ -299,6 +366,13 @@ public sealed partial class BindWindowDialog : ContentDialog
         if (previous is not null)
         {
             _crop = null; // a crop belongs to the window it was drawn on
+        }
+
+        if (_existing is null && choice.SuggestedAdbSerial is { } suggested
+            && AdbCombo.ItemsSource is IEnumerable<AdbChoice> adbChoices
+            && adbChoices.FirstOrDefault(c => string.Equals(c.Serial, suggested, StringComparison.OrdinalIgnoreCase)) is { } matchChoice)
+        {
+            AdbCombo.SelectedItem = matchChoice;
         }
 
         Problem.IsOpen = false;
@@ -566,7 +640,7 @@ public sealed partial class BindWindowDialog : ContentDialog
 
     private async void OnRefFromAdb(object sender, RoutedEventArgs e) => await ReadRefFromAdbAsync();
 
-    /// <summary>Reads <c>wm size</c> of the linked device and orients it like the picture.</summary>
+    /// <summary>Reads the active display size (or <c>wm size</c>) of the linked device and orients it like the picture.</summary>
     private async Task ReadRefFromAdbAsync()
     {
         if (SelectedAdb is not { } serial)
@@ -576,7 +650,21 @@ public sealed partial class BindWindowDialog : ContentDialog
 
         try
         {
-            var size = (await _hub.Adb.GetDisplaySizeAsync(serial)).Effective;
+            var size = default(SizeI);
+            var active = await _hub.Adb.GetActiveDisplayAsync(serial, _hub.TryGetMuMuPreferredDisplayId(serial));
+            if (active.DisplayId > 0 && !active.Size.IsEmpty)
+            {
+                size = active.Size;
+            }
+            else
+            {
+                size = (await _hub.Adb.GetDisplaySizeAsync(serial)).Effective;
+                if (size.IsEmpty)
+                {
+                    size = active.Size;
+                }
+            }
+
             if (size.IsEmpty)
             {
                 return;

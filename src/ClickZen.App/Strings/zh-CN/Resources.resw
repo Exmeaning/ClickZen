@@ -76,6 +76,7 @@
   <data name="DeviceState_Offline" xml:space="preserve"><value>离线</value></data>
   <data name="DeviceState_Other" xml:space="preserve"><value>不可用</value></data>
   <data name="DeviceState_Ready" xml:space="preserve"><value>已就绪</value></data>
+  <data name="Device_DisplayId" xml:space="preserve"><value>屏幕 {0}</value></data>
   <data name="AdbError_Unauthorized" xml:space="preserve"><value>设备未授权。请在手机弹出的对话框中允许 USB 调试。</value></data>
   <data name="AdbError_Offline" xml:space="preserve"><value>设备离线。请重新插拔数据线或重启 USB 调试。</value></data>
   <data name="AdbError_DeviceNotFound" xml:space="preserve"><value>找不到设备，它可能已断开。</value></data>

@@ -218,4 +218,25 @@ public sealed class ScrcpySessionTests
         var session = new ScrcpySession("s", new FakeTransport([])) { DeviceSizeOverride = new SizeI(1080, 2400) };
         Assert.Equal(new SizeI(1080, 2400), session.DeviceSize);
     }
+
+    [Fact]
+    public async Task SwitchDisplay_reconnects_in_place_on_new_display_id()
+    {
+        var transport = new FakeTransport([]);
+        await using var session = new ScrcpySession("127.0.0.1:16416", transport, new ScrcpySessionOptions { AutoReconnect = false });
+
+        await session.StartAsync(Ct);
+        Assert.Equal(0, session.DisplayId);
+        Assert.Equal(0, transport.Options[0].DisplayId);
+
+        session.SwitchDisplay(2);
+        for (var i = 0; i < 60 && transport.Options.Count < 2; i++)
+        {
+            await Task.Delay(25, Ct);
+        }
+
+        Assert.Equal(2, session.DisplayId);
+        Assert.True(transport.Options.Count >= 2);
+        Assert.Equal(2, transport.Options[^1].DisplayId);
+    }
 }

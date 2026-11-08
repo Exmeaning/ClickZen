@@ -1,13 +1,16 @@
 using System.Collections.ObjectModel;
 using ClickZen.Core.Automation;
 using ClickZen.Core.Devices;
+using ClickZen.Core.Emulators;
 using ClickZen.Core.Geometry;
 using ClickZen.Core.Settings;
 using ClickZen.Device;
 using ClickZen.Device.Adb;
+using ClickZen.Device.Adb.Parsing;
 using ClickZen.Device.Decoding;
 using ClickZen.Device.Scrcpy;
 using ClickZen.Platform.Capture;
+using ClickZen.Platform.Emulators;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
@@ -50,6 +53,35 @@ public sealed partial class DeviceEntry : ObservableObject
     [ObservableProperty]
     public partial bool IsCurrent { get; set; }
 
+    /// <summary>Active Android display id (0 = primary; &gt; 0 = secondary virtual display, e.g. MuMu 12 game tab).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EffectivePhysicalSize), nameof(ScreenSize))]
+    public partial int ActiveDisplayId { get; set; }
+
+    /// <summary>Resolution of <see cref="ActiveDisplayId"/> when &gt; 0, if reported by <c>dumpsys window</c>.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EffectivePhysicalSize), nameof(ScreenSize))]
+    public partial SizeI ActiveDisplaySize { get; set; }
+
+    /// <summary>Currently focused non-launcher (or launcher) Android package name, if known.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ForegroundComponent))]
+    public partial string? ForegroundPackage { get; set; }
+
+    /// <summary>Currently focused Android activity name, if known.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ForegroundComponent))]
+    public partial string? ForegroundActivity { get; set; }
+
+    public string? ForegroundComponent =>
+        string.IsNullOrEmpty(ForegroundPackage) ? null
+        : string.IsNullOrEmpty(ForegroundActivity) ? ForegroundPackage
+        : $"{ForegroundPackage}/{ForegroundActivity}";
+
+    /// <summary>Physical size of the active display (prefers secondary virtual display geometry when active).</summary>
+    public SizeI EffectivePhysicalSize =>
+        ActiveDisplayId > 0 && !ActiveDisplaySize.IsEmpty ? ActiveDisplaySize : Info.PhysicalSize;
+
     public string Serial => Info.Serial;
 
     public bool IsWindow => Profile is not null;
@@ -84,7 +116,7 @@ public sealed partial class DeviceEntry : ObservableObject
                 return !frame.IsEmpty && frame.Width != frame.Height && frame.IsLandscape != r.IsLandscape ? r.Transposed : r;
             }
 
-            return Session is { } s && !s.DeviceSize.IsEmpty ? s.DeviceSize : Info.PhysicalSize;
+            return Session is { } s && !s.DeviceSize.IsEmpty ? s.DeviceSize : EffectivePhysicalSize;
         }
     }
 
@@ -108,9 +140,27 @@ public sealed partial class DeviceEntry : ObservableObject
     partial void OnInfoChanged(DeviceInfo value)
     {
         OnPropertyChanged(nameof(Serial));
+        OnPropertyChanged(nameof(EffectivePhysicalSize));
+        OnPropertyChanged(nameof(ScreenSize));
         if (Session is not null)
         {
-            Session.DeviceSizeOverride = value.PhysicalSize;
+            Session.DeviceSizeOverride = EffectivePhysicalSize;
+        }
+    }
+
+    partial void OnActiveDisplayIdChanged(int value)
+    {
+        if (Session is not null)
+        {
+            Session.DeviceSizeOverride = EffectivePhysicalSize;
+        }
+    }
+
+    partial void OnActiveDisplaySizeChanged(SizeI value)
+    {
+        if (Session is not null)
+        {
+            Session.DeviceSizeOverride = EffectivePhysicalSize;
         }
     }
 }
@@ -135,6 +185,16 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
     private readonly ILocalizer _loc;
     private DispatcherQueue? _ui;
     private bool _ffmpegReady;
+    private volatile string? _mumuInstallHint;
+    private CancellationTokenSource? _displayMonitor;
+
+    internal void SetMuMuInstallHint(string? installDir)
+    {
+        if (!string.IsNullOrWhiteSpace(installDir))
+        {
+            _mumuInstallHint = installDir;
+        }
+    }
 
     public DeviceHub(AdbServerHost server, AdbService adb, DeviceWatcher watcher, AutoConnector autoConnector,
         SettingsService settings, BundledTools tools, IScrcpyTransport transport, ILoggerFactory loggers,
@@ -201,6 +261,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         Sync(_watcher.Devices);
         SyncProfiles();
         StartWindowMonitor();
+        StartDisplayMonitor();
 
         if (_settings.Current.Devices.AutoConnectSaved)
         {
@@ -235,15 +296,15 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             {
                 return new ClickZen.Device.Input.RootSendeventInjector(
                     (cmd, c) => _adb.RootShellAsync(entry.Serial, cmd, c), touch,
-                    () => entry.Info.PhysicalSize,
-                    () => entry.Session is { } s && !s.VideoSize.IsEmpty && s.VideoSize.IsLandscape != entry.Info.PhysicalSize.IsLandscape
+                    () => entry.EffectivePhysicalSize,
+                    () => entry.Session is { } s && !s.VideoSize.IsEmpty && s.VideoSize.IsLandscape != entry.EffectivePhysicalSize.IsLandscape
                         ? ClickZen.Core.Geometry.DisplayRotation.Rotation90
                         : ClickZen.Core.Geometry.DisplayRotation.Rotation0,
                     raw);
             }
 
             _log.LogWarning("No touchscreen found for root input on {Serial}; using adb input as root", entry.Serial);
-            return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: true);
+            return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: true, () => entry.ActiveDisplayId);
         }
 
         if (pref == InputMethodPreference.Scrcpy && entry.Session is { IsControlAvailable: true } session)
@@ -251,7 +312,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             return session.Injector;
         }
 
-        return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel);
+        return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: false, () => entry.ActiveDisplayId);
     }
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<(ClickZen.Device.Input.InputDeviceInfo? Touch, bool Raw)>> _rootInput =
@@ -431,6 +492,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _windowMonitor?.Cancel();
+        _displayMonitor?.Cancel();
         foreach (var e in Devices.ToList())
         {
             await DisconnectAsync(e);

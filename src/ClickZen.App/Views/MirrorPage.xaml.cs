@@ -4,6 +4,7 @@ using ClickZen.App.Services;
 using ClickZen.Core.Input;
 using ClickZen.Core.Persistence;
 using ClickZen.Core.Settings;
+using ClickZen.Device.Adb.Parsing;
 using ClickZen.Device.Scrcpy;
 using ClickZen.Vision;
 using Microsoft.Extensions.DependencyInjection;
@@ -129,8 +130,19 @@ public sealed partial class MirrorPage : Page
         }
 
         var dev = entry.ScreenSize;
-        InfoText.Text = _loc.Format("Mirror_Info", entry.Info.DisplayName, dev.Width, dev.Height,
+        var text = _loc.Format("Mirror_Info", entry.Info.DisplayName, dev.Width, dev.Height,
             picture.Width, picture.Height, Math.Round(frames.Fps));
+        if (entry.ActiveDisplayId > 0)
+        {
+            text += "  ·  " + _loc.Format("Device_DisplayId", entry.ActiveDisplayId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(entry.ForegroundPackage) && !DisplayFocusParser.IsLauncherComponent(entry.ForegroundPackage))
+        {
+            text += "  ·  " + entry.ForegroundPackage;
+        }
+
+        InfoText.Text = text;
     }
 
     // ------------------------------------------------------------------ hover / pick

@@ -26,7 +26,19 @@ public sealed record McpDevice(
     int Density,
     string? AndroidVersion,
     string? InputMethod,
-    string? Error);
+    string? Error,
+    string? ForegroundApp = null,
+    int DisplayId = 0);
+
+/// <summary>Active display and foreground Android application of a device.</summary>
+public sealed record McpForegroundApp(
+    string Device,
+    int DisplayId,
+    string? Package,
+    string? Activity,
+    string? Component,
+    int ScreenWidth,
+    int ScreenHeight);
 
 /// <summary>An encoded screenshot.</summary>
 /// <param name="Data">Encoded image bytes.</param>
@@ -210,6 +222,9 @@ public interface IClickZenBackend
 
     /// <summary>Screen size in the current orientation (input coordinate space).</summary>
     Task<SizeI> GetScreenSizeAsync(string? device, CancellationToken ct);
+
+    /// <summary>Live foreground package/activity and active Android display id (including secondary virtual displays).</summary>
+    Task<McpForegroundApp> GetForegroundAppAsync(string? device, CancellationToken ct);
 
     Task TapAsync(string? device, PointI point, int durationMs, CancellationToken ct);
 

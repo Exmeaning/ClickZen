@@ -85,9 +85,10 @@ public sealed class EmulatorDetector
     // ================================================================== MuMu 12
 
     /// <summary>
-    /// MuMu 12: one player per instance (5.x <c>nx_device\&lt;engine&gt;\shell\MuMuNxDevice.exe</c>, 4.x
-    /// <c>shell\MuMuPlayer.exe</c>) and one <c>MuMuVMMHeadless.exe --comment &lt;vm&gt;</c> per running VM. The VM name
-    /// ("MuMuPlayer-12.0-1") comes from either command line; its port from <c>vms\&lt;vm&gt;\configs\vm_config.json</c>.
+    /// MuMu 12 (4.x / 5.x / 6.x): one player per instance (<c>nx_device\&lt;engine&gt;\shell\MuMuNxDevice.exe -v &lt;index&gt;</c>
+    /// or <c>shell\MuMuPlayer.exe</c>) and one <c>MuMuVMMHeadless.exe --comment &lt;vm&gt;</c> per running VM. Resolves the
+    /// instance from the VM name or <c>-v</c>/<c>--vmindex</c> index, reads <c>vms\&lt;vm&gt;\configs\vm_config.json</c>, and
+    /// falls back to <c>MuMuManager.exe info --vmindex all</c> when elevation hides command lines or VMs live elsewhere.
     /// </summary>
     private List<EmulatorInstance> DetectMuMu(List<ProcessInfo> players, List<ProcessInfo> vms)
     {
@@ -95,20 +96,77 @@ public sealed class EmulatorDetector
         var vmNames = vms
             .Select(v => EmulatorConfigParsers.FindMuMuVmName(CommandLine.Option(CommandLine.Split(v.CommandLine), "--comment") ?? v.CommandLine))
             .OfType<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        var managerCache = new Dictionary<string, IReadOnlyList<MuMuManagerInstanceInfo>>(StringComparer.OrdinalIgnoreCase);
+        IReadOnlyList<MuMuManagerInstanceInfo> GetManagerInfo(string? install)
+        {
+            if (string.IsNullOrEmpty(install))
+            {
+                return [];
+            }
+
+            if (!managerCache.TryGetValue(install, out var cached))
+            {
+                cached = QueryMuMuManager(install);
+                managerCache[install] = cached;
+            }
+
+            return cached;
+        }
+
         var claimed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var claimedIndexes = new HashSet<int>();
+        void Claim(string vmName, int? idx)
+        {
+            claimed.Add(vmName);
+            if ((idx ?? EmulatorConfigParsers.MuMuVmIndex(vmName)) is int i)
+            {
+                claimedIndexes.Add(i);
+            }
+        }
+
         foreach (var p in players)
         {
-            var install = MuMuInstallDir(p.Path);
+            var install = MuMuInstallDir(p.Path) ?? InstallDirsFromRegistry(EmulatorCatalog.MuMu).FirstOrDefault();
             var vm = EmulatorConfigParsers.FindMuMuVmName(p.CommandLine);
+            var cmdIndex = EmulatorConfigParsers.MuMuCommandLineIndex(p.CommandLine);
+            MuMuManagerInstanceInfo? mgrMatch = null;
+
+            if (vm is null && cmdIndex is int explicitIdx)
+            {
+                vm = vmNames.FirstOrDefault(n => EmulatorConfigParsers.MuMuVmIndex(n) == explicitIdx)
+                    ?? (install is not null ? FirstMuMuVm(install, explicitIdx) : null)
+                    ?? SynthesizeMuMuVmName(p.Path, explicitIdx);
+            }
+
             if (vm is null)
             {
-                // No instance on the command line (the main instance started from the shortcut): take an unclaimed VM.
+                // No instance on the command line (started from shortcut without -v, or command line hidden by UAC).
                 var candidates = vmNames.Where(n => !claimed.Contains(n)).ToList();
-                vm = candidates.Count == 1 ? candidates[0]
-                    : candidates.FirstOrDefault(n => EmulatorConfigParsers.MuMuVmIndex(n) == 0)
-                    ?? (install is not null ? FirstMuMuVm(install, 0) : null);
+                if (candidates.Count == 1)
+                {
+                    vm = candidates[0];
+                }
+                else if (candidates.FirstOrDefault(n => EmulatorConfigParsers.MuMuVmIndex(n) == 0) is { } vmZero)
+                {
+                    vm = vmZero;
+                }
+                else if (install is not null)
+                {
+                    var runningMgr = GetManagerInfo(install).Where(m => m.IsRunning && !claimedIndexes.Contains(m.Index)).ToList();
+                    mgrMatch = runningMgr.FirstOrDefault(m => m.ProcessId == p.Id)
+                        ?? (runningMgr.Count == 1 ? runningMgr[0] : runningMgr.FirstOrDefault(m => m.Index == 0) ?? runningMgr.FirstOrDefault());
+                    if (mgrMatch is not null)
+                    {
+                        vm = FirstMuMuVm(install, mgrMatch.Index) ?? SynthesizeMuMuVmName(p.Path, mgrMatch.Index);
+                    }
+                    else
+                    {
+                        vm = FirstUnclaimedMuMuVm(install, claimed, claimedIndexes);
+                    }
+                }
             }
 
             if (vm is null)
@@ -116,24 +174,48 @@ public sealed class EmulatorDetector
                 continue;
             }
 
-            claimed.Add(vm);
-            result.Add(MuMuInstance(vm, install, p));
+            var resolvedIdx = EmulatorConfigParsers.MuMuVmIndex(vm) ?? cmdIndex ?? mgrMatch?.Index;
+            Claim(vm, resolvedIdx);
+            result.Add(MuMuInstance(vm, resolvedIdx, install, p, mgrMatch, GetManagerInfo));
         }
 
         // VMs without a player window (started headless, or the player process could not be read).
         foreach (var vm in vmNames.Where(n => !claimed.Contains(n)))
         {
-            claimed.Add(vm);
-            var install = players.Select(p => MuMuInstallDir(p.Path)).FirstOrDefault(d => d is not null) ?? MuMuInstallFromRegistry(vm);
-            result.Add(MuMuInstance(vm, install, null));
+            var idx = EmulatorConfigParsers.MuMuVmIndex(vm);
+            Claim(vm, idx);
+            var install = players.Select(p => MuMuInstallDir(p.Path)).FirstOrDefault(d => d is not null)
+                ?? MuMuInstallFromRegistry(vm)
+                ?? InstallDirsFromRegistry(EmulatorCatalog.MuMu).FirstOrDefault();
+            result.Add(MuMuInstance(vm, idx, install, null, null, GetManagerInfo));
+        }
+
+        // Headless VMs whose command lines were hidden by MuMuVMMSVC (SYSTEM): ask MuMuManager when VMs are running.
+        if (result.Count == 0 && vms.Count > 0)
+        {
+            foreach (var install in InstallDirsFromRegistry(EmulatorCatalog.MuMu))
+            {
+                foreach (var m in GetManagerInfo(install).Where(x => x.IsRunning && !claimedIndexes.Contains(x.Index)))
+                {
+                    var vm = FirstMuMuVm(install, m.Index) ?? $"MuMuPlayer-12.0-{m.Index.ToString(CultureInfo.InvariantCulture)}";
+                    Claim(vm, m.Index);
+                    result.Add(MuMuInstance(vm, m.Index, install, null, m, GetManagerInfo));
+                }
+            }
         }
 
         return result;
     }
 
-    private EmulatorInstance MuMuInstance(string vm, string? install, ProcessInfo? player)
+    private EmulatorInstance MuMuInstance(
+        string vm,
+        int? index,
+        string? install,
+        ProcessInfo? player,
+        MuMuManagerInstanceInfo? mgrInfo,
+        Func<string?, IReadOnlyList<MuMuManagerInstanceInfo>> getManagerInfo)
     {
-        var index = EmulatorConfigParsers.MuMuVmIndex(vm);
+        index ??= EmulatorConfigParsers.MuMuVmIndex(vm);
         int? port = null;
         string? configPath = null;
         string? name = null;
@@ -153,6 +235,23 @@ public sealed class EmulatorDetector
         }
 
         var source = AdbPortSource.Config;
+        if (port is null && index is int lookupIdx && install is not null)
+        {
+            // VMs may have been relocated to another drive in MuMu Settings; ask MuMuManager if present.
+            mgrInfo ??= getManagerInfo(install).FirstOrDefault(m => m.Index == lookupIdx);
+            if (mgrInfo?.AdbPort is int mgrPort)
+            {
+                port = mgrPort;
+                source = AdbPortSource.Runtime;
+                configPath = null;
+            }
+        }
+
+        if (string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(mgrInfo?.Name))
+        {
+            name = mgrInfo.Name;
+        }
+
         if (port is null && index is int i)
         {
             port = EmulatorCatalog.MuMu.PortForIndex(i);
@@ -169,6 +268,7 @@ public sealed class EmulatorDetector
             InstallDirectory = install,
             ProcessId = player?.Id ?? 0,
             ProcessName = player?.Name ?? "",
+            WindowHandle = mgrInfo?.MainWindowHandle ?? 0,
             AdbPort = port,
             PortSource = port is null ? AdbPortSource.Unknown : source,
             // MuMu takes the next free port when its port is in use.
@@ -185,18 +285,24 @@ public sealed class EmulatorDetector
             return null;
         }
 
+        string? markerFallback = null;
         var dir = Path.GetDirectoryName(playerPath);
-        for (var up = 0; dir is not null && up < 4; up++)
+        for (var up = 0; dir is not null && up < 5; up++)
         {
-            if (_env.DirectoryExists(Path.Combine(dir, "vms")) && IsInstall(EmulatorCatalog.MuMu, dir))
+            if (IsInstall(EmulatorCatalog.MuMu, dir))
             {
-                return dir;
+                if (_env.DirectoryExists(Path.Combine(dir, "vms")))
+                {
+                    return dir;
+                }
+
+                markerFallback ??= dir;
             }
 
             dir = Path.GetDirectoryName(dir);
         }
 
-        return null;
+        return markerFallback;
     }
 
     private string? MuMuInstallFromRegistry(string vm) =>
@@ -206,6 +312,79 @@ public sealed class EmulatorDetector
         _env.GetDirectories(Path.Combine(install, "vms"))
             .Select(Path.GetFileName)
             .FirstOrDefault(n => EmulatorConfigParsers.MuMuVmIndex(n) == index);
+
+    private string? FirstUnclaimedMuMuVm(string install, HashSet<string> claimed, HashSet<int> claimedIndexes)
+    {
+        var dirs = _env.GetDirectories(Path.Combine(install, "vms"))
+            .Select(Path.GetFileName)
+            .OfType<string>()
+            .Select(n => (Name: n, Index: EmulatorConfigParsers.MuMuVmIndex(n)))
+            .Where(x => x.Index is int idx && !claimed.Contains(x.Name) && !claimedIndexes.Contains(idx))
+            .OrderBy(x => x.Index)
+            .ToList();
+
+        // Prefer instance 0 when present; when instance 0 was deleted (e.g. only instance 1 exists), use the sole VM.
+        return dirs.FirstOrDefault(x => x.Index == 0).Name
+            ?? (dirs.Count == 1 ? dirs[0].Name : null);
+    }
+
+    private static string SynthesizeMuMuVmName(string? playerPath, int index)
+    {
+        var engine = "12.0";
+        if (!string.IsNullOrEmpty(playerPath))
+        {
+            // …\nx_device\15.0\shell\MuMuNxDevice.exe → engine "15.0"
+            var shellDir = Path.GetDirectoryName(playerPath);
+            var engineDir = shellDir is null ? null : Path.GetDirectoryName(shellDir);
+            var parentDir = engineDir is null ? null : Path.GetDirectoryName(engineDir);
+            if (parentDir is not null
+                && string.Equals(Path.GetFileName(parentDir), "nx_device", StringComparison.OrdinalIgnoreCase)
+                && Path.GetFileName(engineDir) is { Length: > 0 } ver)
+            {
+                engine = ver;
+            }
+        }
+
+        return string.Create(CultureInfo.InvariantCulture, $"MuMuPlayer-{engine}-{index}");
+    }
+
+    private IReadOnlyList<MuMuManagerInstanceInfo> QueryMuMuManager(string install)
+    {
+        string? exe = null;
+        foreach (var rel in new[] { @"nx_main\MuMuManager.exe", @"shell\MuMuManager.exe", @"nx_main\mumu-cli.exe" })
+        {
+            var candidate = Path.Combine(install, rel);
+            if (_env.FileExists(candidate))
+            {
+                exe = candidate;
+                break;
+            }
+        }
+
+        if (exe is null)
+        {
+            return [];
+        }
+
+        var infoJson = _env.RunCommand(exe, "info --vmindex all");
+        if (string.IsNullOrWhiteSpace(infoJson))
+        {
+            return [];
+        }
+
+        var parsed = EmulatorConfigParsers.ParseMuMuManagerInfo(infoJson);
+        if (parsed.Any(p => p.IsRunning && p.AdbPort is null))
+        {
+            // MuMu v6 can omit adb_port from `info` and expose it via `adb --vmindex all` (MaaFramework #1395).
+            var adbJson = _env.RunCommand(exe, "adb --vmindex all");
+            if (!string.IsNullOrWhiteSpace(adbJson))
+            {
+                parsed = EmulatorConfigParsers.ParseMuMuManagerInfo(infoJson, adbJson);
+            }
+        }
+
+        return parsed;
+    }
 
     // ================================================================== LDPlayer
 
@@ -477,9 +656,27 @@ public sealed class EmulatorDetector
 
     // ================================================================== windows
 
-    /// <summary>The instance's main window: a window of its player process, preferring the known main window class.</summary>
+    /// <summary>The instance's main window: an explicit handle from CLI metadata when present, else a window of its player process.</summary>
     private static EmulatorInstance AttachWindow(EmulatorInstance instance, EmulatorDefinition def, IReadOnlyList<DesktopWindowInfo> windows)
     {
+        if (instance.WindowHandle != 0)
+        {
+            var byHandle = windows.FirstOrDefault(w => w.Handle == instance.WindowHandle);
+            if (byHandle is not null)
+            {
+                return instance with
+                {
+                    ProcessId = instance.ProcessId != 0 ? instance.ProcessId : (int)byHandle.ProcessId,
+                    ProcessName = instance.ProcessName.Length > 0 ? instance.ProcessName : byHandle.ProcessName,
+                    WindowHandle = byHandle.Handle,
+                    WindowTitle = byHandle.Title,
+                    WindowClass = byHandle.ClassName,
+                    WindowMinimized = byHandle.IsMinimized,
+                    DisplayName = instance.DisplayName.Length > 0 ? instance.DisplayName : byHandle.Title,
+                };
+            }
+        }
+
         if (instance.ProcessId == 0)
         {
             return instance;
@@ -491,7 +688,10 @@ public sealed class EmulatorDetector
             return instance;
         }
 
-        var best = own
+        var primary = own.Where(w => !WindowEnumerator.IsAuxiliaryEmulatorWindow(w.Title, w.ClassName)).ToList();
+        var candidates = primary.Count > 0 ? primary : own;
+
+        var best = candidates
             .OrderByDescending(w => def.MainWindowClasses.Contains(w.ClassName, StringComparer.Ordinal))
             .ThenBy(w => w.IsMinimized)
             .ThenBy(w => w.Title.Length)
@@ -586,16 +786,22 @@ public sealed class EmulatorDetector
             }
         }
 
-        const string uninstall = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
-        foreach (var machine in new[] { true, false })
+        foreach (var uninstall in new[]
         {
-            foreach (var sub in _env.GetRegistrySubKeys(machine, uninstall)
-                         .Where(k => def.UninstallKeyPrefixes.Any(p => k.StartsWith(p, StringComparison.OrdinalIgnoreCase))))
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+        })
+        {
+            foreach (var machine in new[] { true, false })
             {
-                var key = uninstall + "\\" + sub;
-                Add(_env.ReadRegistryString(machine, key, "InstallLocation"));
-                Add(ExecutableDirectory(_env.ReadRegistryString(machine, key, "UninstallString")));
-                Add(ExecutableDirectory(_env.ReadRegistryString(machine, key, "DisplayIcon")));
+                foreach (var sub in _env.GetRegistrySubKeys(machine, uninstall)
+                             .Where(k => def.UninstallKeyPrefixes.Any(p => k.StartsWith(p, StringComparison.OrdinalIgnoreCase))))
+                {
+                    var key = uninstall + "\\" + sub;
+                    Add(_env.ReadRegistryString(machine, key, "InstallLocation"));
+                    Add(ExecutableDirectory(_env.ReadRegistryString(machine, key, "UninstallString")));
+                    Add(ExecutableDirectory(_env.ReadRegistryString(machine, key, "DisplayIcon")));
+                }
             }
         }
 

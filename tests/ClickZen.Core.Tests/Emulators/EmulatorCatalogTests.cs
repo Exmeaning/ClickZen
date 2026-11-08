@@ -11,6 +11,8 @@ public sealed class EmulatorCatalogTests
     [InlineData(EmulatorKind.MuMu, 0, 16384)]
     [InlineData(EmulatorKind.MuMu, 1, 16416)]
     [InlineData(EmulatorKind.MuMu, 3, 16480)]
+    [InlineData(EmulatorKind.MuMu, 32, 16388)]
+    [InlineData(EmulatorKind.MuMu, 33, 16420)]
     [InlineData(EmulatorKind.LDPlayer, 0, 5555)]
     [InlineData(EmulatorKind.LDPlayer, 2, 5559)]
     [InlineData(EmulatorKind.Nox, 0, 62001)]

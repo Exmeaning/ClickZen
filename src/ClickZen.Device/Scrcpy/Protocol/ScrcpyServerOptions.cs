@@ -15,6 +15,9 @@ public sealed record ScrcpyServerOptions
     /// <summary>true: PC connects to the device (adb forward); false: device connects to PC (adb reverse).</summary>
     public bool TunnelForward { get; init; }
 
+    /// <summary>Android display id to mirror and inject into (0 = primary display; &gt; 0 = secondary/virtual display, e.g. MuMu game tab).</summary>
+    public int DisplayId { get; init; }
+
     /// <summary>Longest edge of the video, 0 = native.</summary>
     public int MaxSize { get; init; } = 1280;
 
@@ -50,6 +53,11 @@ public sealed record ScrcpyServerOptions
         P("audio", false);
         P("control", Control);
         P("tunnel_forward", TunnelForward);
+        if (DisplayId > 0)
+        {
+            P("display_id", DisplayId);
+        }
+
         if (Video)
         {
             P("video_codec", "h264");

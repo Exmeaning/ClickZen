@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using AdvancedSharpAdbClient;
@@ -432,21 +433,40 @@ public sealed class AdbService : IDisposable
     /// The device screen as PNG via <c>screencap -p</c> (exec service, binary-safe). Used where no live picture exists,
     /// e.g. to find an emulator's Android screen inside its window. Default timeout 15 s.
     /// </summary>
-    public Task<byte[]> ScreencapPngAsync(string serial, CancellationToken ct = default)
+    /// <summary>
+    /// Queries <c>dumpsys window</c> and resolves the active Android display and foreground application (including
+    /// multi-display emulators such as MuMu 12 where games run on a secondary virtual display).
+    /// </summary>
+    public async Task<ActiveDisplayInfo> GetActiveDisplayAsync(string serial, int? preferredDisplayId = null, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(serial);
+        var output = await ShellAsync(serial, "dumpsys window", TimeSpan.FromSeconds(5), ct);
+        return DisplayFocusParser.Parse(output, preferredDisplayId);
+    }
+
+    public Task<byte[]> ScreencapPngAsync(string serial, CancellationToken ct = default) =>
+        ScreencapPngAsync(serial, 0, ct);
+
+    /// <summary>
+    /// Captures a PNG screenshot over <c>exec:screencap</c>, trying <c>-d &lt;displayId&gt;</c> first when
+    /// <paramref name="displayId"/> &gt; 0 and falling back to the primary display if the ROM rejects logical display ids.
+    /// </summary>
+    public Task<byte[]> ScreencapPngAsync(string serial, int displayId, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(serial);
         return RunAsync(serial, "screencap", DefaultShellTimeout, async t =>
         {
-            using var socket = new AdbSocket(_client.EndPoint, null);
-            await socket.SetDeviceAsync(Device(serial), t);
-            await socket.SendAdbRequestAsync("exec:screencap -p", t);
-            _ = await socket.ReadAdbResponseAsync(t);
-            await using var stream = socket.GetShellStream();
-            using var ms = new MemoryStream();
-            await stream.CopyToAsync(ms, t);
+            if (displayId > 0)
+            {
+                var targeted = await ExecScreencapAsync(serial, $"exec:screencap -d {displayId.ToString(CultureInfo.InvariantCulture)} -p", t);
+                if (IsPngHeader(targeted))
+                {
+                    return targeted;
+                }
+            }
 
-            var png = ms.ToArray();
-            if (png.Length < 8 || png[0] != 0x89 || png[1] != (byte)'P' || png[2] != (byte)'N' || png[3] != (byte)'G')
+            var png = await ExecScreencapAsync(serial, "exec:screencap -p", t);
+            if (!IsPngHeader(png))
             {
                 throw new IOException("screencap did not return a PNG image.");
             }
@@ -454,6 +474,21 @@ public sealed class AdbService : IDisposable
             return png;
         }, ct);
     }
+
+    private async Task<byte[]> ExecScreencapAsync(string serial, string request, CancellationToken ct)
+    {
+        using var socket = new AdbSocket(_client.EndPoint, null);
+        await socket.SetDeviceAsync(Device(serial), ct);
+        await socket.SendAdbRequestAsync(request, ct);
+        _ = await socket.ReadAdbResponseAsync(ct);
+        await using var stream = socket.GetShellStream();
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, ct);
+        return ms.ToArray();
+    }
+
+    private static bool IsPngHeader(byte[] bytes) =>
+        bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
 
     /// <summary>Pushes a local file to the device using the sync service.</summary>
     public async Task PushAsync(string serial, string localPath, string remotePath, int mode = DefaultPushMode, CancellationToken ct = default)

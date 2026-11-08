@@ -1,5 +1,6 @@
 using ClickZen.Core.Automation;
 using ClickZen.Core.Devices;
+using ClickZen.Device.Adb.Parsing;
 using ClickZen.Device.Scrcpy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -20,16 +21,20 @@ public static class DeviceUi
         _ => "\uE8EA",                       // CellPhone
     };
 
-    public static string Details(DeviceInfo info)
+    public static string Details(DeviceInfo info) => EntryDetails(info, 0, null);
+
+    public static string EntryDetails(DeviceInfo info, int activeDisplayId, string? foregroundPackage)
     {
-        var parts = new List<string>();
-        parts.Add(info.Kind switch
+        var parts = new List<string>
         {
-            ConnectionKind.Wireless => Loc["DeviceKind_Wireless"],
-            ConnectionKind.Emulator => Loc["DeviceKind_Emulator"],
-            ConnectionKind.Window => Loc["Window_Kind"],
-            _ => Loc["DeviceKind_Usb"],
-        });
+            info.Kind switch
+            {
+                ConnectionKind.Wireless => Loc["DeviceKind_Wireless"],
+                ConnectionKind.Emulator => Loc["DeviceKind_Emulator"],
+                ConnectionKind.Window => Loc["Window_Kind"],
+                _ => Loc["DeviceKind_Usb"],
+            },
+        };
         if (!info.PhysicalSize.IsEmpty)
         {
             parts.Add($"{info.PhysicalSize.Width}×{info.PhysicalSize.Height}");
@@ -38,6 +43,16 @@ public static class DeviceUi
         if (info.Density > 0)
         {
             parts.Add($"{info.Density} dpi");
+        }
+
+        if (activeDisplayId > 0)
+        {
+            parts.Add(Loc.Format("Device_DisplayId", activeDisplayId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(foregroundPackage) && !DisplayFocusParser.IsLauncherComponent(foregroundPackage))
+        {
+            parts.Add(foregroundPackage);
         }
 
         return string.Join("  ·  ", parts);

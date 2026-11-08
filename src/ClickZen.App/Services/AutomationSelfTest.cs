@@ -265,6 +265,12 @@ internal sealed class AutomationSelfTest
     {
         try
         {
+            var active = await hub.Adb.GetActiveDisplayAsync(serial, hub.TryGetMuMuPreferredDisplayId(serial), CancellationToken.None);
+            if (!string.IsNullOrEmpty(active.ForegroundComponent))
+            {
+                return active.ForegroundComponent;
+            }
+
             var text = await hub.Adb.ShellAsync(serial, "dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity'", CancellationToken.None);
             var m = System.Text.RegularExpressions.Regex.Match(text, @"\s(\S+/\S+)\s");
             return m.Success ? m.Groups[1].Value : null;

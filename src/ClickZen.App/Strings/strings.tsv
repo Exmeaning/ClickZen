@@ -75,6 +75,7 @@ DeviceState_Unauthorized	未授权：请在手机上允许 USB 调试	Unauthoriz
 DeviceState_Offline	离线	Offline
 DeviceState_Other	不可用	Unavailable
 DeviceState_Ready	已就绪	Ready
+Device_DisplayId	屏幕 {0}	Display {0}
 AdbError_Unauthorized	设备未授权。请在手机弹出的对话框中允许 USB 调试。	The device is not authorized. Allow USB debugging in the prompt on the phone.
 AdbError_Offline	设备离线。请重新插拔数据线或重启 USB 调试。	The device is offline. Reconnect the cable or toggle USB debugging.
 AdbError_DeviceNotFound	找不到设备，它可能已断开。	Device not found; it may have been disconnected.

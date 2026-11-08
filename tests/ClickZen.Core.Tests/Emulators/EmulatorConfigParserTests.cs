@@ -74,6 +74,75 @@ public sealed class EmulatorConfigParserTests
         Assert.Equal(expected is not null, EmulatorConfigParsers.IsMuMuVmName(name));
     }
 
+    [Theory]
+    [InlineData("\"D:\\Program Files\\Netease\\MuMu\\nx_device\\12.0\\shell\\MuMuNxDevice.exe\" -v 1", 1)]
+    [InlineData("\"D:\\MuMu\\nx_device\\15.0\\shell\\MuMuNxDevice.exe\" --vmindex 2", 2)]
+    [InlineData("MuMuPlayer.exe --index=3", 3)]
+    [InlineData("MuMuNxDevice.exe -v MuMuPlayer-15.0-4", 4)]
+    [InlineData("\"D:\\MuMu\\nx_device\\12.0\\shell\\MuMuNxDevice.exe\"", null)]
+    [InlineData(null, null)]
+    public void MuMu_command_line_index(string? commandLine, int? expected)
+    {
+        Assert.Equal(expected, EmulatorConfigParsers.MuMuCommandLineIndex(commandLine));
+    }
+
+    [Theory]
+    [InlineData(16384, 0)]
+    [InlineData(16385, 0)]
+    [InlineData(16416, 1)]
+    [InlineData(16417, 1)]
+    [InlineData(16480, 3)]
+    [InlineData(16388, 32)]
+    [InlineData(7555, 0)]
+    [InlineData(5555, null)]
+    [InlineData(20000, null)]
+    public void MuMu_port_to_index(int port, int? expected)
+    {
+        Assert.Equal(expected, EmulatorConfigParsers.MuMuPortToIndex(port));
+    }
+
+    [Fact]
+    public void MuMu_manager_info_parses_multi_vm_and_v6_adb_fallback()
+    {
+        const string info = """
+            [INFO] MuMuManager starting...
+            {
+              "0": {
+                "index": "0",
+                "name": "MuMu模拟器12",
+                "is_process_started": false,
+                "is_android_started": false,
+                "main_wnd": "0",
+                "render_wnd": "0"
+              },
+              "1": {
+                "index": "1",
+                "name": "塔塔冒险队专服",
+                "is_process_started": true,
+                "is_android_started": true,
+                "main_wnd": "1a052c",
+                "render_wnd": "2b061e"
+              }
+            }
+            """;
+        const string adb = """
+            {
+              "0": { "adb_host": "127.0.0.1", "adb_port": 16384 },
+              "1": { "adb_host": "127.0.0.1", "adb_port": 16416 }
+            }
+            """;
+
+        var list = EmulatorConfigParsers.ParseMuMuManagerInfo(info, adb);
+        Assert.Equal(2, list.Count);
+        Assert.False(list[0].IsRunning);
+        Assert.True(list[1].IsRunning);
+        Assert.Equal(1, list[1].Index);
+        Assert.Equal("塔塔冒险队专服", list[1].Name);
+        Assert.Equal(16416, list[1].AdbPort);
+        Assert.Equal((nint)0x1a052c, list[1].MainWindowHandle);
+        Assert.Equal((nint)0x2b061e, list[1].RenderWindowHandle);
+    }
+
     [Fact]
     public void VBox_forwarding_rule_for_adb()
     {

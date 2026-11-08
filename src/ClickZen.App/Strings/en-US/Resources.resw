@@ -76,6 +76,7 @@
   <data name="DeviceState_Offline" xml:space="preserve"><value>Offline</value></data>
   <data name="DeviceState_Other" xml:space="preserve"><value>Unavailable</value></data>
   <data name="DeviceState_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Device_DisplayId" xml:space="preserve"><value>Display {0}</value></data>
   <data name="AdbError_Unauthorized" xml:space="preserve"><value>The device is not authorized. Allow USB debugging in the prompt on the phone.</value></data>
   <data name="AdbError_Offline" xml:space="preserve"><value>The device is offline. Reconnect the cable or toggle USB debugging.</value></data>
   <data name="AdbError_DeviceNotFound" xml:space="preserve"><value>Device not found; it may have been disconnected.</value></data>

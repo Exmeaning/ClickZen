@@ -230,6 +230,10 @@ public sealed partial class EmulatorService : ObservableObject
             Installed.Add(i);
         }
 
+        var mumuInstall = result.Running.FirstOrDefault(r => r.Kind == EmulatorKind.MuMu && !string.IsNullOrWhiteSpace(r.InstallDirectory))?.InstallDirectory
+            ?? result.Installed.FirstOrDefault(i => i.Kind == EmulatorKind.MuMu)?.InstallDirectory;
+        _hub.SetMuMuInstallHint(mumuInstall);
+
         RefreshStates();
         OnPropertyChanged(nameof(HasInstances));
     }
@@ -457,11 +461,28 @@ public sealed partial class EmulatorService : ObservableObject
             }
 
             var device = default(SizeI);
+            var activeDisplayId = 0;
             if (serial is not null)
             {
                 try
                 {
-                    device = (await _adb.GetDisplaySizeAsync(serial, ct)).Effective;
+                    var preferredDisplay = i.Kind == EmulatorKind.MuMu && i.Index is int mumuIdx
+                        ? MuMuExternalRenderer.TryGetActiveDisplayId(i.InstallDirectory, mumuIdx)
+                        : null;
+                    var active = await _adb.GetActiveDisplayAsync(serial, preferredDisplay, ct);
+                    activeDisplayId = active.DisplayId;
+                    if (active.DisplayId > 0 && !active.Size.IsEmpty)
+                    {
+                        device = active.Size;
+                    }
+                    else
+                    {
+                        device = (await _adb.GetDisplaySizeAsync(serial, ct)).Effective;
+                        if (device.IsEmpty)
+                        {
+                            device = active.Size;
+                        }
+                    }
                 }
                 catch (AdbException ex)
                 {
@@ -477,7 +498,7 @@ public sealed partial class EmulatorService : ObservableObject
             }
 
             // 3. Where the Android screen is.
-            var area = await LocateScreenAsync(i, frame, device, serial, ct);
+            var area = await LocateScreenAsync(i, frame, device, serial, activeDisplayId, ct);
             var reference = device.IsEmpty ? default : ScreenOrientation.OrientLike(device, area.Crop?.Size ?? frame.Size);
 
             var existing = EmulatorProfileFactory.FindExisting(i, SafeProfiles());
@@ -534,7 +555,7 @@ public sealed partial class EmulatorService : ObservableObject
     }
 
     /// <summary>The best screen area among the locator methods, most reliable first.</summary>
-    private async Task<ScreenArea> LocateScreenAsync(EmulatorInstance i, Frame frame, SizeI device, string? serial, CancellationToken ct)
+    private async Task<ScreenArea> LocateScreenAsync(EmulatorInstance i, Frame frame, SizeI device, string? serial, int displayId, CancellationToken ct)
     {
         var client = frame.Size;
         if (!device.IsEmpty && ScreenAreaLocator.FromAspect(client, device) is { } aspect)
@@ -556,13 +577,25 @@ public sealed partial class EmulatorService : ObservableObject
             }
         }
 
-        // The device's screenshot found in the window picture (most general, needs adb).
+        // The device's screenshot found in the window picture (most general, needs adb or MuMu IPC).
         if (serial is not null && !device.IsEmpty)
         {
             try
             {
-                var png = await _adb.ScreencapPngAsync(serial, ct);
-                var shot = Vision.ImageCodec.MeasurePng(png);
+                byte[]? png = null;
+                SizeI shot = default;
+                if (displayId > 0 && i.Kind == EmulatorKind.MuMu && i.Index is int mumuIdx
+                    && MuMuExternalRenderer.TryCaptureDisplayBgra(i.InstallDirectory, mumuIdx, displayId) is { } ipcShot)
+                {
+                    shot = ipcShot.Size;
+                    png = Vision.ImageCodec.ToPng(new Frame(shot.Width, shot.Height, ipcShot.Bgra));
+                }
+                else
+                {
+                    png = await _adb.ScreencapPngAsync(serial, displayId, ct);
+                    shot = Vision.ImageCodec.MeasurePng(png);
+                }
+
                 if (await Task.Run(() => ScreenAreaLocator.FromScreenshot(frame, png, shot, _matcher), ct) is { } matched)
                 {
                     return matched;

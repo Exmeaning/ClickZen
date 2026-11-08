@@ -65,6 +65,46 @@ public sealed class AdbInputInjectorTests
     {
         Assert.Equal("input tap 10 20", AdbInputInjector.BuildTap(new PointI(10, 20), 60));
         Assert.Equal("input swipe 10 20 10 20 800", AdbInputInjector.BuildTap(new PointI(10, 20), 800));
+        Assert.Equal("input -d 2 tap 10 20", AdbInputInjector.BuildTap(new PointI(10, 20), 60, displayId: 2));
+        Assert.Equal("input -d 2 swipe 10 20 10 20 800", AdbInputInjector.BuildTap(new PointI(10, 20), 800, displayId: 2));
+    }
+
+    [Fact]
+    public async Task Secondary_display_injector_passes_dash_d_flag_to_all_commands()
+    {
+        var commands = new List<string>();
+        var activeDisplay = 2;
+        var injector = new AdbInputInjector((cmd, _) =>
+        {
+            commands.Add(cmd);
+            return Task.FromResult("");
+        }, sdkLevel: 32, () => activeDisplay);
+
+        await injector.TapAsync(new PointI(50, 60), 40, TestContext.Current.CancellationToken);
+        await injector.KeyAsync(4, TestContext.Current.CancellationToken);
+        await injector.TextAsync("hi", TestContext.Current.CancellationToken);
+        await injector.StrokeAsync([P(10, 20, 0), P(10, 120, 40)], TestContext.Current.CancellationToken);
+
+        Assert.Equal("input -d 2 tap 50 60", commands[0]);
+        Assert.Equal("input -d 2 keyevent 4", commands[1]);
+        Assert.Equal("input -d 2 text hi", commands[2]);
+        Assert.StartsWith("input -d 2 motionevent DOWN 10 20", commands[3], StringComparison.Ordinal);
+        Assert.EndsWith("input -d 2 motionevent UP 10 120", commands[3], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DisplayRotationParser_prefers_requested_display_id_over_display0()
+    {
+        const string viewports = """
+            Viewport INTERNAL: displayId=0, uniqueId=local:0, port=0, orientation=1
+            Viewport VIRTUAL: displayId=2, uniqueId=virtual:mumu, port=2, orientation=0
+            """;
+
+        Assert.True(DisplayRotationParser.TryParse(viewports, out var rot0, displayId: 0));
+        Assert.Equal(DisplayRotation.Rotation90, rot0);
+
+        Assert.True(DisplayRotationParser.TryParse(viewports, out var rot2, displayId: 2));
+        Assert.Equal(DisplayRotation.Rotation0, rot2);
     }
 
     [Fact]

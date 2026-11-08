@@ -25,6 +25,7 @@ public enum SessionState
 public sealed record ScrcpySessionOptions
 {
     public bool Video { get; init; } = true;
+    public int DisplayId { get; init; }
     public int MaxSize { get; init; } = 1280;
     public int VideoBitRate { get; init; } = 8_000_000;
     public int MaxFps { get; init; } = 60;
@@ -47,7 +48,11 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
     private readonly ILogger? _logger;
     private readonly IClock _clock;
     private readonly Lock _frameLock = new();
+    private readonly Lock _switchLock = new();
     private readonly CancellationTokenSource _life = new();
+    private CancellationTokenSource? _attemptCts;
+    private volatile int _displayId;
+    private volatile bool _switchingDisplay;
     private Frame? _latest;
     private long _sequence;
     private TaskCompletionSource _frameSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -64,12 +69,16 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
         Serial = serial;
         _transport = transport;
         _options = options ?? new ScrcpySessionOptions();
+        _displayId = Math.Max(0, _options.DisplayId);
         _logger = logger;
         _clock = clock ?? SystemClock.Instance;
         Injector = new ScrcpyTouchInjector(SendAsync, () => _videoSize, () => DeviceSize, _clock);
     }
 
     public string Serial { get; }
+
+    /// <summary>Currently mirrored Android display id (0 = primary, &gt; 0 = secondary/virtual display).</summary>
+    public int DisplayId => _displayId;
 
     public string DeviceName { get; private set; } = "";
 
@@ -183,6 +192,35 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
         await firstAttempt.Task;
     }
 
+    /// <summary>
+    /// Switches the session in place to another Android display id (e.g. when a multi-display emulator such as MuMu 12
+    /// opens or switches a game tab on a virtual display). Consumers keep the same <see cref="ScrcpySession"/> instance.
+    /// </summary>
+    public void SwitchDisplay(int displayId)
+    {
+        var next = Math.Max(0, displayId);
+        CancellationTokenSource? toCancel;
+        lock (_switchLock)
+        {
+            if (_displayId == next)
+            {
+                return;
+            }
+
+            _displayId = next;
+            _switchingDisplay = true;
+            toCancel = _attemptCts;
+        }
+
+        try
+        {
+            toCancel?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
     private async Task RunAsync(TaskCompletionSource firstAttempt, CancellationToken ct)
     {
         var backoff = TimeSpan.FromSeconds(1);
@@ -190,11 +228,22 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
         {
             State = _state == SessionState.Disconnected ? SessionState.Connecting : SessionState.Reconnecting;
             ScrcpyStartResult? started = null;
+            int targetDisplay;
+            CancellationTokenSource attemptCts;
+            lock (_switchLock)
+            {
+                _switchingDisplay = false;
+                targetDisplay = _displayId;
+                attemptCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                _attemptCts = attemptCts;
+            }
+
             try
             {
                 var options = new ScrcpyServerOptions
                 {
                     Scid = ScrcpyServerOptions.NewScid(),
+                    DisplayId = targetDisplay,
                     Video = _options.Video,
                     MaxSize = _options.MaxSize,
                     VideoBitRate = _options.VideoBitRate,
@@ -202,43 +251,73 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
                     StayAwake = _options.StayAwake,
                     ShowTouches = _options.ShowTouches,
                 };
-                started = await _transport.StartAsync(Serial, options, ct);
+                started = await _transport.StartAsync(Serial, options, attemptCts.Token);
                 _connection = started.Connection;
                 DeviceName = started.Connection.DeviceName;
                 LastError = null;
                 backoff = TimeSpan.FromSeconds(1);
                 State = started.Connection.HasVideo ? SessionState.Streaming : SessionState.Connected;
                 firstAttempt.TrySetResult();
-                _logger?.LogInformation("scrcpy session for {Serial} ({Name}) connected, video={Video}", Serial, DeviceName, started.Connection.HasVideo);
+                _logger?.LogInformation("scrcpy session for {Serial} ({Name}) connected on display {DisplayId}, video={Video}",
+                    Serial, DeviceName, targetDisplay, started.Connection.HasVideo);
 
-                using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var tasks = new List<Task> { started.ServerExited, started.Connection.DrainControlAsync(linked.Token) };
+                var tasks = new List<Task> { started.ServerExited, started.Connection.DrainControlAsync(attemptCts.Token) };
                 if (started.Connection.HasVideo)
                 {
-                    tasks.Add(Task.Run(() => PumpVideoAsync(started.Connection, linked.Token), CancellationToken.None));
+                    tasks.Add(Task.Run(() => PumpVideoAsync(started.Connection, attemptCts.Token), CancellationToken.None));
                 }
 
                 var finished = await Task.WhenAny(tasks);
-                await linked.CancelAsync();
-                if (!ct.IsCancellationRequested)
+                await attemptCts.CancelAsync();
+                if (!ct.IsCancellationRequested && !_switchingDisplay)
                 {
                     LastError = finished.Exception?.GetBaseException().Message ?? "Connection closed by the device.";
-                    _logger?.LogWarning("scrcpy session for {Serial} ended: {Error}", Serial, LastError);
+                    _logger?.LogWarning("scrcpy session for {Serial} (display {DisplayId}) ended: {Error}", Serial, targetDisplay, LastError);
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 break;
             }
+            catch (OperationCanceledException) when (_switchingDisplay)
+            {
+                firstAttempt.TrySetResult();
+            }
             catch (Exception ex)
             {
-                LastError = ex.Message;
-                _logger?.LogWarning(ex, "scrcpy session for {Serial} failed to start", Serial);
-                firstAttempt.TrySetResult();
+                if (started is null && targetDisplay > 0)
+                {
+                    // Virtual display may have just closed (e.g. game tab exited); fall back immediately to primary display 0.
+                    _logger?.LogWarning(ex, "scrcpy session for {Serial} could not attach to display {DisplayId}; falling back to display 0",
+                        Serial, targetDisplay);
+                    lock (_switchLock)
+                    {
+                        if (_displayId == targetDisplay)
+                        {
+                            _displayId = 0;
+                            _switchingDisplay = true;
+                        }
+                    }
+                }
+                else
+                {
+                    LastError = ex.Message;
+                    _logger?.LogWarning(ex, "scrcpy session for {Serial} failed to start", Serial);
+                    firstAttempt.TrySetResult();
+                }
             }
             finally
             {
                 _connection = null;
+                lock (_switchLock)
+                {
+                    if (ReferenceEquals(_attemptCts, attemptCts))
+                    {
+                        _attemptCts = null;
+                    }
+                }
+
+                attemptCts.Dispose();
                 if (started is not null)
                 {
                     await started.DisposeAsync();
@@ -248,6 +327,12 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
             if (ct.IsCancellationRequested)
             {
                 break;
+            }
+
+            if (_switchingDisplay)
+            {
+                backoff = TimeSpan.FromSeconds(1);
+                continue;
             }
 
             if (!_options.AutoReconnect)

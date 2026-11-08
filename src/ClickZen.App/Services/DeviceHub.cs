@@ -1,13 +1,16 @@
 using System.Collections.ObjectModel;
 using ClickZen.Core.Automation;
 using ClickZen.Core.Devices;
+using ClickZen.Core.Emulators;
 using ClickZen.Core.Geometry;
 using ClickZen.Core.Settings;
 using ClickZen.Device;
 using ClickZen.Device.Adb;
+using ClickZen.Device.Adb.Parsing;
 using ClickZen.Device.Decoding;
 using ClickZen.Device.Scrcpy;
 using ClickZen.Platform.Capture;
+using ClickZen.Platform.Emulators;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
@@ -50,6 +53,35 @@ public sealed partial class DeviceEntry : ObservableObject
     [ObservableProperty]
     public partial bool IsCurrent { get; set; }
 
+    /// <summary>Active Android display id (0 = primary; &gt; 0 = secondary virtual display, e.g. MuMu 12 game tab).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EffectivePhysicalSize), nameof(ScreenSize))]
+    public partial int ActiveDisplayId { get; set; }
+
+    /// <summary>Resolution of <see cref="ActiveDisplayId"/> when &gt; 0, if reported by <c>dumpsys window</c>.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EffectivePhysicalSize), nameof(ScreenSize))]
+    public partial SizeI ActiveDisplaySize { get; set; }
+
+    /// <summary>Currently focused non-launcher (or launcher) Android package name, if known.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ForegroundComponent))]
+    public partial string? ForegroundPackage { get; set; }
+
+    /// <summary>Currently focused Android activity name, if known.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ForegroundComponent))]
+    public partial string? ForegroundActivity { get; set; }
+
+    public string? ForegroundComponent =>
+        string.IsNullOrEmpty(ForegroundPackage) ? null
+        : string.IsNullOrEmpty(ForegroundActivity) ? ForegroundPackage
+        : $"{ForegroundPackage}/{ForegroundActivity}";
+
+    /// <summary>Physical size of the active display (prefers secondary virtual display geometry when active).</summary>
+    public SizeI EffectivePhysicalSize =>
+        ActiveDisplayId > 0 && !ActiveDisplaySize.IsEmpty ? ActiveDisplaySize : Info.PhysicalSize;
+
     public string Serial => Info.Serial;
 
     public bool IsWindow => Profile is not null;
@@ -84,7 +116,7 @@ public sealed partial class DeviceEntry : ObservableObject
                 return !frame.IsEmpty && frame.Width != frame.Height && frame.IsLandscape != r.IsLandscape ? r.Transposed : r;
             }
 
-            return Session is { } s && !s.DeviceSize.IsEmpty ? s.DeviceSize : Info.PhysicalSize;
+            return Session is { } s && !s.DeviceSize.IsEmpty ? s.DeviceSize : EffectivePhysicalSize;
         }
     }
 
@@ -108,9 +140,27 @@ public sealed partial class DeviceEntry : ObservableObject
     partial void OnInfoChanged(DeviceInfo value)
     {
         OnPropertyChanged(nameof(Serial));
+        OnPropertyChanged(nameof(EffectivePhysicalSize));
+        OnPropertyChanged(nameof(ScreenSize));
         if (Session is not null)
         {
-            Session.DeviceSizeOverride = value.PhysicalSize;
+            Session.DeviceSizeOverride = EffectivePhysicalSize;
+        }
+    }
+
+    partial void OnActiveDisplayIdChanged(int value)
+    {
+        if (Session is not null)
+        {
+            Session.DeviceSizeOverride = EffectivePhysicalSize;
+        }
+    }
+
+    partial void OnActiveDisplaySizeChanged(SizeI value)
+    {
+        if (Session is not null)
+        {
+            Session.DeviceSizeOverride = EffectivePhysicalSize;
         }
     }
 }
@@ -135,6 +185,16 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
     private readonly ILocalizer _loc;
     private DispatcherQueue? _ui;
     private bool _ffmpegReady;
+    private volatile string? _mumuInstallHint;
+    private CancellationTokenSource? _displayMonitor;
+
+    internal void SetMuMuInstallHint(string? installDir)
+    {
+        if (!string.IsNullOrWhiteSpace(installDir))
+        {
+            _mumuInstallHint = installDir;
+        }
+    }
 
     public DeviceHub(AdbServerHost server, AdbService adb, DeviceWatcher watcher, AutoConnector autoConnector,
         SettingsService settings, BundledTools tools, IScrcpyTransport transport, ILoggerFactory loggers,
@@ -201,6 +261,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         Sync(_watcher.Devices);
         SyncProfiles();
         StartWindowMonitor();
+        StartDisplayMonitor();
 
         if (_settings.Current.Devices.AutoConnectSaved)
         {
@@ -235,15 +296,15 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             {
                 return new ClickZen.Device.Input.RootSendeventInjector(
                     (cmd, c) => _adb.RootShellAsync(entry.Serial, cmd, c), touch,
-                    () => entry.Info.PhysicalSize,
-                    () => entry.Session is { } s && !s.VideoSize.IsEmpty && s.VideoSize.IsLandscape != entry.Info.PhysicalSize.IsLandscape
+                    () => entry.EffectivePhysicalSize,
+                    () => entry.Session is { } s && !s.VideoSize.IsEmpty && s.VideoSize.IsLandscape != entry.EffectivePhysicalSize.IsLandscape
                         ? ClickZen.Core.Geometry.DisplayRotation.Rotation90
                         : ClickZen.Core.Geometry.DisplayRotation.Rotation0,
                     raw);
             }
 
             _log.LogWarning("No touchscreen found for root input on {Serial}; using adb input as root", entry.Serial);
-            return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: true);
+            return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: true, () => entry.ActiveDisplayId);
         }
 
         if (pref == InputMethodPreference.Scrcpy && entry.Session is { IsControlAvailable: true } session)
@@ -251,7 +312,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             return session.Injector;
         }
 
-        return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel);
+        return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: false, () => entry.ActiveDisplayId);
     }
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<(ClickZen.Device.Input.InputDeviceInfo? Touch, bool Raw)>> _rootInput =
@@ -298,10 +359,14 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         }
 
         EnsureFfmpeg();
+        var initialDisplay = await ProbeActiveDisplayQuietlyAsync(entry.Serial, ct);
+        ApplyActiveDisplay(entry, initialDisplay, switchSession: false);
+
         var d = _settings.Current.Devices;
         var m = _settings.Current.Mirror;
         var session = new ScrcpySession(entry.Serial, _transport, new ScrcpySessionOptions
         {
+            DisplayId = initialDisplay.DisplayId,
             MaxSize = d.MaxSize,
             VideoBitRate = d.VideoBitRateMbps * 1_000_000,
             MaxFps = d.MaxFps,
@@ -310,7 +375,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             AutoReconnect = d.AutoReconnect,
         }, _loggers.CreateLogger<ScrcpySession>())
         {
-            DeviceSizeOverride = entry.Info.PhysicalSize,
+            DeviceSizeOverride = entry.EffectivePhysicalSize,
         };
         session.StateChanged += (_, s) => Ui(() =>
         {
@@ -322,6 +387,128 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         await session.StartAsync(ct);
         entry.SessionState = session.State;
         entry.SessionError = session.LastError;
+    }
+
+    internal int? TryGetMuMuPreferredDisplayId(string? serial)
+    {
+        if (string.IsNullOrWhiteSpace(serial) || string.IsNullOrWhiteSpace(_mumuInstallHint))
+        {
+            return null;
+        }
+
+        var colon = serial.LastIndexOf(':');
+        if (colon <= 0 || !int.TryParse(serial[(colon + 1)..], out var port))
+        {
+            return null;
+        }
+
+        return EmulatorConfigParsers.MuMuPortToIndex(port) is int idx
+            ? MuMuExternalRenderer.TryGetActiveDisplayId(_mumuInstallHint, idx)
+            : null;
+    }
+
+    public async Task<ActiveDisplayInfo> RefreshActiveDisplayAsync(DeviceEntry entry, CancellationToken ct = default)
+    {
+        var serial = entry.AdbSerial;
+        if (string.IsNullOrWhiteSpace(serial))
+        {
+            return ActiveDisplayInfo.Default;
+        }
+
+        var active = await _adb.GetActiveDisplayAsync(serial, TryGetMuMuPreferredDisplayId(serial), ct);
+        Ui(() =>
+        {
+            var adbEntry = entry.IsWindow ? LinkedAdbDevice(entry) : entry;
+            if (adbEntry is not null)
+            {
+                ApplyActiveDisplay(adbEntry, active, switchSession: true);
+            }
+            else
+            {
+                entry.ActiveDisplayId = active.DisplayId;
+                entry.ActiveDisplaySize = active.Size;
+                entry.ForegroundPackage = active.ForegroundPackage;
+                entry.ForegroundActivity = active.ForegroundActivity;
+            }
+        });
+        return active;
+    }
+
+    private async Task<ActiveDisplayInfo> ProbeActiveDisplayQuietlyAsync(string serial, CancellationToken ct)
+    {
+        try
+        {
+            return await _adb.GetActiveDisplayAsync(serial, TryGetMuMuPreferredDisplayId(serial), ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _log.LogDebug(ex, "Could not query active display for {Serial}", serial);
+            return ActiveDisplayInfo.Default;
+        }
+    }
+
+    private void ApplyActiveDisplay(DeviceEntry adbEntry, ActiveDisplayInfo active, bool switchSession)
+    {
+        adbEntry.ActiveDisplayId = active.DisplayId;
+        adbEntry.ActiveDisplaySize = active.Size;
+        adbEntry.ForegroundPackage = active.ForegroundPackage;
+        adbEntry.ForegroundActivity = active.ForegroundActivity;
+        SyncLinkedWindowForeground(adbEntry);
+
+        if (switchSession && adbEntry.Session is { } session && session.DisplayId != active.DisplayId)
+        {
+            _log.LogInformation("Active display for {Serial} changed {OldDisplay} -> {NewDisplay} ({Foreground}); switching scrcpy stream",
+                adbEntry.Serial, session.DisplayId, active.DisplayId, active.ForegroundComponent ?? "launcher");
+            session.SwitchDisplay(active.DisplayId);
+        }
+    }
+
+    private void StartDisplayMonitor()
+    {
+        _displayMonitor?.Cancel();
+        var cts = new CancellationTokenSource();
+        _displayMonitor = cts;
+        _ = Task.Run(() => RunDisplayMonitorAsync(cts.Token), CancellationToken.None);
+    }
+
+    private async Task RunDisplayMonitorAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(2500));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                List<DeviceEntry> snapshot;
+                try
+                {
+                    snapshot = Devices.ToArray().Where(d => !d.IsWindow && d.Info.State == DeviceAdbState.Online).ToList();
+                }
+                catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+                {
+                    continue;
+                }
+
+                foreach (var entry in snapshot)
+                {
+                    if (ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    try
+                    {
+                        _ = await RefreshActiveDisplayAsync(entry, ct);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        _log.LogDebug(ex, "Active display monitor tick failed for {Serial}", entry.Serial);
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     public async Task DisconnectAsync(DeviceEntry entry)
@@ -379,9 +566,13 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
                 var entry = new DeviceEntry(info);
                 Devices.Add(entry);
                 Current ??= entry;
-                if (info.State == DeviceAdbState.Online && _settings.Current.Mirror.OpenMirrorOnConnect)
+                if (info.State == DeviceAdbState.Online)
                 {
-                    _ = ConnectQuietlyAsync(entry);
+                    _ = RefreshActiveDisplayQuietlyAsync(entry);
+                    if (_settings.Current.Mirror.OpenMirrorOnConnect)
+                    {
+                        _ = ConnectQuietlyAsync(entry);
+                    }
                 }
             }
             else if (existing.Info != info)
@@ -393,14 +584,30 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
                 }
 
                 existing.Info = info;
-                if (cameOnline && _settings.Current.Mirror.OpenMirrorOnConnect)
+                if (cameOnline)
                 {
-                    _ = ConnectQuietlyAsync(existing);
+                    _ = RefreshActiveDisplayQuietlyAsync(existing);
+                    if (_settings.Current.Mirror.OpenMirrorOnConnect)
+                    {
+                        _ = ConnectQuietlyAsync(existing);
+                    }
                 }
             }
         }
 
         RefreshWindowInfos();
+    }
+
+    private async Task RefreshActiveDisplayQuietlyAsync(DeviceEntry entry)
+    {
+        try
+        {
+            _ = await RefreshActiveDisplayAsync(entry);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _log.LogDebug(ex, "Initial active display query failed for {Serial}", entry.Serial);
+        }
     }
 
     private async Task ConnectQuietlyAsync(DeviceEntry entry)
@@ -431,6 +638,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _windowMonitor?.Cancel();
+        _displayMonitor?.Cancel();
         foreach (var e in Devices.ToList())
         {
             await DisconnectAsync(e);

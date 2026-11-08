@@ -118,6 +118,24 @@ public sealed partial class DeviceHub
         foreach (var e in Devices.Where(d => d.IsWindow))
         {
             e.Info = BuildWindowInfo(e.Profile!);
+            if (LinkedAdbDevice(e) is { } linked)
+            {
+                e.ActiveDisplayId = linked.ActiveDisplayId;
+                e.ActiveDisplaySize = linked.ActiveDisplaySize;
+                e.ForegroundPackage = linked.ForegroundPackage;
+                e.ForegroundActivity = linked.ForegroundActivity;
+            }
+        }
+    }
+
+    private void SyncLinkedWindowForeground(DeviceEntry adbEntry)
+    {
+        foreach (var w in Devices.Where(d => d.IsWindow && string.Equals(d.AdbSerial, adbEntry.Serial, StringComparison.OrdinalIgnoreCase)))
+        {
+            w.ActiveDisplayId = adbEntry.ActiveDisplayId;
+            w.ActiveDisplaySize = adbEntry.ActiveDisplaySize;
+            w.ForegroundPackage = adbEntry.ForegroundPackage;
+            w.ForegroundActivity = adbEntry.ForegroundActivity;
         }
     }
 

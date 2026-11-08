@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Text;
 using ClickZen.Platform.Windows;
 using Microsoft.Win32;
 
@@ -36,6 +38,12 @@ public interface IEmulatorEnvironment
 
     /// <summary>Expands environment variables such as %TEMP% and %LOCALAPPDATA%.</summary>
     string ExpandEnvironment(string text);
+
+    /// <summary>
+    /// Runs a short-lived local helper CLI (used only as a fallback for <c>MuMuManager.exe info --vmindex all</c>
+    /// when process command lines are unreadable or VMs live outside the install folder); returns stdout or null.
+    /// </summary>
+    string? RunCommand(string fileName, string arguments, int timeoutMs = 1500) => null;
 }
 
 /// <summary>The real system: processes, files, registry and windows of this PC.</summary>
@@ -145,4 +153,55 @@ public sealed class SystemEmulatorEnvironment : IEmulatorEnvironment
     }
 
     public string ExpandEnvironment(string text) => Environment.ExpandEnvironmentVariables(text);
+
+    public string? RunCommand(string fileName, string arguments, int timeoutMs = 1500)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) || !File.Exists(fileName))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var proc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments,
+                    WorkingDirectory = Path.GetDirectoryName(fileName) ?? "",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    StandardOutputEncoding = Encoding.UTF8,
+                },
+            };
+            if (!proc.Start())
+            {
+                return null;
+            }
+
+            var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+            _ = proc.StandardError.ReadToEndAsync();
+            if (!proc.WaitForExit(Math.Clamp(timeoutMs, 100, 10_000)))
+            {
+                try
+                {
+                    proc.Kill(entireProcessTree: true);
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+                {
+                }
+
+                return null;
+            }
+
+            return stdoutTask.GetAwaiter().GetResult();
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            return null;
+        }
+    }
 }

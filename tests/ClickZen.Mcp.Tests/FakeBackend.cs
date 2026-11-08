@@ -100,6 +100,9 @@ internal sealed class FakeBackend : IClickZenBackend
 
     public Task<SizeI> GetScreenSizeAsync(string? device, CancellationToken ct) => Task.FromResult(Screen);
 
+    public Task<McpForegroundApp> GetForegroundAppAsync(string? device, CancellationToken ct) =>
+        Result($"foreground {device}", new McpForegroundApp(device ?? "emulator-5554", 0, "com.demo.game", ".MainActivity", "com.demo.game/.MainActivity", Screen.Width, Screen.Height));
+
     public Task TapAsync(string? device, PointI point, int durationMs, CancellationToken ct) => Done($"tap {point.X},{point.Y} {durationMs}");
 
     public Task SwipeAsync(string? device, IReadOnlyList<PointI> points, int durationMs, CancellationToken ct) =>

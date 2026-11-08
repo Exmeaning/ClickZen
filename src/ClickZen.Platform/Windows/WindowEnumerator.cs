@@ -1,4 +1,5 @@
 using ClickZen.Core.Devices;
+using ClickZen.Core.Emulators;
 using ClickZen.Platform.Native;
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -18,7 +19,18 @@ public static class WindowEnumerator
     private static readonly HashSet<string> IgnoredClasses = new(StringComparer.Ordinal)
     {
         "Progman", "Shell_TrayWnd", "Shell_SecondaryTrayWnd", "WorkerW", "Windows.UI.Core.CoreWindow",
+        "IME", "Default IME", "MSCTFIME UI", "NVOpenGLPbuffer",
     };
+
+    private static readonly HashSet<string> AuxiliaryTitles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "HintWnd", "MessageWnd", "__wglDummyWindowFodder",
+    };
+
+    /// <summary>True when a window title/class is an invisible/helper popup owned by an emulator process (e.g. MuMu Qt helpers).</summary>
+    public static bool IsAuxiliaryEmulatorWindow(string? title, string? className) =>
+        (!string.IsNullOrEmpty(title) && AuxiliaryTitles.Contains(title.Trim()))
+        || (!string.IsNullOrEmpty(className) && (IgnoredClasses.Contains(className) || className.EndsWith("ToolSaveBits", StringComparison.Ordinal)));
 
     /// <summary>Visible, non-minimized top-level windows with a title (what can be captured right now).</summary>
     public static IReadOnlyList<DesktopWindowInfo> GetVisibleWindows(uint excludeProcessId = 0) => Enumerate(excludeProcessId, includeMinimized: false);
@@ -34,7 +46,7 @@ public static class WindowEnumerator
 
         bool Visit(HWND hwnd)
         {
-            if (hwnd == shell || !PInvoke.IsWindowVisible(hwnd))
+            if (hwnd == shell || !PInvoke.IsWindowVisible(hwnd) || IsCloaked(hwnd))
             {
                 return true;
             }
@@ -45,20 +57,8 @@ public static class WindowEnumerator
                 return true;
             }
 
-            var exStyle = (WINDOW_EX_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
-            if ((exStyle & WINDOW_EX_STYLE.WS_EX_TOOLWINDOW) != 0 || IsCloaked(hwnd))
-            {
-                return true;
-            }
-
-            var title = GetTitle(hwnd);
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                return true;
-            }
-
             var cls = GetClassName(hwnd);
-            if (IgnoredClasses.Contains(cls))
+            if (IgnoredClasses.Contains(cls) || cls.EndsWith("ToolSaveBits", StringComparison.Ordinal))
             {
                 return true;
             }
@@ -73,6 +73,31 @@ public static class WindowEnumerator
             {
                 processName = GetProcessName(pid);
                 names[pid] = processName;
+            }
+
+            var isEmulatorPlayer = !string.IsNullOrEmpty(processName) && EmulatorCatalog.All.Any(d => d.IsPlayerProcess(processName));
+
+            var exStyle = (WINDOW_EX_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
+            if ((exStyle & WINDOW_EX_STYLE.WS_EX_TOOLWINDOW) != 0
+                && !(isEmulatorPlayer && (minimized || HasSubstantialClientArea(hwnd))))
+            {
+                return true;
+            }
+
+            var title = GetTitle(hwnd);
+            if (IsAuxiliaryEmulatorWindow(title, cls))
+            {
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                if (!isEmulatorPlayer || (!minimized && !HasSubstantialClientArea(hwnd)))
+                {
+                    return true;
+                }
+
+                title = processName;
             }
 
             result.Add(new DesktopWindowInfo(hwnd, title, cls, pid, processName, minimized));
@@ -130,6 +155,9 @@ public static class WindowEnumerator
         }
     }
 
+    private static bool HasSubstantialClientArea(HWND hwnd) =>
+        PInvoke.GetClientRect(hwnd, out var rc) && (rc.right - rc.left) >= 200 && (rc.bottom - rc.top) >= 200;
+
     private static unsafe bool IsCloaked(HWND hwnd)
     {
         int cloaked = 0;
@@ -139,17 +167,29 @@ public static class WindowEnumerator
 
     private static unsafe string GetTitle(HWND hwnd)
     {
-        var len = PInvoke.GetWindowTextLength(hwnd);
-        if (len <= 0)
+        char* fast = stackalloc char[512];
+        var n = PInvoke.GetWindowText(hwnd, fast, 512);
+        if (n <= 0)
         {
             return "";
+        }
+
+        if (n < 511)
+        {
+            return new string(fast, 0, n);
+        }
+
+        var len = PInvoke.GetWindowTextLength(hwnd);
+        if (len <= n)
+        {
+            return new string(fast, 0, n);
         }
 
         var buffer = new char[len + 1];
         fixed (char* p = buffer)
         {
-            var n = PInvoke.GetWindowText(hwnd, p, buffer.Length);
-            return new string(p, 0, n);
+            var full = PInvoke.GetWindowText(hwnd, p, buffer.Length);
+            return full > 0 ? new string(p, 0, full) : new string(fast, 0, n);
         }
     }
 

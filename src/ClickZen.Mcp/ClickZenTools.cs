@@ -320,6 +320,14 @@ public sealed partial class ClickZenTools
         return shown.Count == 0 ? "No matching packages." : $"{shown.Count} package(s):\n" + string.Join('\n', shown.Select(a => a.System ? a.Package + " (system)" : a.Package));
     }, cancellationToken);
 
+    [McpServerTool(Name = "get_foreground_app", Title = "Get foreground app", ReadOnly = true, Idempotent = true, Destructive = false, OpenWorld = false)]
+    [McpCapability(McpCapability.Observe)]
+    [Description("Returns the currently focused Android package, activity and display id (handles multi-display emulators such as MuMu 12 where games run on a secondary virtual display). Needs adb.")]
+    public Task<string> GetForegroundApp(
+        [Description("Device id or name from list_devices; omit for the current device.")] string? device = null,
+        CancellationToken cancellationToken = default) =>
+        Run(async ct => McpJson.Serialize(await B.GetForegroundAppAsync(device, ct)), cancellationToken);
+
     // =====================================================================================
     //  Input
     // =====================================================================================

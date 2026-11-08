@@ -204,6 +204,14 @@ public sealed class ScrcpyServerOptionsTests
         var cmd = new ScrcpyServerOptions { Scid = 1, Video = false }.BuildCommand();
         Assert.Contains(" video=false", cmd, StringComparison.Ordinal);
         Assert.DoesNotContain("max_size", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("display_id", cmd, StringComparison.Ordinal);
         Assert.Contains(" scid=00000001", cmd, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Secondary_display_id_is_passed_to_scrcpy_server()
+    {
+        var cmd = new ScrcpyServerOptions { Scid = 2, DisplayId = 2 }.BuildCommand();
+        Assert.Contains(" display_id=2", cmd, StringComparison.Ordinal);
     }
 }

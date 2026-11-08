@@ -76,16 +76,16 @@ public static class EmulatorCatalog
         Id = "mumu12",
         EnglishName = "MuMu Player",
         ChineseName = "MuMu 模拟器 12",
-        // 5.x ("nx"): nx_device\<engine>\shell\MuMuNxDevice.exe per instance; 4.x: shell\MuMuPlayer.exe per instance.
-        PlayerProcesses = ["MuMuNxDevice", "MuMuPlayer"],
+        // 5.x/6.x ("nx"): nx_device\<engine>\shell\MuMuNxDevice.exe per instance; 4.x: shell\MuMuPlayer.exe; legacy: NemuPlayer.exe.
+        PlayerProcesses = ["MuMuNxDevice", "MuMuPlayer", "NemuPlayer"],
         VmProcesses = ["MuMuVMMHeadless"],
         UninstallKeyPrefixes = ["MuMuPlayer", "MuMu Player", "YXArkNights"],
-        InstallMarkers = [@"nx_main\MuMuNxMain.exe", @"shell\MuMuPlayer.exe"],
-        // Official: 16384 + 32 × index (the port moves up by one when it is taken).
-        PortForIndex = i => i >= 0 ? 16384 + 32 * i : null,
+        InstallMarkers = [@"nx_main\MuMuNxMain.exe", @"nx_main\MuMuManager.exe", @"nx_main\mumu-cli.exe", @"shell\MuMuPlayer.exe", @"shell\MuMuManager.exe", @"EmulatorShell\NemuPlayer.exe"],
+        // Official / MAA formula: 16384 + (index % 32) × 32 + (index / 32) × 4 (shifts up by 1 when a port is taken).
+        PortForIndex = i => i >= 0 ? 16384 + (i % 32) * 32 + (i / 32) * 4 : null,
         ScanInstances = 6,
         RenderWindows = [new(null, "nemudisplay"), new("nemuwin", null)],
-        MainWindowClasses = ["Qt5156QWindowIcon", "Qt6QWindowIcon"],
+        MainWindowClasses = ["Qt5156QWindowIcon", "Qt6QWindowIcon", "Qt672QWindowIcon", "Qt5QWindowIcon"],
     };
 
     public static EmulatorDefinition LDPlayer { get; } = new()

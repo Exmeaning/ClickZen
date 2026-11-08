@@ -86,6 +86,265 @@ public static partial class EmulatorConfigParsers
         return m.Success ? m.Value : null;
     }
 
+    /// <summary>
+    /// Instance number in a MuMu player command line: <c>-v 1</c>, <c>--vmindex 1</c>, <c>--index 1</c> (as passed to
+    /// <c>MuMuNxDevice.exe</c> / <c>MuMuPlayer.exe</c> in MuMu 4.x–6.x), or the suffix of a VM directory name.
+    /// </summary>
+    public static int? MuMuCommandLineIndex(string? commandLine)
+    {
+        if (string.IsNullOrWhiteSpace(commandLine))
+        {
+            return null;
+        }
+
+        if (MuMuVmIndex(FindMuMuVmName(commandLine)) is int vmIdx)
+        {
+            return vmIdx;
+        }
+
+        var args = CommandLine.Split(commandLine);
+        foreach (var opt in new[] { "-v", "--vmindex", "--index", "-m" })
+        {
+            var raw = CommandLine.Option(args, opt);
+            if (raw is not null)
+            {
+                if (int.TryParse(raw.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var idx))
+                {
+                    return idx;
+                }
+
+                if (MuMuVmIndex(raw) is int namedIdx)
+                {
+                    return namedIdx;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Inverse of MuMu 12/5/6's port formula (<c>16384 + (index % 32) × 32 + (index / 32) × 4</c>, plus up to +3 conflict
+    /// offset; legacy MuMu 6 single-instance port 7555 → 0). Mirrors MAA's <c>MuMuPortToIndex</c>.
+    /// </summary>
+    public static int? MuMuPortToIndex(int port)
+    {
+        if (port == 7555)
+        {
+            return 0;
+        }
+
+        if (port is < 16384 or >= 17408)
+        {
+            return null;
+        }
+
+        var k = (port - 16384) / 4;
+        var index = ((k & 7) << 5) | (k >> 3);
+        return index is >= 0 and < 256 ? index : null;
+    }
+
+    /// <summary>
+    /// Parses <c>MuMuManager.exe info --vmindex all</c> (and optional <c>MuMuManager.exe adb --vmindex all</c> on MuMu v6
+    /// where <c>info</c> omits <c>adb_port</c>, matching MaaFramework's <c>AdbDeviceWin32Finder</c>).
+    /// </summary>
+    public static IReadOnlyList<MuMuManagerInstanceInfo> ParseMuMuManagerInfo(string? infoJson, string? adbJson = null)
+    {
+        using var infoDoc = ParseJsonAfterBanner(infoJson);
+        if (infoDoc is null || infoDoc.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            return [];
+        }
+
+        var adbPorts = ParseMuMuAdbPorts(adbJson);
+        var root = infoDoc.RootElement;
+        var list = new List<MuMuManagerInstanceInfo>();
+
+        if (IsSingleMuMuVmObject(root))
+        {
+            if (ParseSingleMuMuVm(null, root, adbPorts) is { } single)
+            {
+                list.Add(single);
+            }
+
+            return list;
+        }
+
+        foreach (var prop in root.EnumerateObject())
+        {
+            if (prop.Value.ValueKind == JsonValueKind.Object && ParseSingleMuMuVm(prop.Name, prop.Value, adbPorts) is { } item)
+            {
+                list.Add(item);
+            }
+        }
+
+        return list.OrderBy(i => i.Index).ToList();
+    }
+
+    private static bool IsSingleMuMuVmObject(JsonElement obj) =>
+        obj.TryGetProperty("index", out _)
+        || obj.TryGetProperty("is_process_started", out _)
+        || obj.TryGetProperty("is_android_started", out _)
+        || obj.TryGetProperty("player_state", out _);
+
+    private static MuMuManagerInstanceInfo? ParseSingleMuMuVm(string? key, JsonElement obj, Dictionary<int, int> adbPorts)
+    {
+        int? index = null;
+        if (obj.TryGetProperty("index", out var idxEl))
+        {
+            index = AsNonNegativeInt(idxEl);
+        }
+
+        if (index is null && key is not null && int.TryParse(key, NumberStyles.None, CultureInfo.InvariantCulture, out var keyIdx))
+        {
+            index = keyIdx;
+        }
+
+        if (index is not int vmIndex)
+        {
+            return null;
+        }
+
+        var name = obj.TryGetProperty("name", out var nEl) && nEl.ValueKind == JsonValueKind.String
+            ? NullIfBlank(nEl.GetString())
+            : null;
+        var processStarted = TryGetBool(obj, "is_process_started");
+        var androidStarted = TryGetBool(obj, "is_android_started");
+        var state = obj.TryGetProperty("player_state", out var stEl) && stEl.ValueKind == JsonValueKind.String
+            ? stEl.GetString()
+            : null;
+        var pid = obj.TryGetProperty("pid", out var pidEl) ? AsNonNegativeInt(pidEl) ?? 0 : 0;
+        var headlessPid = obj.TryGetProperty("headless_pid", out var hPidEl) ? AsNonNegativeInt(hPidEl) ?? 0 : 0;
+        var running = processStarted == true
+            || androidStarted == true
+            || string.Equals(state, "start_finished", StringComparison.OrdinalIgnoreCase)
+            || pid > 0;
+
+        int? port = obj.TryGetProperty("adb_port", out var pEl) ? AsPort(pEl) : null;
+        if (port is null && adbPorts.TryGetValue(vmIndex, out var fallbackPort))
+        {
+            port = fallbackPort;
+        }
+
+        if (port is null && adbPorts.TryGetValue(-1, out var singleAdbPort) && vmIndex == 0)
+        {
+            port = singleAdbPort;
+        }
+
+        var mainWnd = obj.TryGetProperty("main_wnd", out var mwEl) ? AsHwnd(mwEl) : 0;
+        var renderWnd = obj.TryGetProperty("render_wnd", out var rwEl) ? AsHwnd(rwEl) : 0;
+
+        return new MuMuManagerInstanceInfo(vmIndex, name, running, port, mainWnd, renderWnd, pid, headlessPid);
+    }
+
+    private static Dictionary<int, int> ParseMuMuAdbPorts(string? adbJson)
+    {
+        var map = new Dictionary<int, int>();
+        using var doc = ParseJsonAfterBanner(adbJson);
+        if (doc is null || doc.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            return map;
+        }
+
+        var root = doc.RootElement;
+        if (root.TryGetProperty("adb_port", out var direct) && AsPort(direct) is int singlePort)
+        {
+            map[-1] = singlePort;
+            if (MuMuPortToIndex(singlePort) is int derivedIdx)
+            {
+                map[derivedIdx] = singlePort;
+            }
+
+            return map;
+        }
+
+        foreach (var prop in root.EnumerateObject())
+        {
+            if (int.TryParse(prop.Name, NumberStyles.None, CultureInfo.InvariantCulture, out var idx)
+                && prop.Value.ValueKind == JsonValueKind.Object
+                && prop.Value.TryGetProperty("adb_port", out var pEl)
+                && AsPort(pEl) is int p)
+            {
+                map[idx] = p;
+            }
+        }
+
+        return map;
+    }
+
+    private static JsonDocument? ParseJsonAfterBanner(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var brace = text.IndexOf('{', StringComparison.Ordinal);
+        return brace < 0 ? null : ParseJson(text[brace..]);
+    }
+
+    private static bool? TryGetBool(JsonElement obj, string prop)
+    {
+        if (!obj.TryGetProperty(prop, out var v))
+        {
+            return null;
+        }
+
+        return v.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Number when v.TryGetInt32(out var n) => n != 0,
+            JsonValueKind.String => v.GetString()?.Trim() switch
+            {
+                "true" or "1" => true,
+                "false" or "0" => false,
+                _ => null,
+            },
+            _ => null,
+        };
+    }
+
+    private static int? AsNonNegativeInt(JsonElement e)
+    {
+        if (e.ValueKind == JsonValueKind.Number && e.TryGetInt32(out var n) && n >= 0)
+        {
+            return n;
+        }
+
+        return e.ValueKind == JsonValueKind.String
+            && int.TryParse(e.GetString()?.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var s)
+            && s >= 0
+                ? s
+                : null;
+    }
+
+    private static nint AsHwnd(JsonElement e)
+    {
+        if (e.ValueKind == JsonValueKind.Number && e.TryGetInt64(out var num) && num > 0)
+        {
+            return (nint)num;
+        }
+
+        if (e.ValueKind != JsonValueKind.String)
+        {
+            return 0;
+        }
+
+        var s = e.GetString()?.Trim();
+        if (string.IsNullOrEmpty(s) || s == "0")
+        {
+            return 0;
+        }
+
+        if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            s = s[2..];
+        }
+
+        return long.TryParse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var hex) && hex > 0 ? (nint)hex : 0;
+    }
+
     [GeneratedRegex(@"^(?:MuMuPlayer(?:Global)?|YXArkNights)-\d+(?:\.\d+)?-(\d+)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex MuMuVmRegex();
 
@@ -403,3 +662,14 @@ public static partial class EmulatorConfigParsers
 
     private static string? NullIfBlank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }
+
+/// <summary>An emulator instance entry reported by <c>MuMuManager.exe info --vmindex all</c>.</summary>
+public sealed record MuMuManagerInstanceInfo(
+    int Index,
+    string? Name,
+    bool IsRunning,
+    int? AdbPort,
+    nint MainWindowHandle,
+    nint RenderWindowHandle,
+    int ProcessId = 0,
+    int HeadlessProcessId = 0);

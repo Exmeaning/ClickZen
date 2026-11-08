@@ -43,7 +43,7 @@ ClickZen 会自动检测这台电脑上正在运行的 Android 模拟器，从�
 
 | 模拟器 | 识别的进程 | 端口来源 | 验证状态 |
 |---|---|---|---|
-| MuMu 模拟器 12（4.x / 5.x，含国际版） | `MuMuNxDevice.exe` / `MuMuPlayer.exe`，以及 `MuMuVMMHeadless.exe --comment <实例>` | `vms\<实例>\configs\vm_config.json` 的 `vm.nat.port_forward.adb.host_port`；4.x 读 `.nemu` 中的转发规则；读不到时按 `16384 + 32 × 序号` 推算 | 配置解析已用本机 5.28 国际版的真实文件验证；运行时检测尚未实机验证 |
+| MuMu 模拟器 12（4.x / 5.x / 6.x，含国际版） | `MuMuNxDevice.exe -v <序号>` / `MuMuPlayer.exe` / `NemuPlayer.exe`，以及 `MuMuVMMHeadless.exe --comment <实例>` | `vms\<实例>\configs\vm_config.json` 的 `vm.nat.port_forward.adb.host_port`；4.x 读 `.nemu`；进程提权或 `vms` 目录迁移时回退到 `MuMuManager.exe info/adb --vmindex all`；仍读不到时按 `16384 + (序号 % 32) × 32 + (序号 / 32) × 4` 推算 | 配置解析与 6.x 多虚拟显示屏（后台保活 / 多标签页 `display_id`）已覆盖 |
 | 雷电模拟器 3 / 4 / 9 / 14 | `dnplayer.exe`，以及 `Ld9BoxHeadless.exe --comment leidian<N>` | 没有端口配置，按 `5555 + 2 × 序号` 推算（adb 会自动识别为 `emulator-(5554 + 2N)`）；ADB 开关读 `vms\config\leidian<N>.config` 的 `basicSettings.adbDebug` | 安装检测与配置格式已用本机雷电 14 验证；运行时检测尚未实机验证 |
 | 夜神模拟器 | `Nox.exe -clone:<实例>` | `bin\BignoxVMS\<实例>\<实例>.vbox` 的转发规则；读不到时按 62001、62025、62026… 推算 | 尚未实机验证 |
 | 逍遥模拟器 | `MEmuHeadless.exe --comment <实例>`、`MEmu.exe` | `MemuHyperv VMs\<实例>\<实例>.memu` 的转发规则；读不到时按 `21503 + 10 × 序号` 推算 | 尚未实机验证 |

@@ -18,6 +18,9 @@ internal sealed class FakeEmulatorEnvironment : IEmulatorEnvironment
     /// <summary>(machine, key, value) → data.</summary>
     public Dictionary<(bool, string, string), string> Registry { get; } = [];
 
+    /// <summary>(exePath, args) → stdout.</summary>
+    public Dictionary<(string, string), string> Commands { get; } = [];
+
     public Dictionary<string, string> Environment { get; } = new(StringComparer.OrdinalIgnoreCase)
     {
         ["TEMP"] = @"C:\Users\me\AppData\Local\Temp",
@@ -80,6 +83,9 @@ internal sealed class FakeEmulatorEnvironment : IEmulatorEnvironment
 
         return text;
     }
+
+    public string? RunCommand(string fileName, string arguments, int timeoutMs = 1500) =>
+        Commands.TryGetValue((fileName, arguments), out var stdout) ? stdout : null;
 }
 
 public sealed class EmulatorDetectorTests
@@ -342,5 +348,90 @@ public sealed class EmulatorDetectorTests
     public void Executable_directory(string command, string? expected)
     {
         Assert.Equal(expected, EmulatorDetector.ExecutableDirectory(command));
+    }
+
+    [Fact]
+    public void MuMu_v6_numeric_dash_v_index_without_instance_zero_or_vm_cmdline()
+    {
+        // Issue #4 scenario: instance 1 (127.0.0.1:16416) started via `-v 1`, instance 0 deleted,
+        // and MuMuVMMHeadless running under MuMuVMMSVC (SYSTEM) with unreadable command line.
+        const string root = @"D:\Program Files\Netease\MuMu";
+        var env = new FakeEmulatorEnvironment();
+        env.AddFile(root + @"\nx_main\MuMuNxMain.exe");
+        env.AddFile(root + @"\vms\MuMuPlayer-12.0-1\configs\vm_config.json",
+            """{"vm":{"nat":{"port_forward":{"adb":{"host_port":"16416"}}}}}""");
+        env.AddFile(root + @"\vms\MuMuPlayer-12.0-1\configs\extra_config.json",
+            """{"playerName":"MuMu模拟器12-1"}""");
+
+        var player = root + @"\nx_device\12.0\shell\MuMuNxDevice.exe";
+        env.AddProcess(4100, player, $"\"{player}\" -v 1");
+        env.AddProcess(4200, @"C:\Program Files\MuMuVMMVbox\Hypervisor\MuMuVMMHeadless.exe", "");
+        env.AddWindow(0x101, 4100, "HintWnd", "Qt5156QWindowToolSaveBits");
+        env.AddWindow(0x102, 4100, "MuMu安卓设备", "Qt5156QWindowIcon");
+
+        var instance = Assert.Single(new EmulatorDetector(env).Detect().Running);
+        Assert.Equal("MuMuPlayer-12.0-1", instance.InstanceKey);
+        Assert.Equal(1, instance.Index);
+        Assert.Equal((16416, AdbPortSource.Config), (instance.AdbPort, instance.PortSource));
+        Assert.Equal((nint)0x102, instance.WindowHandle);
+        Assert.Equal("MuMu模拟器12-1", instance.Name);
+        Assert.True(instance.OwnsSerial("127.0.0.1:16416"));
+    }
+
+    [Fact]
+    public void MuMu_elevated_with_relocated_vms_falls_back_to_MuMuManager_v6()
+    {
+        const string root = @"C:\Program Files\Netease\MuMuPlayer";
+        var mgr = root + @"\nx_main\MuMuManager.exe";
+        var player = root + @"\nx_device\15.0\shell\MuMuNxDevice.exe";
+
+        var env = new FakeEmulatorEnvironment();
+        env.AddFile(mgr);
+        // Elevated process: command line could not be read (only executable path), and vms\ lives on another drive.
+        env.AddProcess(5100, player, $"\"{player}\"");
+        env.AddWindow(0x2A04, 5100, "MuMu安卓设备", "Qt6QWindowIcon");
+        env.Commands[(mgr, "info --vmindex all")] = """
+            {
+              "1": {
+                "index": "1",
+                "name": "明日方舟/塔塔",
+                "is_process_started": true,
+                "is_android_started": true,
+                "main_wnd": "2a04"
+              }
+            }
+            """;
+        env.Commands[(mgr, "adb --vmindex all")] = """
+            {
+              "1": { "adb_host": "127.0.0.1", "adb_port": 16416 }
+            }
+            """;
+
+        var instance = Assert.Single(new EmulatorDetector(env).Detect().Running);
+        Assert.Equal("MuMuPlayer-15.0-1", instance.InstanceKey);
+        Assert.Equal(1, instance.Index);
+        Assert.Equal((16416, AdbPortSource.Runtime), (instance.AdbPort, instance.PortSource));
+        Assert.Equal("明日方舟/塔塔", instance.Name);
+        Assert.Equal((nint)0x2A04, instance.WindowHandle);
+    }
+
+    [Fact]
+    public void MuMuExternalRenderer_locates_sdk_dll_and_flips_rgba_to_bgra()
+    {
+        const string root = @"D:\MuMu";
+        var env = new FakeEmulatorEnvironment();
+        var dll12 = root + @"\nx_device\12.0\shell\sdk\external_renderer_ipc.dll";
+        var dll15 = root + @"\nx_device\15.0\shell\sdk\external_renderer_ipc.dll";
+        env.AddFile(dll12);
+        Assert.Equal(dll12, MuMuExternalRenderer.FindSdkDll(root, env.GetDirectories, env.FileExists));
+
+        env.AddFile(dll15);
+        Assert.Equal(dll15, MuMuExternalRenderer.FindSdkDll(root, env.GetDirectories, env.FileExists));
+
+        // 1x2 bottom-up RGBA: bottom row = (R=10,G=20,B=30,A=255), top row = (R=40,G=50,B=60,A=128).
+        var rgba = new byte[] { 10, 20, 30, 255, 40, 50, 60, 128 };
+        var bgra = MuMuExternalRenderer.ConvertBottomUpRgbaToTopDownBgra(rgba, width: 1, height: 2);
+        // Top-down BGRA: row 0 = top row (B=60,G=50,R=40,A=128), row 1 = bottom row (B=30,G=20,R=10,A=255).
+        Assert.Equal(new byte[] { 60, 50, 40, 128, 30, 20, 10, 255 }, bgra);
     }
 }

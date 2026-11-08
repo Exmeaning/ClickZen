@@ -131,7 +131,7 @@ public sealed class DisplayFocusParserTests
     public async Task AdbService_GetActiveDisplayAsync_parses_dumpsys_window()
     {
         var (client, fake) = FakeAdbClient.Create();
-        using var svc = new AdbService(client);
+        using var svc = new AdbService(client, null, null, new ManualTimeProvider());
         fake.Devices.Add(new DeviceData { Serial = "127.0.0.1:16416", State = DeviceState.Online });
         fake.Shell = (_, cmd, _) => Task.FromResult<IEnumerable<string>>(
             cmd == "dumpsys window"

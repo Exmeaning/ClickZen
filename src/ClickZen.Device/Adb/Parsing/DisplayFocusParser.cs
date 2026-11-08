@@ -37,7 +37,7 @@ public sealed record ActiveDisplayInfo(
     AppComponent? ForegroundApp,
     IReadOnlyList<DisplayFocusEntry> Displays)
 {
-    public static ActiveDisplayInfo Default { get; } = new(0, SizeI.Empty, 0, null, []);
+    public static ActiveDisplayInfo Default { get; } = new(0, default, 0, null, []);
 
     public string? ForegroundPackage => ForegroundApp?.Package;
 

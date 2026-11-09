@@ -23,8 +23,9 @@ public sealed class QrCodeOpticalDecodeTests
         using var gray = new Mat();
         Cv2.CvtColor(bgraMat, gray, ColorConversionCodes.BGRA2GRAY);
 
+        using var straight = new Mat();
         using var detector = new QRCodeDetector();
-        var decoded = detector.DetectAndDecode(gray, out _);
+        var decoded = detector.DetectAndDecode(gray, out _, straight);
 
         Assert.Equal(payload, decoded);
     }
@@ -39,8 +40,9 @@ public sealed class QrCodeOpticalDecodeTests
         using var bgr = new Mat();
         Cv2.CvtColor(bgraMat, bgr, ColorConversionCodes.BGRA2BGR);
 
+        using var straight = new Mat();
         using var detector = new QRCodeDetector();
-        var decoded = detector.DetectAndDecode(bgr, out _);
+        var decoded = detector.DetectAndDecode(bgr, out _, straight);
 
         Assert.Equal(creds.Payload, decoded);
         Assert.True(AdbWirelessQrCredentials.TryParse(decoded, out var roundTripped));

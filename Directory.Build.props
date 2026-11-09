@@ -21,7 +21,13 @@
     <Version Condition="'$(Version)' == ''">2.1.0-dev</Version>
 
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
+    <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)tests\CiFailureReporter.cs" Link="CiFailureReporter.cs" />
+  </ItemGroup>
 
   <!-- Recommended analyzers are noisy for app code; keep the ones that matter as errors. -->
   <PropertyGroup>

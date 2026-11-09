@@ -82,14 +82,57 @@ public sealed class ScrcpyTouchInjector : ITouchInjector
         }
     }
 
+    private long _clipboardSeq;
+
     public async Task KeyAsync(int keyCode, CancellationToken ct)
     {
         await _send(b => ControlMessageWriter.WriteKeycode(b, KeyAction.Down, keyCode), ct);
         await _send(b => ControlMessageWriter.WriteKeycode(b, KeyAction.Up, keyCode), CancellationToken.None);
     }
 
-    public Task TextAsync(string text, CancellationToken ct) =>
-        string.IsNullOrEmpty(text) ? Task.CompletedTask : _send(b => ControlMessageWriter.WriteText(b, text), ct);
+    /// <summary>
+    /// Injects text: pure printable ASCII within <see cref="ControlMessageWriter.InjectTextMaxLength"/> uses
+    /// <c>INJECT_TEXT</c>; non-ASCII text (Chinese/CJK/emoji) or longer strings automatically use
+    /// <c>SET_CLIPBOARD(paste: true)</c> so all Unicode characters land reliably on screen.
+    /// </summary>
+    public Task TextAsync(string text, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return Task.CompletedTask;
+        }
+
+        if (RequiresClipboardPaste(text))
+        {
+            return SetClipboardAsync(text, paste: true, ct);
+        }
+
+        return _send(b => ControlMessageWriter.WriteText(b, text), ct);
+    }
+
+    /// <summary>True when <c>INJECT_TEXT</c> cannot represent <paramref name="text"/> losslessly (non-ASCII or &gt; 300 UTF-8 bytes).</summary>
+    public static bool RequiresClipboardPaste(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return false;
+        }
+
+        if (System.Text.Encoding.UTF8.GetByteCount(text) > ControlMessageWriter.InjectTextMaxLength)
+        {
+            return true;
+        }
+
+        foreach (var ch in text)
+        {
+            if (ch > 0x7E || (ch < 0x20 && ch is not ('\n' or '\t')))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>Mouse-wheel style scroll at a device point.</summary>
     public Task ScrollAsync(PointI point, float hscroll, float vscroll, CancellationToken ct)
@@ -104,8 +147,22 @@ public sealed class ScrcpyTouchInjector : ITouchInjector
 
     public Task RotateAsync(CancellationToken ct) => _send(b => ControlMessageWriter.WriteSimple(b, ControlMessageType.RotateDevice), ct);
 
-    public Task SetClipboardAsync(string text, bool paste, CancellationToken ct) =>
-        _send(b => ControlMessageWriter.WriteSetClipboard(b, Environment.TickCount64, paste, text), ct);
+    public Task SetClipboardAsync(string text, bool paste, CancellationToken ct)
+    {
+        var seq = Interlocked.Increment(ref _clipboardSeq);
+        if (seq <= 0)
+        {
+            seq = Math.Max(1, Environment.TickCount64);
+        }
+
+        return _send(b => ControlMessageWriter.WriteSetClipboard(b, seq, paste, text), ct);
+    }
+
+    /// <summary>Toggles a virtual UHID USB keyboard on the device so Android hides (or restores) the soft on-screen keyboard.</summary>
+    public Task SetHardwareKeyboardAsync(bool enabled, CancellationToken ct) =>
+        enabled
+            ? _send(b => ControlMessageWriter.WriteUhidCreateKeyboard(b), ct)
+            : _send(b => ControlMessageWriter.WriteUhidDestroy(b), ct);
 
     /// <summary>Low-level: one raw touch event (used by the mirror view for live input).</summary>
     public Task SendRawTouchAsync(MotionAction action, int pointerId, PointI devicePoint, CancellationToken ct) =>

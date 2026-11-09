@@ -270,4 +270,40 @@ public sealed class ScrcpyTouchInjectorTimelineTests
 
         Assert.Equal((byte)MotionAction.Up, sent[^1][1]);
     }
+
+    [Fact]
+    public async Task Unicode_and_long_text_automatically_route_through_clipboard_paste_and_uhid_toggles()
+    {
+        var sent = new List<byte[]>();
+        var injector = new ScrcpyTouchInjector((write, _) =>
+        {
+            var buf = new byte[ControlMessageWriter.MaxMessageSize];
+            var n = write(buf);
+            sent.Add(buf[..n]);
+            return Task.CompletedTask;
+        }, () => new SizeI(1080, 2400), () => new SizeI(1080, 2400));
+
+        await injector.TextAsync("hello123", Ct);
+        Assert.Equal((byte)ControlMessageType.InjectText, sent[0][0]);
+
+        await injector.TextAsync("你好，ClickZen 局域网投屏！", Ct);
+        Assert.Equal((byte)ControlMessageType.SetClipboard, sent[1][0]);
+        Assert.Equal(1, sent[1][9]); // paste = true
+
+        await injector.TextAsync(new string('x', 350), Ct);
+        Assert.Equal((byte)ControlMessageType.SetClipboard, sent[2][0]);
+
+        await injector.SetHardwareKeyboardAsync(true, Ct);
+        Assert.Equal((byte)ControlMessageType.UhidCreate, sent[3][0]);
+
+        await injector.SetHardwareKeyboardAsync(false, Ct);
+        Assert.Equal((byte)ControlMessageType.UhidDestroy, sent[4][0]);
+    }
+
+    [Theory]
+    [InlineData("java.lang.SecurityException: Injecting input events requires the caller (or the source of the instrumentation, if any) to have the INJECT_EVENTS permission.", true)]
+    [InlineData("Permission denial: writing to settings requires:android.permission.WRITE_SECURE_SETTINGS", false)]
+    [InlineData("[server] INFO: Device: [Xiaomi] 2304FPN6DC (Android 14)", false)]
+    public void Detects_rom_input_injection_security_exceptions(string line, bool expected) =>
+        Assert.Equal(expected, ScrcpyStartResult.IsInputPermissionError(line));
 }

@@ -66,6 +66,8 @@ public sealed partial class DevicesPage : Page
 
     private void OnSetCurrentClick(object sender, RoutedEventArgs e) => ViewModel.SetCurrentCommand.Execute(Tagged<DeviceEntry>(sender));
 
+    private void OnSwitchWirelessClick(object sender, RoutedEventArgs e) => ViewModel.SwitchUsbToWirelessCommand.Execute(Tagged<DeviceEntry>(sender));
+
     private void OnDisconnectWirelessClick(object sender, RoutedEventArgs e) => ViewModel.DisconnectWirelessCommand.Execute(Tagged<DeviceEntry>(sender));
 
     private void OnConnectSavedClick(object sender, RoutedEventArgs e) => ViewModel.ConnectSavedCommand.Execute(Tagged<SavedDeviceItem>(sender));

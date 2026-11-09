@@ -36,6 +36,19 @@ public sealed class ScrcpyStartResult : IAsyncDisposable
     /// <summary>Completes when the device-side server process ends.</summary>
     public Task ServerExited { get; }
 
+    /// <summary>Fired when scrcpy-server reports that Android rejected control input (<c>INJECT_EVENTS</c> / SecurityException).</summary>
+    public event Action<string>? InputRejected;
+
+    public void NotifyInputRejected(string reason) => InputRejected?.Invoke(reason);
+
+    /// <summary>Detects ROM security permission errors (Xiaomi HyperOS/MIUI, VIVO, OPPO) in scrcpy-server stdout.</summary>
+    public static bool IsInputPermissionError(string? line) =>
+        !string.IsNullOrEmpty(line)
+        && (line.Contains("INJECT_EVENTS", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("Injecting input events requires", StringComparison.OrdinalIgnoreCase)
+            || (line.Contains("SecurityException", StringComparison.OrdinalIgnoreCase)
+                && line.Contains("inject", StringComparison.OrdinalIgnoreCase)));
+
     public async ValueTask DisposeAsync()
     {
         await Connection.DisposeAsync();
@@ -85,10 +98,17 @@ public sealed class AdbScrcpyTransport : IScrcpyTransport
         var remote = "localabstract:" + options.SocketName;
         var serverCts = new CancellationTokenSource();
         Task? server = null;
+        ScrcpyStartResult? result = null;
         try
         {
             await _adb.CreateReverseAsync(serial, remote, $"tcp:{port}", ct: ct);
-            server = RunServerAsync(serial, options, serverCts.Token);
+            server = RunServerAsync(serial, options, line =>
+            {
+                if (ScrcpyStartResult.IsInputPermissionError(line))
+                {
+                    result?.NotifyInputRejected(line);
+                }
+            }, serverCts.Token);
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(ConnectTimeout);
@@ -101,13 +121,14 @@ public sealed class AdbScrcpyTransport : IScrcpyTransport
 
             var connection = await accept;
             listener.Stop();
-            return new ScrcpyStartResult(connection, server, async () =>
+            result = new ScrcpyStartResult(connection, server, async () =>
             {
                 await serverCts.CancelAsync();
                 await IgnoreErrors(_adb.RemoveReverseAsync(serial, remote, CancellationToken.None));
                 await IgnoreErrors(server);
                 serverCts.Dispose();
             });
+            return result;
         }
         catch
         {
@@ -129,19 +150,27 @@ public sealed class AdbScrcpyTransport : IScrcpyTransport
         var serverCts = new CancellationTokenSource();
         var port = 0;
         Task? server = null;
+        ScrcpyStartResult? result = null;
         try
         {
             port = await _adb.CreateForwardAsync(serial, "tcp:0", "localabstract:" + options.SocketName, ct: ct);
-            server = RunServerAsync(serial, options, serverCts.Token);
+            server = RunServerAsync(serial, options, line =>
+            {
+                if (ScrcpyStartResult.IsInputPermissionError(line))
+                {
+                    result?.NotifyInputRejected(line);
+                }
+            }, serverCts.Token);
             var connection = await ScrcpyConnection.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port), options.Video, ConnectTimeout, ct);
             var p = port;
-            return new ScrcpyStartResult(connection, server, async () =>
+            result = new ScrcpyStartResult(connection, server, async () =>
             {
                 await serverCts.CancelAsync();
                 await IgnoreErrors(_adb.RemoveForwardAsync(serial, p, CancellationToken.None));
                 await IgnoreErrors(server);
                 serverCts.Dispose();
             });
+            return result;
         }
         catch
         {
@@ -161,7 +190,7 @@ public sealed class AdbScrcpyTransport : IScrcpyTransport
         }
     }
 
-    private Task RunServerAsync(string serial, ScrcpyServerOptions options, CancellationToken ct) =>
+    private Task RunServerAsync(string serial, ScrcpyServerOptions options, Action<string>? onLine, CancellationToken ct) =>
         Task.Run(async () =>
         {
             try
@@ -171,6 +200,7 @@ public sealed class AdbScrcpyTransport : IScrcpyTransport
                     if (!string.IsNullOrWhiteSpace(line))
                     {
                         _logger?.LogDebug("[scrcpy-server {Serial}] {Line}", serial, line);
+                        onLine?.Invoke(line);
                     }
                 }, ct);
             }

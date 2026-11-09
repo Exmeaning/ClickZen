@@ -58,6 +58,7 @@
   <data name="Devices_StartMirror.Content" xml:space="preserve"><value>Start mirroring</value></data>
   <data name="Devices_StopMirror.Content" xml:space="preserve"><value>Stop mirroring</value></data>
   <data name="Devices_SetCurrent.Content" xml:space="preserve"><value>Set as current</value></data>
+  <data name="Devices_SwitchWireless.Content" xml:space="preserve"><value>Switch to Wi-Fi</value></data>
   <data name="Devices_DisconnectWireless.Content" xml:space="preserve"><value>Disconnect</value></data>
   <data name="Devices_SavedHeader.Text" xml:space="preserve"><value>Saved wireless devices</value></data>
   <data name="Devices_SavedEmpty.Text" xml:space="preserve"><value>Give a wireless device a name when connecting to save it for one-click or automatic reconnection.</value></data>
@@ -66,6 +67,9 @@
   <data name="Devices_RemoveSaved.ToolTipService.ToolTip" xml:space="preserve"><value>Remove</value></data>
   <data name="Devices_Connected" xml:space="preserve"><value>Connected to {0}</value></data>
   <data name="Devices_Disconnected" xml:space="preserve"><value>Disconnected {0}</value></data>
+  <data name="Devices_UsbSwitchedWireless" xml:space="preserve"><value>Wireless ADB enabled and connected to {0}; you can unplug USB now</value></data>
+  <data name="Devices_InputSwitchedToRoot" xml:space="preserve"><value>System blocked standard touch injection; switched to Root fast injection</value></data>
+  <data name="Devices_InputPermissionHint" xml:space="preserve"><value>System blocked touch injection: enable "USB debugging (Security settings)" or "Disable permission monitoring" in Developer options</value></data>
   <data name="Devices_Paired" xml:space="preserve"><value>Paired. Now enter the IP address and port shown on the phone's Wireless debugging screen to connect.</value></data>
   <data name="Devices_ScanNone" xml:space="preserve"><value>No local emulators found. Make sure the emulator is running with ADB enabled.</value></data>
   <data name="Devices_ScanFound" xml:space="preserve"><value>Connected {0} emulator(s).</value></data>
@@ -84,9 +88,20 @@
   <data name="AdbError_ServerStartFailed" xml:space="preserve"><value>The ADB server could not be started.</value></data>
   <data name="AdbError_ConnectionRefused" xml:space="preserve"><value>Connection refused. Check that wireless debugging is on and the address is correct.</value></data>
   <data name="AddWireless_Dialog.Title" xml:space="preserve"><value>Add wireless device</value></data>
+  <data name="AddWireless_TabQr.Text" xml:space="preserve"><value>QR &amp; LAN</value></data>
   <data name="AddWireless_TabDirect.Text" xml:space="preserve"><value>Connect by IP</value></data>
   <data name="AddWireless_TabPair.Text" xml:space="preserve"><value>Pair with code</value></data>
   <data name="AddWireless_TabScan.Text" xml:space="preserve"><value>Scan emulators</value></data>
+  <data name="AddWireless_QrHint.Text" xml:space="preserve"><value>Android 11+: on the phone open Developer options -&gt; Wireless debugging -&gt; Pair device with QR code and scan below to pair and connect automatically.</value></data>
+  <data name="AddWireless_QrRefresh.Content" xml:space="preserve"><value>New QR code</value></data>
+  <data name="AddWireless_QrWaiting" xml:space="preserve"><value>Waiting for phone to scan…</value></data>
+  <data name="AddWireless_QrPairing" xml:space="preserve"><value>Phone found at {0}, pairing…</value></data>
+  <data name="AddWireless_QrConnecting" xml:space="preserve"><value>Paired; connecting to wireless debugging port…</value></data>
+  <data name="AddWireless_QrPairedManualPort" xml:space="preserve"><value>Paired, but no connect port was broadcast; enter the connect address on the Pair tab.</value></data>
+  <data name="AddWireless_QrFailed" xml:space="preserve"><value>QR pairing did not finish; generate a new QR code and try again.</value></data>
+  <data name="AddWireless_LanHeader.Text" xml:space="preserve"><value>Discovered on LAN (mDNS)</value></data>
+  <data name="AddWireless_LanRefresh.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="AddWireless_LanEmpty.Text" xml:space="preserve"><value>No wireless debugging broadcasts found on LAN yet. Turn on Wireless debugging on the phone to appear here.</value></data>
   <data name="AddWireless_DirectHint.Text" xml:space="preserve"><value>For devices with TCP debugging enabled (adb tcpip) or emulators on the network. Port defaults to 5555.</value></data>
   <data name="AddWireless_Address.Header" xml:space="preserve"><value>Address</value></data>
   <data name="AddWireless_Address.PlaceholderText" xml:space="preserve"><value>192.168.1.20:5555</value></data>
@@ -684,6 +699,7 @@
   <data name="Settings_Devices_VideoBitRateMbps" xml:space="preserve"><value>Bit rate (Mbps)</value></data>
   <data name="Settings_Devices_MaxFps" xml:space="preserve"><value>Maximum FPS</value></data>
   <data name="Settings_Devices_InputMethod" xml:space="preserve"><value>Input method</value></data>
+  <data name="Settings_Devices_SuppressSoftKeyboard" xml:space="preserve"><value>Suppress on-screen soft keyboard (UHID hardware keyboard)</value></data>
   <data name="Settings_Mirror_HighQualityScaling" xml:space="preserve"><value>High-quality scaling</value></data>
   <data name="Settings_Mirror_ShowTouches" xml:space="preserve"><value>Show touches</value></data>
   <data name="Settings_Mirror_StayAwake" xml:space="preserve"><value>Stay awake</value></data>

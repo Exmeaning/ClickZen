@@ -57,6 +57,7 @@ Devices_CurrentBadge.Text	当前设备	Current
 Devices_StartMirror.Content	开始投屏	Start mirroring
 Devices_StopMirror.Content	停止投屏	Stop mirroring
 Devices_SetCurrent.Content	设为当前	Set as current
+Devices_SwitchWireless.Content	转为无线	Switch to Wi-Fi
 Devices_DisconnectWireless.Content	断开	Disconnect
 Devices_SavedHeader.Text	已保存的无线设备	Saved wireless devices
 Devices_SavedEmpty.Text	连接无线设备时填写名称即可保存，之后可一键连接或开机自动连接。	Give a wireless device a name when connecting to save it for one-click or automatic reconnection.
@@ -65,6 +66,9 @@ Devices_Connect.Content	连接	Connect
 Devices_RemoveSaved.ToolTipService.ToolTip	删除	Remove
 Devices_Connected	已连接 {0}	Connected to {0}
 Devices_Disconnected	已断开 {0}	Disconnected {0}
+Devices_UsbSwitchedWireless	已开启无线调试并连接 {0}，现在可拔下数据线	Wireless ADB enabled and connected to {0}; you can unplug USB now
+Devices_InputSwitchedToRoot	系统拦截了普通模拟点击，已自动切换至 Root 极速注入	System blocked standard touch injection; switched to Root fast injection
+Devices_InputPermissionHint	系统拦截了模拟点击：请在手机“开发者选项”中开启“USB 调试（安全设置）”或“禁止权限监控”	System blocked touch injection: enable "USB debugging (Security settings)" or "Disable permission monitoring" in Developer options
 Devices_Paired	配对成功。请在下方输入手机“无线调试”页面上显示的 IP 地址和端口完成连接。	Paired. Now enter the IP address and port shown on the phone's Wireless debugging screen to connect.
 Devices_ScanNone	没有发现本地模拟器。请确认模拟器已启动并开启了 ADB 调试。	No local emulators found. Make sure the emulator is running with ADB enabled.
 Devices_ScanFound	已连接 {0} 个模拟器。	Connected {0} emulator(s).
@@ -84,9 +88,20 @@ AdbError_ServerStartFailed	ADB 服务无法启动。	The ADB server could not be
 AdbError_ConnectionRefused	连接被拒绝。请确认设备已开启无线调试且地址正确。	Connection refused. Check that wireless debugging is on and the address is correct.
 # ---- Add wireless dialog ----
 AddWireless_Dialog.Title	添加无线设备	Add wireless device
+AddWireless_TabQr.Text	扫码与局域网	QR & LAN
 AddWireless_TabDirect.Text	IP 直连	Connect by IP
 AddWireless_TabPair.Text	配对码配对	Pair with code
 AddWireless_TabScan.Text	扫描模拟器	Scan emulators
+AddWireless_QrHint.Text	Android 11 及以上：在手机“开发者选项 → 无线调试 → 使用二维码配对设备”扫描下方二维码，配对与连接将自动完成。	Android 11+: on the phone open Developer options -> Wireless debugging -> Pair device with QR code and scan below to pair and connect automatically.
+AddWireless_QrRefresh.Content	刷新二维码	New QR code
+AddWireless_QrWaiting	等待手机扫码…	Waiting for phone to scan…
+AddWireless_QrPairing	检测到手机 {0}，正在自动配对…	Phone found at {0}, pairing…
+AddWireless_QrConnecting	配对成功，正在连接无线调试端口…	Paired; connecting to wireless debugging port…
+AddWireless_QrPairedManualPort	配对成功，但未收到连接端口广播；请切换到“配对码配对”页填写连接地址。	Paired, but no connect port was broadcast; enter the connect address on the Pair tab.
+AddWireless_QrFailed	扫码配对未完成，请刷新二维码重试。	QR pairing did not finish; generate a new QR code and try again.
+AddWireless_LanHeader.Text	局域网已发现设备（mDNS）	Discovered on LAN (mDNS)
+AddWireless_LanRefresh.Content	刷新列表	Refresh
+AddWireless_LanEmpty.Text	暂未发现局域网广播的无线调试设备。开启手机“无线调试”后将自动出现在此处。	No wireless debugging broadcasts found on LAN yet. Turn on Wireless debugging on the phone to appear here.
 AddWireless_DirectHint.Text	适用于已开启 TCP 调试（adb tcpip）的设备或局域网内的模拟器。不填端口时默认 5555。	For devices with TCP debugging enabled (adb tcpip) or emulators on the network. Port defaults to 5555.
 AddWireless_Address.Header	地址	Address
 AddWireless_Address.PlaceholderText	192.168.1.20:5555	192.168.1.20:5555

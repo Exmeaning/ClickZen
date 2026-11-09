@@ -16,6 +16,7 @@ Settings_Devices_MaxSize	最长边（0 为原始分辨率）	Maximum edge (0 for
 Settings_Devices_VideoBitRateMbps	码率（Mbps）	Bit rate (Mbps)
 Settings_Devices_MaxFps	最大帧率	Maximum FPS
 Settings_Devices_InputMethod	输入方式	Input method
+Settings_Devices_SuppressSoftKeyboard	抑制手机软键盘弹出（UHID 外接键盘模式）	Suppress on-screen soft keyboard (UHID hardware keyboard)
 Settings_Mirror_HighQualityScaling	高质量缩放	High-quality scaling
 Settings_Mirror_ShowTouches	显示触点	Show touches
 Settings_Mirror_StayAwake	保持常亮	Stay awake

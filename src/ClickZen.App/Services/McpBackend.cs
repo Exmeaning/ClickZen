@@ -11,6 +11,7 @@ using ClickZen.Core.Recording;
 using ClickZen.Core.Settings;
 using ClickZen.Core.Variables;
 using ClickZen.Device.Adb;
+using ClickZen.Device.Adb.Wireless;
 using ClickZen.Device.Scrcpy;
 using ClickZen.Mcp;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,9 @@ public sealed class McpBackend : IClickZenBackend
     private static readonly TimeSpan FreshFrameTimeout = TimeSpan.FromMilliseconds(600);
 
     private readonly DeviceHub _hub;
+    private readonly AdbService _adb;
+    private readonly IAdbMdnsDiscovery _mdns;
+    private readonly SavedDeviceStore _saved;
     private readonly EmulatorService _emulators;
     private readonly AutomationService _automation;
     private readonly RecordingService _recording;
@@ -45,10 +49,14 @@ public sealed class McpBackend : IClickZenBackend
     private CancellationTokenSource? _playCts;
     private McpPlaybackInfo? _playback;
 
-    public McpBackend(DeviceHub hub, EmulatorService emulators, AutomationService automation, RecordingService recording, VariableStore globals,
+    public McpBackend(DeviceHub hub, AdbService adb, IAdbMdnsDiscovery mdns, SavedDeviceStore saved,
+        EmulatorService emulators, AutomationService automation, RecordingService recording, VariableStore globals,
         IImageMatcher matcher, SettingsService settings, AppPaths paths, ILogger<McpBackend> log)
     {
         _hub = hub;
+        _adb = adb;
+        _mdns = mdns;
+        _saved = saved;
         _emulators = emulators;
         _automation = automation;
         _recording = recording;
@@ -214,6 +222,57 @@ public sealed class McpBackend : IClickZenBackend
             var size = _hub.Devices.FirstOrDefault(d => d.Serial == r.DeviceId)?.ScreenSize ?? r.Profile?.ReferenceSize ?? default;
             return new McpEmulatorBind(r.DeviceId, McpEnumName(r.Method.ToString()), r.Profile?.AdbSerial, size.Width, size.Height, r.Message);
         });
+    }
+
+    public async Task<IReadOnlyList<McpLanDevice>> DiscoverLanDevicesAsync(CancellationToken ct)
+    {
+        var list = await _mdns.DiscoverAsync(TimeSpan.FromMilliseconds(1100), ct);
+        return list.Select(s => new McpLanDevice(
+            s.Address,
+            s.Host,
+            s.Port,
+            s.Kind switch
+            {
+                MdnsAdbServiceKind.TlsConnect => "tlsConnect",
+                MdnsAdbServiceKind.TlsPairing => "tlsPairing",
+                _ => "legacyTcp",
+            },
+            s.InstanceName)).ToList();
+    }
+
+    public async Task<McpWirelessEnableResult> EnableWirelessAdbAsync(string? device, int port, bool remember, CancellationToken ct)
+    {
+        var (serial, name) = await OnUi(() =>
+        {
+            var e = ResolveEntry(device);
+            var adbSerial = e.AdbSerial ?? throw new McpToolException($"Device \"{e.DisplayName}\" has no linked ADB device.");
+            return (adbSerial, e.DisplayName);
+        });
+
+        var r = await _adb.EnableWirelessAsync(serial, port, ct: ct);
+        var saved = false;
+        if (r.Success && remember)
+        {
+            var colon = r.Address.LastIndexOf(':');
+            if (colon > 0 && int.TryParse(r.Address[(colon + 1)..], out var parsedPort))
+            {
+                _saved.AddOrUpdate(new SavedDevice
+                {
+                    Name = name,
+                    Host = r.Address[..colon],
+                    Port = parsedPort,
+                    AutoConnect = true,
+                });
+                saved = true;
+            }
+        }
+
+        if (r.Success)
+        {
+            await _hub.RefreshAsync(ct);
+        }
+
+        return new McpWirelessEnableResult(r.Success, r.Address, r.Message, saved);
     }
 
     /// <summary>Detects again and resolves the argument; a clear error lists the running emulators when nothing matches.</summary>

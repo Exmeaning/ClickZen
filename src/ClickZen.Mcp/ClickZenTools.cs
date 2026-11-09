@@ -153,6 +153,25 @@ public sealed partial class ClickZenTools
         CancellationToken cancellationToken = default) => Run(async ct =>
         McpJson.Serialize(await B.BindEmulatorWindowAsync(emulator, ct)), cancellationToken);
 
+    [McpServerTool(Name = "discover_lan_devices", Title = "Discover LAN Android devices", ReadOnly = true, Idempotent = true, Destructive = false, OpenWorld = false)]
+    [McpCapability(McpCapability.Observe)]
+    [Description("Discovers Android devices on the local network advertising Wireless Debugging (_adb-tls-connect._tcp / _adb-tls-pairing._tcp) or legacy TCP ADB (_adb._tcp) via mDNS / DNS-SD. Useful when an Android 11+ phone's Wireless Debugging port changed after reconnecting to Wi-Fi.")]
+    public Task<string> DiscoverLanDevices(CancellationToken cancellationToken = default) => Run(async ct =>
+        McpJson.Serialize(await B.DiscoverLanDevicesAsync(ct)), cancellationToken);
+
+    [McpServerTool(Name = "enable_wireless_adb", Title = "Enable wireless ADB from USB", ReadOnly = false, Idempotent = true, Destructive = false, OpenWorld = false)]
+    [McpCapability(McpCapability.Control)]
+    [Description("Switches a USB-connected Android device to wireless TCP/IP ADB mode (default port 5555), reads its Wi-Fi IP, connects over LAN, and optionally remembers it for automatic reconnection after unplugging USB.")]
+    public Task<string> EnableWirelessAdb(
+        [Description("USB device id or name from list_devices; omit for the current device.")] string? device = null,
+        [Description("TCP port to open on the phone (default 5555).")] int port = 5555,
+        [Description("Save this device for automatic wireless reconnection (default true).")] bool remember = true,
+        CancellationToken cancellationToken = default) => Run(async ct =>
+    {
+        var r = await B.EnableWirelessAdbAsync(device, Math.Clamp(port, 1024, 65535), remember, ct);
+        return r.Connected ? McpJson.Serialize(r) : throw new McpToolException(r.Message);
+    }, cancellationToken);
+
     [McpServerTool(Name = "take_screenshot", Title = "Take screenshot", ReadOnly = true, Idempotent = false, Destructive = false, OpenWorld = false)]
     [McpCapability(McpCapability.Observe)]
     [Description("Captures the device screen and returns it as an image (JPEG by default, scaled so the longest edge is maxSize). The text part tells how image pixels map to device pixels. To tap something seen on the image, pass its image coordinates to tap with refWidth/refHeight = the image size (full-screen screenshots only).")]

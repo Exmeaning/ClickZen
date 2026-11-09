@@ -31,6 +31,7 @@ public sealed record ScrcpySessionOptions
     public int MaxFps { get; init; } = 60;
     public bool StayAwake { get; init; } = true;
     public bool ShowTouches { get; init; }
+    public bool SuppressSoftKeyboard { get; init; }
     public bool AutoReconnect { get; init; } = true;
     public TimeSpan MaxBackoff { get; init; } = TimeSpan.FromSeconds(30);
 }
@@ -53,6 +54,8 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
     private CancellationTokenSource? _attemptCts;
     private volatile int _displayId;
     private volatile bool _switchingDisplay;
+    private volatile bool _suppressSoftKeyboard;
+    private volatile bool _inputRejected;
     private Frame? _latest;
     private long _sequence;
     private TaskCompletionSource _frameSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -70,6 +73,7 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
         _transport = transport;
         _options = options ?? new ScrcpySessionOptions();
         _displayId = Math.Max(0, _options.DisplayId);
+        _suppressSoftKeyboard = _options.SuppressSoftKeyboard;
         _logger = logger;
         _clock = clock ?? SystemClock.Instance;
         Injector = new ScrcpyTouchInjector(SendAsync, () => _videoSize, () => DeviceSize, _clock);
@@ -122,10 +126,33 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
 
     public string? LastError { get; private set; }
 
+    /// <summary>True when Android rejected scrcpy control injection (<c>INJECT_EVENTS</c> / ROM security restriction).</summary>
+    public bool IsInputRejected => _inputRejected;
+
     /// <summary>Frames per second over the last second.</summary>
     public double Fps { get; private set; }
 
     public event EventHandler<SessionState>? StateChanged;
+
+    /// <summary>Raised when scrcpy-server reports that Android rejected input events.</summary>
+    public event EventHandler<string>? InputRejected;
+
+    /// <summary>Toggles virtual UHID keyboard registration on the live session so Android suppresses or restores soft IME.</summary>
+    public async Task SetSuppressSoftKeyboardAsync(bool enabled, CancellationToken ct = default)
+    {
+        _suppressSoftKeyboard = enabled;
+        if (_connection is not null && !_inputRejected)
+        {
+            try
+            {
+                await Injector.SetHardwareKeyboardAsync(enabled, ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger?.LogDebug(ex, "UHID keyboard toggle ({Enabled}) ignored on {Serial}", enabled, Serial);
+            }
+        }
+    }
 
     /// <summary>Raised on the decode thread for every new frame.</summary>
     public event EventHandler<Frame>? FrameArrived;
@@ -252,11 +279,32 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
                     ShowTouches = _options.ShowTouches,
                 };
                 started = await _transport.StartAsync(Serial, options, attemptCts.Token);
+                started.InputRejected += reason =>
+                {
+                    if (!_inputRejected)
+                    {
+                        _inputRejected = true;
+                        _logger?.LogWarning("scrcpy control input rejected on {Serial}: {Reason}", Serial, reason);
+                        InputRejected?.Invoke(this, reason);
+                    }
+                };
                 _connection = started.Connection;
                 DeviceName = started.Connection.DeviceName;
                 LastError = null;
                 backoff = TimeSpan.FromSeconds(1);
                 State = started.Connection.HasVideo ? SessionState.Streaming : SessionState.Connected;
+                if (_suppressSoftKeyboard)
+                {
+                    try
+                    {
+                        await Injector.SetHardwareKeyboardAsync(true, attemptCts.Token);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        _logger?.LogDebug(ex, "Could not register UHID keyboard on {Serial}", Serial);
+                    }
+                }
+
                 firstAttempt.TrySetResult();
                 _logger?.LogInformation("scrcpy session for {Serial} ({Name}) connected on display {DisplayId}, video={Video}",
                     Serial, DeviceName, targetDisplay, started.Connection.HasVideo);
@@ -437,7 +485,7 @@ public sealed class ScrcpySession : ILiveFrameSource, IAsyncDisposable
         return c.SendAsync(write, ct);
     }
 
-    public bool IsControlAvailable => _connection is not null;
+    public bool IsControlAvailable => _connection is not null && !_inputRejected;
 
     public async ValueTask DisposeAsync()
     {

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using ClickZen.App.Services;
 using ClickZen.Core.Devices;
 using ClickZen.Device.Adb;
+using ClickZen.Device.Adb.Wireless;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -40,15 +41,17 @@ public sealed partial class DevicesViewModel : ObservableObject
 {
     private readonly DeviceHub _hub;
     private readonly AdbService _adb;
+    private readonly IAdbMdnsDiscovery _mdns;
     private readonly SavedDeviceStore _saved;
     private readonly EmulatorService _emulators;
     private readonly ILocalizer _loc;
     private readonly ILogger<DevicesViewModel> _log;
 
-    public DevicesViewModel(DeviceHub hub, AdbService adb, SavedDeviceStore saved, EmulatorService emulators, ILocalizer loc, ILogger<DevicesViewModel> log)
+    public DevicesViewModel(DeviceHub hub, AdbService adb, IAdbMdnsDiscovery mdns, SavedDeviceStore saved, EmulatorService emulators, ILocalizer loc, ILogger<DevicesViewModel> log)
     {
         _hub = hub;
         _adb = adb;
+        _mdns = mdns;
         _saved = saved;
         _emulators = emulators;
         _loc = loc;
@@ -271,13 +274,55 @@ public sealed partial class DevicesViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task SwitchUsbToWirelessAsync(DeviceEntry entry)
+    {
+        await RunAsync(async () =>
+        {
+            var r = await _adb.EnableWirelessAsync(entry.Serial);
+            if (r.Success && TrySplit(r.Address, out var host, out var port))
+            {
+                _saved.AddOrUpdate(new SavedDevice
+                {
+                    Name = entry.Info.DisplayName,
+                    Host = host,
+                    Port = port,
+                    AutoConnect = true,
+                });
+                await _hub.RefreshAsync();
+                Report(_loc.Format("Devices_UsbSwitchedWireless", r.Address), false);
+            }
+            else
+            {
+                Report(r.Message, true);
+            }
+        });
+    }
+
+    [RelayCommand]
     private async Task ConnectSavedAsync(SavedDeviceItem item)
     {
         item.IsBusy = true;
         try
         {
             var r = await _adb.ConnectAsync(item.Address);
-            Report(r.Success ? _loc.Format("Devices_Connected", item.Address) : r.Message, !r.Success);
+            if (!r.Success)
+            {
+                // Android 11+ randomizes Wireless Debugging ports across Wi-Fi/reboot cycles; probe mDNS to heal.
+                var services = await _mdns.DiscoverAsync(TimeSpan.FromMilliseconds(1100));
+                var healed = services.FirstOrDefault(s =>
+                    s.Kind is MdnsAdbServiceKind.TlsConnect or MdnsAdbServiceKind.LegacyTcp
+                    && string.Equals(s.Host, item.Model.Host.Trim('[', ']'), StringComparison.OrdinalIgnoreCase));
+                if (healed is not null && healed.Port != item.Model.Port)
+                {
+                    r = await _adb.ConnectAsync(healed.Address);
+                    if (r.Success)
+                    {
+                        _saved.UpdatePortForHost(item.Model.Host, item.Model.Port, healed.Port);
+                    }
+                }
+            }
+
+            Report(r.Success ? _loc.Format("Devices_Connected", r.Address) : r.Message, !r.Success);
         }
         catch (Exception ex)
         {
@@ -321,6 +366,43 @@ public sealed partial class DevicesViewModel : ObservableObject
         var r = await _adb.PairAsync(NormalizeAddress(address, 0), code.Trim(), ct);
         Report(r.Success ? _loc["Devices_Paired"] : r.Message, !r.Success);
         return r;
+    }
+
+    public WirelessQrPairCoordinator CreateQrPairCoordinator() => new(_adb, _mdns);
+
+    public async Task<IReadOnlyList<MdnsAdbService>> DiscoverLanDevicesAsync(CancellationToken ct = default)
+    {
+        var all = await _mdns.DiscoverAsync(TimeSpan.FromMilliseconds(1100), ct);
+        return all.Where(s => s.Kind is MdnsAdbServiceKind.TlsConnect or MdnsAdbServiceKind.LegacyTcp).ToArray();
+    }
+
+    public async Task RememberConnectedDeviceAsync(string address, string? fallbackName = null)
+    {
+        if (!TrySplit(address, out var host, out var port))
+        {
+            return;
+        }
+
+        await _hub.RefreshAsync();
+        var live = _hub.Devices.FirstOrDefault(d => string.Equals(d.Serial, address, StringComparison.OrdinalIgnoreCase));
+        var name = live?.Info.DisplayName;
+        if (string.IsNullOrWhiteSpace(name) || string.Equals(name, address, StringComparison.OrdinalIgnoreCase))
+        {
+            name = !string.IsNullOrWhiteSpace(fallbackName) ? fallbackName.Trim() : host;
+        }
+
+        // Update any prior port for this LAN host in place, or add a new saved wireless device.
+        var existingSameHost = _saved.GetAll().FirstOrDefault(s => string.Equals(s.Host.Trim('[', ']'), host.Trim('[', ']'), StringComparison.OrdinalIgnoreCase));
+        if (existingSameHost is not null && existingSameHost.Port != port)
+        {
+            _saved.UpdatePortForHost(existingSameHost.Host, existingSameHost.Port, port);
+        }
+        else
+        {
+            _saved.AddOrUpdate(new SavedDevice { Name = name, Host = host, Port = port, AutoConnect = true });
+        }
+
+        Report(_loc.Format("Devices_Connected", address), false);
     }
 
     /// <summary>

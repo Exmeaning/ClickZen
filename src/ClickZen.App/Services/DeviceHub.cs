@@ -214,6 +214,19 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         _watcher.DevicesChanged += OnDevicesChanged;
         _watcher.TrackingChanged += (_, tracking) => Ui(() => IsAdbAvailable = tracking);
         _profiles.Changed += (_, _) => Ui(SyncProfiles);
+        _settings.Changed += OnSettingsChanged;
+    }
+
+    private void OnSettingsChanged(object? sender, EventArgs e)
+    {
+        var suppress = _settings.Current.Devices.SuppressSoftKeyboard;
+        foreach (var entry in Devices.ToArray())
+        {
+            if (entry.Session is { } session)
+            {
+                _ = session.SetSuppressSoftKeyboardAsync(suppress);
+            }
+        }
     }
 
     public ObservableCollection<DeviceEntry> Devices { get; } = [];
@@ -291,25 +304,21 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         var pref = _settings.Current.Devices.InputMethod;
         if (pref == InputMethodPreference.Root)
         {
-            var (touch, raw) = await RootInputOfAsync(entry.Serial, ct);
-            if (touch is not null)
-            {
-                return new ClickZen.Device.Input.RootSendeventInjector(
-                    (cmd, c) => _adb.RootShellAsync(entry.Serial, cmd, c), touch,
-                    () => entry.EffectivePhysicalSize,
-                    () => entry.Session is { } s && !s.VideoSize.IsEmpty && s.VideoSize.IsLandscape != entry.EffectivePhysicalSize.IsLandscape
-                        ? ClickZen.Core.Geometry.DisplayRotation.Rotation90
-                        : ClickZen.Core.Geometry.DisplayRotation.Rotation0,
-                    raw);
-            }
-
-            _log.LogWarning("No touchscreen found for root input on {Serial}; using adb input as root", entry.Serial);
-            return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: true, () => entry.ActiveDisplayId);
+            return await GetRootInjectorCoreAsync(entry, ct);
         }
 
-        if (pref == InputMethodPreference.Scrcpy && entry.Session is { IsControlAvailable: true } session)
+        if (pref == InputMethodPreference.Scrcpy && entry.Session is { } session)
         {
-            return session.Injector;
+            if (session.IsControlAvailable)
+            {
+                return session.Injector;
+            }
+
+            if (session.IsInputRejected && await HasRootAccessCachedAsync(entry.Serial, ct))
+            {
+                _log.LogInformation("ROM blocked scrcpy INJECT_EVENTS on {Serial}; automatically routing input via persistent root", entry.Serial);
+                return await GetRootInjectorCoreAsync(entry, ct);
+            }
         }
 
         return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: false, () => entry.ActiveDisplayId);
@@ -317,6 +326,68 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<(ClickZen.Device.Input.InputDeviceInfo? Touch, bool Raw)>> _rootInput =
         new(StringComparer.Ordinal);
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ClickZen.Device.Input.PersistentRootInjector> _persistentRoot =
+        new(StringComparer.Ordinal);
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<bool>> _rootAvailability =
+        new(StringComparer.Ordinal);
+
+    private async Task<ClickZen.Core.Input.ITouchInjector> GetRootInjectorCoreAsync(DeviceEntry entry, CancellationToken ct)
+    {
+        var (touch, raw) = await RootInputOfAsync(entry.Serial, ct);
+        if (touch is not null)
+        {
+            return _persistentRoot.GetOrAdd(entry.Serial, s =>
+            {
+                var fallback = new ClickZen.Device.Input.RootSendeventInjector(
+                    (cmd, c) => _adb.RootShellAsync(s, cmd, c), touch,
+                    () => entry.EffectivePhysicalSize,
+                    () => entry.Session is { } sess && !sess.VideoSize.IsEmpty && sess.VideoSize.IsLandscape != entry.EffectivePhysicalSize.IsLandscape
+                        ? ClickZen.Core.Geometry.DisplayRotation.Rotation90
+                        : ClickZen.Core.Geometry.DisplayRotation.Rotation0,
+                    raw);
+                return ClickZen.Device.Input.PersistentRootInjector.ForAdbSocket(
+                    _server.EndPoint,
+                    s,
+                    fallback,
+                    touch,
+                    raw,
+                    () => entry.ActiveDisplayId,
+                    logger: _loggers.CreateLogger<ClickZen.Device.Input.PersistentRootInjector>());
+            });
+        }
+
+        _log.LogWarning("No touchscreen found for root input on {Serial}; using adb input as root", entry.Serial);
+        return ClickZen.Device.Input.AdbInputInjector.For(_adb, entry.Serial, entry.Info.SdkLevel, asRoot: true, () => entry.ActiveDisplayId);
+    }
+
+    private async Task<bool> HasRootAccessCachedAsync(string serial, CancellationToken ct)
+    {
+        var task = _rootAvailability.GetOrAdd(serial, async s =>
+        {
+            try
+            {
+                var check = await _adb.CheckRootAsync(s, TimeSpan.FromSeconds(4), CancellationToken.None);
+                return check.HasRoot;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        });
+        return await task.WaitAsync(ct);
+    }
+
+    private async Task ResetDeviceInputCachesAsync(string serial)
+    {
+        _rootInput.TryRemove(serial, out _);
+        _rootAvailability.TryRemove(serial, out _);
+        if (_persistentRoot.TryRemove(serial, out var rootInj))
+        {
+            await rootInj.DisposeAsync();
+        }
+    }
 
     /// <summary>
     /// Touchscreen node and raw-event support of a rooted device, probed once per connection (getevent -p and the
@@ -372,6 +443,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             MaxFps = d.MaxFps,
             StayAwake = m.StayAwake,
             ShowTouches = m.ShowTouches,
+            SuppressSoftKeyboard = d.SuppressSoftKeyboard,
             AutoReconnect = d.AutoReconnect,
         }, _loggers.CreateLogger<ScrcpySession>())
         {
@@ -382,6 +454,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             entry.SessionState = s;
             entry.SessionError = session.LastError;
         });
+        session.InputRejected += (_, _) => _ = HandleInputRejectedAsync(entry);
         entry.Session = session;
         Current ??= entry;
         await session.StartAsync(ct);
@@ -527,7 +600,20 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
 
         entry.Session = null;
         await session.DisposeAsync();
+        await ResetDeviceInputCachesAsync(entry.Serial);
         entry.SessionState = SessionState.Disconnected;
+    }
+
+    private async Task HandleInputRejectedAsync(DeviceEntry entry)
+    {
+        if (await HasRootAccessCachedAsync(entry.Serial, CancellationToken.None))
+        {
+            Ui(() => entry.SessionError = _loc["Devices_InputSwitchedToRoot"]);
+        }
+        else
+        {
+            Ui(() => entry.SessionError = _loc["Devices_InputPermissionHint"]);
+        }
     }
 
     private void EnsureFfmpeg()
@@ -637,6 +723,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _settings.Changed -= OnSettingsChanged;
         _windowMonitor?.Cancel();
         _displayMonitor?.Cancel();
         foreach (var e in Devices.ToList())
@@ -644,6 +731,12 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             await DisconnectAsync(e);
         }
 
+        foreach (var kv in _persistentRoot)
+        {
+            await kv.Value.DisposeAsync();
+        }
+
+        _persistentRoot.Clear();
         await _watcher.DisposeAsync();
     }
 }

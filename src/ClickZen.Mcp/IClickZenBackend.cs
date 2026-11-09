@@ -184,6 +184,12 @@ public sealed record McpEmulatorConnect(bool Connected, string? Device, string M
 /// <param name="Method">How the Android screen was located ("aspectMatch", "renderWindow", "screenshotMatch", "edgeDetection", "clientArea").</param>
 public sealed record McpEmulatorBind(string WindowDevice, string Method, string? AdbDevice, int ScreenWidth, int ScreenHeight, string Message);
 
+/// <summary>An Android device discovered on the local network via mDNS / DNS-SD.</summary>
+public sealed record McpLanDevice(string Address, string Host, int Port, string Kind, string InstanceName);
+
+/// <summary>Outcome of enable_wireless_adb.</summary>
+public sealed record McpWirelessEnableResult(bool Connected, string Address, string Message, bool Saved);
+
 /// <summary>
 /// Everything the MCP tools need from ClickZen. <c>device</c> arguments are a device id from
 /// <see cref="ListDevicesAsync"/>, a display name, or null/empty for the current device.
@@ -203,6 +209,12 @@ public interface IClickZenBackend
 
     /// <summary>Binds a detected emulator's window as a window device (locates the Android screen automatically).</summary>
     Task<McpEmulatorBind> BindEmulatorWindowAsync(string? emulator, CancellationToken ct);
+
+    /// <summary>Discovers Android Wireless Debugging / TCP ADB services advertised on the LAN via mDNS.</summary>
+    Task<IReadOnlyList<McpLanDevice>> DiscoverLanDevicesAsync(CancellationToken ct);
+
+    /// <summary>Switches a USB-connected Android device to wireless TCP/IP ADB and connects to its LAN IP.</summary>
+    Task<McpWirelessEnableResult> EnableWirelessAdbAsync(string? device, int port, bool remember, CancellationToken ct);
 
     /// <summary>Starts mirroring (scrcpy session / window capture) if needed and waits for a picture.</summary>
     Task<McpDevice> ConnectAsync(string? device, CancellationToken ct);

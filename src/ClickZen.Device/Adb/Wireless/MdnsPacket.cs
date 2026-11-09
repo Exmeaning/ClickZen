@@ -38,6 +38,8 @@ public static partial class MdnsPacket
     public const string TlsPairingService = "_adb-tls-pairing._tcp.local.";
     public const string LegacyTcpService = "_adb._tcp.local.";
 
+    private static readonly string[] DefaultServices = [TlsConnectService, TlsPairingService, LegacyTcpService];
+
     private const ushort TypeA = 1;
     private const ushort TypePtr = 12;
     private const ushort TypeTxt = 16;
@@ -50,7 +52,7 @@ public static partial class MdnsPacket
     {
         if (serviceTypes.Length == 0)
         {
-            serviceTypes = [TlsConnectService, TlsPairingService, LegacyTcpService];
+            serviceTypes = DefaultServices;
         }
 
         using var ms = new MemoryStream(128);

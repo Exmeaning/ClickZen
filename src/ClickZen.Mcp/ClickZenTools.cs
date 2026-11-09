@@ -160,7 +160,7 @@ public sealed partial class ClickZenTools
         McpJson.Serialize(await B.DiscoverLanDevicesAsync(ct)), cancellationToken);
 
     [McpServerTool(Name = "enable_wireless_adb", Title = "Enable wireless ADB from USB", ReadOnly = false, Idempotent = true, Destructive = false, OpenWorld = false)]
-    [McpCapability(McpCapability.Control)]
+    [McpCapability(McpCapability.Observe)]
     [Description("Switches a USB-connected Android device to wireless TCP/IP ADB mode (default port 5555), reads its Wi-Fi IP, connects over LAN, and optionally remembers it for automatic reconnection after unplugging USB.")]
     public Task<string> EnableWirelessAdb(
         [Description("USB device id or name from list_devices; omit for the current device.")] string? device = null,

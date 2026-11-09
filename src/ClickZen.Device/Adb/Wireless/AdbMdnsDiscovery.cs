@@ -31,7 +31,7 @@ public sealed class AdbMdnsDiscovery : IAdbMdnsDiscovery
     public AdbMdnsDiscovery(AdbServerHost? serverHost = null, ILogger<AdbMdnsDiscovery>? logger = null)
     {
         _serverHost = serverHost;
-        _logger = logger ?? NullLogger.Instance;
+        _logger = (ILogger?)logger ?? NullLogger.Instance;
     }
 
     public async Task<IReadOnlyList<MdnsAdbService>> DiscoverAsync(TimeSpan duration, CancellationToken ct = default)

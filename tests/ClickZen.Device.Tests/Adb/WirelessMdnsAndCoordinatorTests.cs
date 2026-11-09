@@ -178,8 +178,8 @@ public sealed class WirelessMdnsAndCoordinatorTests : IDisposable
     private static byte[] BuildSyntheticMdnsResponse(string instance, string service, string targetHost, ushort port, IPAddress ip)
     {
         using var ms = new MemoryStream();
-        Span<byte> u16 = stackalloc byte[2];
-        Span<byte> u32 = stackalloc byte[4];
+        var u16 = new byte[2];
+        var u32 = new byte[4];
         void WriteU16(ushort v) { BinaryPrimitives.WriteUInt16BigEndian(u16, v); ms.Write(u16); }
         void WriteU32(uint v) { BinaryPrimitives.WriteUInt32BigEndian(u32, v); ms.Write(u32); }
         void WriteName(string fqdn)

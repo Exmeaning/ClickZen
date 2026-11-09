@@ -100,8 +100,9 @@ public static class QrCodeEncoder
     public static QrMatrix Encode(ReadOnlySpan<byte> payload)
     {
         // Byte mode header: 4-bit mode (0100) + 8-bit byte count = 12 bits -> max payload = TotalDataCodewords - 2.
-        var spec = Specs.FirstOrDefault(s => payload.Length + 2 <= s.TotalDataCodewords)
-            ?? throw new ArgumentOutOfRangeException(nameof(payload), $"Payload length {payload.Length} exceeds QR Version 6-M capacity (106 bytes).");
+        var payloadLength = payload.Length;
+        var spec = Specs.FirstOrDefault(s => payloadLength + 2 <= s.TotalDataCodewords)
+            ?? throw new ArgumentOutOfRangeException(nameof(payload), $"Payload length {payloadLength} exceeds QR Version 6-M capacity (106 bytes).");
 
         var dataCodewords = BuildDataCodewords(payload, spec.TotalDataCodewords);
         var allCodewords = BuildInterleavedCodewords(dataCodewords, spec);

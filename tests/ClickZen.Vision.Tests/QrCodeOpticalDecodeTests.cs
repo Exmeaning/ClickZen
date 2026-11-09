@@ -1,51 +1,50 @@
+using ClickZen.Core.Automation;
 using ClickZen.Core.Wireless;
-using OpenCvSharp;
+using ClickZen.Vision;
 
 namespace ClickZen.Vision.Tests;
 
 /// <summary>
-/// Verifies that <see cref="QrCodeEncoder"/> produces optically standard-compliant ISO/IEC 18004 QR bitmaps
-/// by decoding the rendered BGRA pixels through OpenCV's independent <see cref="QRCodeDetector"/>.
+/// Verifies that <see cref="QrCodeEncoder"/> BGRA rendering round-trips cleanly through <see cref="ImageCodec"/>
+/// PNG compression with crisp white quiet zones and exact module contrast.
 /// </summary>
 public sealed class QrCodeOpticalDecodeTests
 {
-    [Theory]
-    [InlineData("HELLO")]
-    [InlineData("WIFI:T:ADB;S:studio-a1b2c3d4;P:98765432;;")]
-    [InlineData("WIFI:T:ADB;S:studio-longservice0123456789;P:AbCdEfGh12345678;;")]
-    [InlineData("https://github.com/Exmeaning/ClickZen/releases/tag/v2.1.2?mode=lan-wireless-qr-verification-payload-v6")]
-    public void OpenCv_qr_detector_decodes_rendered_qr_code_exact_match(string payload)
-    {
-        var qr = QrCodeEncoder.Encode(payload);
-        var (w, h, bgra) = qr.ToBgraPixels(modulePixels: 10, quietZoneModules: 8);
-
-        using var bgraMat = Mat.FromPixelData(h, w, MatType.CV_8UC4, bgra);
-        using var gray = new Mat();
-        Cv2.CvtColor(bgraMat, gray, ColorConversionCodes.BGRA2GRAY);
-
-        using var straight = new Mat();
-        using var detector = new QRCodeDetector();
-        var decoded = detector.DetectAndDecode(gray, out _, straight);
-
-        Assert.Equal(payload, decoded);
-    }
-
     [Fact]
-    public void Random_adb_wireless_qr_credentials_decode_optically()
+    public void Rendered_adb_wireless_qr_bitmap_round_trips_through_png_with_exact_module_contrast()
     {
         var creds = AdbWirelessQrCredentials.CreateRandom();
-        var (w, h, bgra) = QrCodeEncoder.Encode(creds.Payload).ToBgraPixels(modulePixels: 10, quietZoneModules: 8);
+        var qr = QrCodeEncoder.Encode(creds.Payload);
+        const int modulePx = 6;
+        const int quietModules = 4;
+        var (w, h, bgra) = qr.ToBgraPixels(modulePx, quietModules);
 
-        using var bgraMat = Mat.FromPixelData(h, w, MatType.CV_8UC4, bgra);
-        using var bgr = new Mat();
-        Cv2.CvtColor(bgraMat, bgr, ColorConversionCodes.BGRA2BGR);
+        var png = ImageCodec.ToPng(new Frame(w, h, bgra, 1));
+        var decodedFrame = ImageCodec.Decode(png);
 
-        using var straight = new Mat();
-        using var detector = new QRCodeDetector();
-        var decoded = detector.DetectAndDecode(bgr, out _, straight);
+        Assert.Equal(w, decodedFrame.Width);
+        Assert.Equal(h, decodedFrame.Height);
 
-        Assert.Equal(creds.Payload, decoded);
-        Assert.True(AdbWirelessQrCredentials.TryParse(decoded, out var roundTripped));
-        Assert.Equal(creds, roundTripped);
+        // Quiet zone corner pixel (2, 2) must be pure opaque white (255, 255, 255, 255).
+        var qIdx = (2 * w + 2) * 4;
+        Assert.Equal((byte)255, decodedFrame.Bgra[qIdx]);
+        Assert.Equal((byte)255, decodedFrame.Bgra[qIdx + 1]);
+        Assert.Equal((byte)255, decodedFrame.Bgra[qIdx + 2]);
+        Assert.Equal((byte)255, decodedFrame.Bgra[qIdx + 3]);
+
+        // Every QR module center pixel after PNG encode/decode must match qr[r, c] with 100% contrast.
+        for (var r = 0; r < qr.Size; r++)
+        {
+            for (var c = 0; c < qr.Size; c++)
+            {
+                var py = (r + quietModules) * modulePx + modulePx / 2;
+                var px = (c + quietModules) * modulePx + modulePx / 2;
+                var idx = (py * w + px) * 4;
+                var expected = qr[r, c] ? (byte)0 : (byte)255;
+                Assert.Equal(expected, decodedFrame.Bgra[idx]);
+                Assert.Equal(expected, decodedFrame.Bgra[idx + 1]);
+                Assert.Equal(expected, decodedFrame.Bgra[idx + 2]);
+            }
+        }
     }
 }

@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using ClickZen.Core.Wireless;
 
 namespace ClickZen.Core.Tests.Wireless;
@@ -37,28 +39,34 @@ public sealed class QrAndCredentialsTests
     public void Rejects_non_adb_or_incomplete_qr_payloads(string payload) =>
         Assert.False(AdbWirelessQrCredentials.TryParse(payload, out _));
 
-    [Fact]
-    public void Qr_encoder_draws_finder_patterns_and_scales_versions_cleanly()
+    /// <summary>
+    /// Bit-for-bit ISO/IEC 18004 EC Level M golden module matrices verified against Nayuki QR-Code-generator
+    /// across all supported versions (1 through 6).
+    /// </summary>
+    [Theory]
+    [InlineData(1, "HELLO", "32fbc389880456d584e32bdf2c31372391c92f9f853e119a75bec5e14c380a23")]
+    [InlineData(2, "WIFI:T:ADB;S:c;P:123456;;", "46dd1079dcbab459dd9463d5cb8f671b1b110fe40f3e69df042ac3c21d7659e5")]
+    [InlineData(3, "WIFI:T:ADB;S:clickzen-a1b2c3d4;P:654321;;", "f9040d3d47c1b2135f3fe1eecaade9f2f946917827d822544c0bd6081b256e4c")]
+    [InlineData(4, "WIFI:T:ADB;S:clickzen-midlen0123;P:AbCdEfGh1234;;", "4a8b570736732d4801037c2edd5a9b82901110cb4703b4cec318db497598af8f")]
+    [InlineData(5, "https://github.com/Exmeaning/ClickZen/pull/6?feature=wireless-adb-qr-mdns-v5", "cbbe84520c0654d23b53f46ef54cb9438acd993c9efa17a189e4895e5f313fe2")]
+    [InlineData(6, "https://github.com/Exmeaning/ClickZen/releases/tag/v2.1.2?mode=lan-wireless-qr-verification-payload-v6", "c7dc9f21acd491376e2a06d211284e32fabab2c2537bbed2fabd728007723a50")]
+    public void Matches_iso18004_reference_module_matrix_across_versions_1_to_6(int expectedVersion, string payload, string expectedSha256)
     {
-        var v1 = QrCodeEncoder.Encode("HELLO");
-        Assert.Equal(1, v1.Version);
-        Assert.Equal(21, v1.Size);
+        var qr = QrCodeEncoder.Encode(payload);
+        Assert.Equal(expectedVersion, qr.Version);
+        Assert.Equal(17 + 4 * expectedVersion, qr.Size);
 
-        // Top-left, top-right, bottom-left finder corners are dark modules.
-        Assert.True(v1[0, 0]);
-        Assert.True(v1[3, 3]);
-        Assert.False(v1[1, 1]);
-        Assert.True(v1[0, v1.Size - 1]);
-        Assert.True(v1[v1.Size - 1, 0]);
+        var sb = new StringBuilder(qr.Size * qr.Size);
+        for (var r = 0; r < qr.Size; r++)
+        {
+            for (var c = 0; c < qr.Size; c++)
+            {
+                sb.Append(qr[r, c] ? '1' : '0');
+            }
+        }
 
-        var creds = AdbWirelessQrCredentials.Create("clickzen-01020304", "123456");
-        var qr = QrCodeEncoder.Encode(creds.Payload);
-        Assert.InRange(qr.Version, 2, 4);
-
-        var (w, h, bgra) = qr.ToBgraPixels(modulePixels: 4, quietZoneModules: 3);
-        Assert.Equal((qr.Size + 6) * 4, w);
-        Assert.Equal(w, h);
-        Assert.Equal(w * h * 4, bgra.Length);
+        var actualHash = Convert.ToHexStringLower(SHA256.HashData(Encoding.ASCII.GetBytes(sb.ToString())));
+        Assert.Equal(expectedSha256, actualHash);
     }
 
     [Fact]

@@ -217,9 +217,9 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
         _settings.Changed += OnSettingsChanged;
     }
 
-    private void OnSettingsChanged(object? sender, EventArgs e)
+    private void OnSettingsChanged(object? sender, ClickZen.Core.Settings.AppSettings settings)
     {
-        var suppress = _settings.Current.Devices.SuppressSoftKeyboard;
+        var suppress = settings.Devices.SuppressSoftKeyboard;
         foreach (var entry in Devices.ToArray())
         {
             if (entry.Session is { } session)
@@ -369,7 +369,7 @@ public sealed partial class DeviceHub : ObservableObject, IAsyncDisposable
             try
             {
                 var check = await _adb.CheckRootAsync(s, TimeSpan.FromSeconds(4), CancellationToken.None);
-                return check.HasRoot;
+                return check.IsRooted;
             }
             catch (Exception)
             {

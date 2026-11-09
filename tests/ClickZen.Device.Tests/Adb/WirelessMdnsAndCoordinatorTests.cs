@@ -110,11 +110,11 @@ public sealed class WirelessMdnsAndCoordinatorTests : IDisposable
         string? pairedCode = null;
 
         var (client, fake) = FakeAdbClient.Create();
-        fake.Pair = (addr, code, _) =>
+        fake.Pair = (host, port, code, _) =>
         {
-            pairedAddr = addr;
+            pairedAddr = $"{host}:{port}";
             pairedCode = code;
-            return Task.FromResult($"Successfully paired to {addr} [guid=adb-pixel]");
+            return Task.FromResult($"Successfully paired to {pairedAddr} [guid=adb-pixel]");
         };
         fake.Connect = (addr, _) => Task.FromResult($"connected to {addr}");
         var adb = new AdbService(client, null, null, null);
@@ -145,10 +145,15 @@ public sealed class WirelessMdnsAndCoordinatorTests : IDisposable
     public async Task EnableWirelessAsync_reads_wifi_ip_switches_tcpip_and_connects()
     {
         var (client, fake) = FakeAdbClient.Create();
-        fake.Devices.Add(FakeAdbClient.MakeDevice("USB123456", AdvancedSharpAdbClient.Models.DeviceState.Online));
-        fake.Shell = (_, cmd) => cmd.Contains("ip route", StringComparison.Ordinal)
-            ? "192.168.50.0/24 dev wlan0 proto kernel scope link src 192.168.50.23"
-            : "";
+        fake.Devices.Add(new AdvancedSharpAdbClient.Models.DeviceData
+        {
+            Serial = "USB123456",
+            State = AdvancedSharpAdbClient.Models.DeviceState.Online,
+        });
+        fake.Shell = (_, cmd, _) => Task.FromResult<IEnumerable<string>>(
+            cmd.Contains("ip route", StringComparison.Ordinal)
+                ? ["192.168.50.0/24 dev wlan0 proto kernel scope link src 192.168.50.23"]
+                : []);
         fake.Connect = (addr, _) => Task.FromResult($"connected to {addr}");
 
         var tcpipSwitched = new List<(string Serial, int Port)>();

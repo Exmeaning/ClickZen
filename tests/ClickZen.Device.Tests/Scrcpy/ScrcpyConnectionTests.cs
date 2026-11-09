@@ -274,6 +274,7 @@ public sealed class ScrcpyTouchInjectorTimelineTests
     [Fact]
     public async Task Unicode_and_long_text_automatically_route_through_clipboard_paste_and_uhid_toggles()
     {
+        var ct = TestContext.Current.CancellationToken;
         var sent = new List<byte[]>();
         var injector = new ScrcpyTouchInjector((write, _) =>
         {
@@ -283,20 +284,20 @@ public sealed class ScrcpyTouchInjectorTimelineTests
             return Task.CompletedTask;
         }, () => new SizeI(1080, 2400), () => new SizeI(1080, 2400));
 
-        await injector.TextAsync("hello123", Ct);
+        await injector.TextAsync("hello123", ct);
         Assert.Equal((byte)ControlMessageType.InjectText, sent[0][0]);
 
-        await injector.TextAsync("你好，ClickZen 局域网投屏！", Ct);
+        await injector.TextAsync("你好，ClickZen 局域网投屏！", ct);
         Assert.Equal((byte)ControlMessageType.SetClipboard, sent[1][0]);
         Assert.Equal(1, sent[1][9]); // paste = true
 
-        await injector.TextAsync(new string('x', 350), Ct);
+        await injector.TextAsync(new string('x', 350), ct);
         Assert.Equal((byte)ControlMessageType.SetClipboard, sent[2][0]);
 
-        await injector.SetHardwareKeyboardAsync(true, Ct);
+        await injector.SetHardwareKeyboardAsync(true, ct);
         Assert.Equal((byte)ControlMessageType.UhidCreate, sent[3][0]);
 
-        await injector.SetHardwareKeyboardAsync(false, Ct);
+        await injector.SetHardwareKeyboardAsync(false, ct);
         Assert.Equal((byte)ControlMessageType.UhidDestroy, sent[4][0]);
     }
 

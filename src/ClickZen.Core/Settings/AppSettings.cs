@@ -66,6 +66,8 @@ public sealed class DeviceDefaults
     public int VideoBitRateMbps { get; set; } = 8;
     public int MaxFps { get; set; } = 60;
     public InputMethodPreference InputMethod { get; set; } = InputMethodPreference.Scrcpy;
+    /// <summary>Registers a virtual UHID physical keyboard over scrcpy so Android suppresses the soft on-screen keyboard.</summary>
+    public bool SuppressSoftKeyboard { get; set; }
 }
 
 public sealed class MirrorSettings

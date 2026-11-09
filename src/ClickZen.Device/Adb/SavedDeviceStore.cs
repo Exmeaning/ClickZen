@@ -119,6 +119,39 @@ public sealed class SavedDeviceStore
         return true;
     }
 
+    /// <summary>
+    /// Updates the port of an existing saved wireless device on <paramref name="host"/> (e.g. when Android 11+
+    /// Wireless Debugging assigns a new random TLS port on the same LAN IP). Returns true if an entry changed.
+    /// </summary>
+    public bool UpdatePortForHost(string host, int oldPort, int newPort)
+    {
+        if (string.IsNullOrWhiteSpace(host) || newPort is < 1 or > 65535 || oldPort == newPort)
+        {
+            return false;
+        }
+
+        var changed = false;
+        lock (_gate)
+        {
+            var existing = _doc.Saved.FirstOrDefault(d => Matches(d, host, oldPort));
+            if (existing is not null)
+            {
+                // Drop any stale duplicate already carrying host:newPort before updating in place.
+                _doc.Saved.RemoveAll(d => !ReferenceEquals(d, existing) && Matches(d, host, newPort));
+                existing.Port = newPort;
+                Persist();
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+
+        return changed;
+    }
+
     private void Persist()
     {
         try

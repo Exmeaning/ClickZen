@@ -58,6 +58,7 @@
   <data name="Devices_StartMirror.Content" xml:space="preserve"><value>开始投屏</value></data>
   <data name="Devices_StopMirror.Content" xml:space="preserve"><value>停止投屏</value></data>
   <data name="Devices_SetCurrent.Content" xml:space="preserve"><value>设为当前</value></data>
+  <data name="Devices_SwitchWireless.Content" xml:space="preserve"><value>转为无线</value></data>
   <data name="Devices_DisconnectWireless.Content" xml:space="preserve"><value>断开</value></data>
   <data name="Devices_SavedHeader.Text" xml:space="preserve"><value>已保存的无线设备</value></data>
   <data name="Devices_SavedEmpty.Text" xml:space="preserve"><value>连接无线设备时填写名称即可保存，之后可一键连接或开机自动连接。</value></data>
@@ -66,6 +67,9 @@
   <data name="Devices_RemoveSaved.ToolTipService.ToolTip" xml:space="preserve"><value>删除</value></data>
   <data name="Devices_Connected" xml:space="preserve"><value>已连接 {0}</value></data>
   <data name="Devices_Disconnected" xml:space="preserve"><value>已断开 {0}</value></data>
+  <data name="Devices_UsbSwitchedWireless" xml:space="preserve"><value>已开启无线调试并连接 {0}，现在可拔下数据线</value></data>
+  <data name="Devices_InputSwitchedToRoot" xml:space="preserve"><value>系统拦截了普通模拟点击，已自动切换至 Root 极速注入</value></data>
+  <data name="Devices_InputPermissionHint" xml:space="preserve"><value>系统拦截了模拟点击：请在手机“开发者选项”中开启“USB 调试（安全设置）”或“禁止权限监控”</value></data>
   <data name="Devices_Paired" xml:space="preserve"><value>配对成功。请在下方输入手机“无线调试”页面上显示的 IP 地址和端口完成连接。</value></data>
   <data name="Devices_ScanNone" xml:space="preserve"><value>没有发现本地模拟器。请确认模拟器已启动并开启了 ADB 调试。</value></data>
   <data name="Devices_ScanFound" xml:space="preserve"><value>已连接 {0} 个模拟器。</value></data>
@@ -84,9 +88,20 @@
   <data name="AdbError_ServerStartFailed" xml:space="preserve"><value>ADB 服务无法启动。</value></data>
   <data name="AdbError_ConnectionRefused" xml:space="preserve"><value>连接被拒绝。请确认设备已开启无线调试且地址正确。</value></data>
   <data name="AddWireless_Dialog.Title" xml:space="preserve"><value>添加无线设备</value></data>
+  <data name="AddWireless_TabQr.Text" xml:space="preserve"><value>扫码与局域网</value></data>
   <data name="AddWireless_TabDirect.Text" xml:space="preserve"><value>IP 直连</value></data>
   <data name="AddWireless_TabPair.Text" xml:space="preserve"><value>配对码配对</value></data>
   <data name="AddWireless_TabScan.Text" xml:space="preserve"><value>扫描模拟器</value></data>
+  <data name="AddWireless_QrHint.Text" xml:space="preserve"><value>Android 11 及以上：在手机“开发者选项 → 无线调试 → 使用二维码配对设备”扫描下方二维码，配对与连接将自动完成。</value></data>
+  <data name="AddWireless_QrRefresh.Content" xml:space="preserve"><value>刷新二维码</value></data>
+  <data name="AddWireless_QrWaiting" xml:space="preserve"><value>等待手机扫码…</value></data>
+  <data name="AddWireless_QrPairing" xml:space="preserve"><value>检测到手机 {0}，正在自动配对…</value></data>
+  <data name="AddWireless_QrConnecting" xml:space="preserve"><value>配对成功，正在连接无线调试端口…</value></data>
+  <data name="AddWireless_QrPairedManualPort" xml:space="preserve"><value>配对成功，但未收到连接端口广播；请切换到“配对码配对”页填写连接地址。</value></data>
+  <data name="AddWireless_QrFailed" xml:space="preserve"><value>扫码配对未完成，请刷新二维码重试。</value></data>
+  <data name="AddWireless_LanHeader.Text" xml:space="preserve"><value>局域网已发现设备（mDNS）</value></data>
+  <data name="AddWireless_LanRefresh.Content" xml:space="preserve"><value>刷新列表</value></data>
+  <data name="AddWireless_LanEmpty.Text" xml:space="preserve"><value>暂未发现局域网广播的无线调试设备。开启手机“无线调试”后将自动出现在此处。</value></data>
   <data name="AddWireless_DirectHint.Text" xml:space="preserve"><value>适用于已开启 TCP 调试（adb tcpip）的设备或局域网内的模拟器。不填端口时默认 5555。</value></data>
   <data name="AddWireless_Address.Header" xml:space="preserve"><value>地址</value></data>
   <data name="AddWireless_Address.PlaceholderText" xml:space="preserve"><value>192.168.1.20:5555</value></data>
@@ -684,6 +699,7 @@
   <data name="Settings_Devices_VideoBitRateMbps" xml:space="preserve"><value>码率（Mbps）</value></data>
   <data name="Settings_Devices_MaxFps" xml:space="preserve"><value>最大帧率</value></data>
   <data name="Settings_Devices_InputMethod" xml:space="preserve"><value>输入方式</value></data>
+  <data name="Settings_Devices_SuppressSoftKeyboard" xml:space="preserve"><value>抑制手机软键盘弹出（UHID 外接键盘模式）</value></data>
   <data name="Settings_Mirror_HighQualityScaling" xml:space="preserve"><value>高质量缩放</value></data>
   <data name="Settings_Mirror_ShowTouches" xml:space="preserve"><value>显示触点</value></data>
   <data name="Settings_Mirror_StayAwake" xml:space="preserve"><value>保持常亮</value></data>

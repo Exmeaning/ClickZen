@@ -18,6 +18,12 @@ public enum ControlMessageType : byte
     SetClipboard = 9,
     SetDisplayPower = 10,
     RotateDevice = 11,
+    UhidCreate = 12,
+    UhidInput = 13,
+    UhidDestroy = 14,
+    OpenHardKeyboardSettings = 15,
+    StartApp = 16,
+    ResetVideo = 17,
 }
 
 /// <summary>Android <c>KeyEvent</c> actions.</summary>
@@ -50,6 +56,21 @@ public static class ControlMessageWriter
     public const long PointerIdGenericFinger = -2;
 
     public const int ButtonPrimary = 1;
+
+    /// <summary>UHID device id scrcpy uses for its virtual USB keyboard (<c>SC_HID_ID_KEYBOARD = 1</c>).</summary>
+    public const ushort DefaultKeyboardUhidId = 1;
+
+    /// <summary>Standard 63-byte USB HID Boot Keyboard report descriptor from scrcpy (<c>app/src/hid/hid_keyboard.c</c>).</summary>
+    public static ReadOnlySpan<byte> HidKeyboardReportDescriptor =>
+    [
+        0x05, 0x01, 0x09, 0x06, 0xA1, 0x01,
+        0x05, 0x07, 0x19, 0xE0, 0x29, 0xE7, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95, 0x08, 0x81, 0x02,
+        0x75, 0x08, 0x95, 0x01, 0x81, 0x01,
+        0x05, 0x08, 0x19, 0x01, 0x29, 0x05, 0x75, 0x01, 0x95, 0x05, 0x91, 0x02,
+        0x75, 0x03, 0x95, 0x01, 0x91, 0x01,
+        0x05, 0x07, 0x19, 0x00, 0x29, 0x65, 0x15, 0x00, 0x25, 0x65, 0x75, 0x08, 0x95, 0x06, 0x81, 0x00,
+        0xC0,
+    ];
 
     /// <summary>INJECT_KEYCODE – 14 bytes.</summary>
     public static int WriteKeycode(Span<byte> buf, KeyAction action, int keycode, int repeat = 0, int metaState = 0)
@@ -120,17 +141,49 @@ public static class ControlMessageWriter
         return 2;
     }
 
-    /// <summary>Single-byte messages: panels, rotate.</summary>
+    /// <summary>Single-byte messages: panels, rotate, hard keyboard settings, reset video.</summary>
     public static int WriteSimple(Span<byte> buf, ControlMessageType type)
     {
         if (type is not (ControlMessageType.ExpandNotificationPanel or ControlMessageType.ExpandSettingsPanel
-            or ControlMessageType.CollapsePanels or ControlMessageType.RotateDevice))
+            or ControlMessageType.CollapsePanels or ControlMessageType.RotateDevice
+            or ControlMessageType.OpenHardKeyboardSettings or ControlMessageType.ResetVideo))
         {
             throw new ArgumentOutOfRangeException(nameof(type), type, "Not a payload-less message.");
         }
 
         buf[0] = (byte)type;
         return 1;
+    }
+
+    /// <summary>
+    /// UHID_CREATE – registers a virtual USB HID keyboard in Android (<c>/dev/uhid</c>), causing Android to treat
+    /// a physical keyboard as attached and suppress the soft on-screen IME popup.
+    /// Layout: type(1) + id(2) + vendorId(2) + productId(2) + nameLen(1) + name + descLen(2) + desc.
+    /// </summary>
+    public static int WriteUhidCreateKeyboard(Span<byte> buf, ushort id = DefaultKeyboardUhidId, string name = "ClickZen")
+    {
+        var nameBytes = Encoding.UTF8.GetBytes(name ?? "");
+        var nameLen = Utf8TruncationIndex(nameBytes, 127);
+        var desc = HidKeyboardReportDescriptor;
+
+        buf[0] = (byte)ControlMessageType.UhidCreate;
+        BinaryPrimitives.WriteUInt16BigEndian(buf[1..], id);
+        BinaryPrimitives.WriteUInt16BigEndian(buf[3..], 0); // vendorId
+        BinaryPrimitives.WriteUInt16BigEndian(buf[5..], 0); // productId
+        buf[7] = (byte)nameLen;
+        nameBytes.AsSpan(0, nameLen).CopyTo(buf[8..]);
+        var descOffset = 8 + nameLen;
+        BinaryPrimitives.WriteUInt16BigEndian(buf[descOffset..], (ushort)desc.Length);
+        desc.CopyTo(buf[(descOffset + 2)..]);
+        return descOffset + 2 + desc.Length;
+    }
+
+    /// <summary>UHID_DESTROY – 3 bytes (<c>type + u16 id</c>). Removes the virtual UHID device so soft IME returns.</summary>
+    public static int WriteUhidDestroy(Span<byte> buf, ushort id = DefaultKeyboardUhidId)
+    {
+        buf[0] = (byte)ControlMessageType.UhidDestroy;
+        BinaryPrimitives.WriteUInt16BigEndian(buf[1..], id);
+        return 3;
     }
 
     private static void WritePosition(Span<byte> buf, int x, int y, int w, int h)

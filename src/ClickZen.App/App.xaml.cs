@@ -59,6 +59,7 @@ public partial class App : Application
         // Devices
         sc.AddSingleton<AdbServerHost>();
         sc.AddSingleton<AdbService>();
+        sc.AddSingleton<ClickZen.Device.Adb.Wireless.IAdbMdnsDiscovery, ClickZen.Device.Adb.Wireless.AdbMdnsDiscovery>();
         sc.AddSingleton<DeviceWatcher>();
         sc.AddSingleton<SavedDeviceStore>();
         sc.AddSingleton(sp => new ClickZen.Core.Devices.EmulatorProfileStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<ILogger<ClickZen.Core.Devices.EmulatorProfileStore>>()));

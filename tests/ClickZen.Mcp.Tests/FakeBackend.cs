@@ -76,6 +76,12 @@ internal sealed class FakeBackend : IClickZenBackend
     public Task<McpEmulatorBind> BindEmulatorWindowAsync(string? emulator, CancellationToken ct) =>
         Result($"bind-emulator {emulator}", new McpEmulatorBind("window:abc123", "screenshotMatch", "127.0.0.1:16384", 1920, 1080, "bound"));
 
+    public Task<IReadOnlyList<McpLanDevice>> DiscoverLanDevicesAsync(CancellationToken ct) =>
+        Result<IReadOnlyList<McpLanDevice>>("discover-lan", [new McpLanDevice("192.168.1.88:41235", "192.168.1.88", 41235, "tlsConnect", "adb-R5CT123-abc")]);
+
+    public Task<McpWirelessEnableResult> EnableWirelessAdbAsync(string? device, int port, bool remember, CancellationToken ct) =>
+        Result($"enable-wireless {device} {port} {remember}", new McpWirelessEnableResult(true, $"192.168.1.88:{port}", "connected", remember));
+
     public Task<McpDevice> ConnectAsync(string? device, CancellationToken ct) => Result($"connect {device}", Device(device ?? "emulator-5554"));
 
     public Task<McpDevice> SelectDeviceAsync(string device, CancellationToken ct) => Result($"select {device}", Device(device));

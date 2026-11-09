@@ -479,4 +479,20 @@ public sealed class McpServerHostTests : IAsyncLifetime
         Assert.Contains("\"component\":\"com.demo.game/.MainActivity\"", text, StringComparison.Ordinal);
         Assert.Contains("foreground ", _backend.Calls);
     }
+
+    [Fact]
+    public async Task Discover_lan_devices_and_enable_wireless_adb_work_end_to_end()
+    {
+        await using var client = await ConnectAsync();
+
+        var lan = await CallAsync(client, "discover_lan_devices");
+        Assert.NotEqual(true, lan.IsError);
+        Assert.Contains("\"address\":\"192.168.1.88:41235\"", Text(lan), StringComparison.Ordinal);
+        Assert.Contains("\"kind\":\"tlsConnect\"", Text(lan), StringComparison.Ordinal);
+
+        var enabled = await CallAsync(client, "enable_wireless_adb", new() { ["device"] = "USB123", ["port"] = 5555, ["remember"] = true });
+        Assert.NotEqual(true, enabled.IsError);
+        Assert.Contains("\"address\":\"192.168.1.88:5555\"", Text(enabled), StringComparison.Ordinal);
+        Assert.Contains("enable-wireless USB123 5555 True", _backend.Calls);
+    }
 }

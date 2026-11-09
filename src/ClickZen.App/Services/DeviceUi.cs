@@ -76,7 +76,7 @@ public static class DeviceUi
             },
         };
 
-        return string.IsNullOrEmpty(error) || session is SessionState.Streaming or SessionState.Connected
+        return string.IsNullOrEmpty(error)
             ? text
             : $"{text}: {error}";
     }
@@ -101,6 +101,9 @@ public static class DeviceUi
     public static Visibility HasSession(ILiveFrameSource? frames) => frames is null ? Visibility.Collapsed : Visibility.Visible;
 
     public static Visibility IsNetwork(ConnectionKind kind) => kind is ConnectionKind.Wireless or ConnectionKind.Emulator ? Visibility.Visible : Visibility.Collapsed;
+
+    public static Visibility CanSwitchUsbToWireless(ConnectionKind kind, DeviceAdbState adb) =>
+        kind == ConnectionKind.Usb && adb == DeviceAdbState.Online ? Visibility.Visible : Visibility.Collapsed;
 
     public static Visibility IsWindowKind(ConnectionKind kind) => kind == ConnectionKind.Window ? Visibility.Visible : Visibility.Collapsed;
 

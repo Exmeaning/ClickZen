@@ -527,6 +527,63 @@ public sealed class AdbService : IDisposable
         return IpParser.ParseRouteSource(route);
     }
 
+    /// <summary>
+    /// Switches a USB-connected Android phone into wireless TCP/IP mode (<c>adb tcpip 5555</c>), discovers its
+    /// Wi-Fi IPv4 address, and connects to <c>&lt;ip&gt;:&lt;port&gt;</c> so the USB cable can be unplugged.
+    /// </summary>
+    public async Task<AdbConnectResult> EnableWirelessAsync(
+        string usbSerial,
+        int port = HostPortParser.DefaultAdbPort,
+        Func<string, int, CancellationToken, Task>? tcpIpRequester = null,
+        CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(usbSerial);
+        if (port is < 1 or > 65535)
+        {
+            throw new ArgumentOutOfRangeException(nameof(port), port, "Port must be 1-65535.");
+        }
+
+        var ip = await GetDeviceIpAsync(usbSerial, ct);
+        if (string.IsNullOrWhiteSpace(ip))
+        {
+            return new AdbConnectResult(false, ConnectResultKind.Failed, "Could not determine the device's Wi-Fi IP address (check Wi-Fi is connected to the same LAN).", "");
+        }
+
+        var requester = tcpIpRequester ?? SendTcpIpRequestAsync;
+        await RunAsync(usbSerial, "tcpip", HostCommandTimeout, async t =>
+        {
+            await requester(usbSerial, port, t);
+            return true;
+        }, ct);
+
+        var target = HostPortParser.Format(ip, port);
+        // adbd restarts in TCP mode; retry connect briefly while it comes back up.
+        AdbConnectResult last = new(false, ConnectResultKind.Failed, "Timed out waiting for wireless adbd.", target);
+        for (var attempt = 0; attempt < 6; attempt++)
+        {
+            if (attempt > 0)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(450), ct);
+            }
+
+            last = await ConnectAsync(target, ct);
+            if (last.Success)
+            {
+                return last;
+            }
+        }
+
+        return last;
+    }
+
+    private async Task SendTcpIpRequestAsync(string serial, int port, CancellationToken ct)
+    {
+        using var socket = new AdbSocket(_client.EndPoint, null);
+        await socket.SetDeviceAsync(Device(serial), ct);
+        await socket.SendAdbRequestAsync($"tcpip:{port.ToString(CultureInfo.InvariantCulture)}", ct);
+        _ = await socket.ReadAdbResponseAsync(ct);
+    }
+
     // ------------------------------------------------------------------ port forwarding
 
     /// <summary><c>adb forward local remote</c>, e.g. <c>("tcp:27183", "localabstract:scrcpy_1234")</c>. Returns the bound port when <paramref name="local"/> is <c>tcp:0</c>.</summary>

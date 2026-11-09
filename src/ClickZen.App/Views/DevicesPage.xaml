@@ -159,6 +159,9 @@
                                             <Button x:Uid="Devices_SetCurrent"
                                                     Visibility="{x:Bind svc:DeviceUi.NotTrue(IsCurrent), Mode=OneWay}"
                                                     Click="OnSetCurrentClick" Tag="{x:Bind}" />
+                                            <Button x:Uid="Devices_SwitchWireless"
+                                                    Visibility="{x:Bind svc:DeviceUi.CanSwitchUsbToWireless(Info.Kind, Info.State), Mode=OneWay}"
+                                                    Click="OnSwitchWirelessClick" Tag="{x:Bind}" />
                                             <Button x:Uid="Devices_DisconnectWireless"
                                                     Visibility="{x:Bind svc:DeviceUi.IsNetwork(Info.Kind), Mode=OneWay}"
                                                     Click="OnDisconnectWirelessClick" Tag="{x:Bind}" />

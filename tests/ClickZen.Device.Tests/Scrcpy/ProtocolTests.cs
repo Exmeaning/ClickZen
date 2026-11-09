@@ -109,6 +109,23 @@ public sealed class ControlMessageWriterTests
         Assert.Equal(new byte[] { 0x0b }, _buf[..ControlMessageWriter.WriteSimple(_buf, ControlMessageType.RotateDevice)]);
     }
 
+    [Fact]
+    public void Uhid_create_and_destroy_keyboard_match_scrcpy_v4_1_wire_format()
+    {
+        var n = ControlMessageWriter.WriteUhidCreateKeyboard(_buf, id: 1, name: "ClickZen");
+        // 1 (type=12) + 2 (id) + 2 (vid) + 2 (pid) + 1 (nameLen=8) + 8 (name) + 2 (descLen=63) + 63 (HID descriptor) = 81 bytes
+        Assert.Equal(81, n);
+        Assert.Equal((byte)ControlMessageType.UhidCreate, _buf[0]);
+        Assert.Equal(new byte[] { 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x08 }, _buf[1..8]);
+        Assert.Equal("ClickZen"u8.ToArray(), _buf[8..16]);
+        Assert.Equal(new byte[] { 0x00, 0x3f }, _buf[16..18]); // 63-byte HID report descriptor
+        Assert.Equal(0x05, _buf[18]); // Usage Page (Generic Desktop)
+        Assert.Equal(0xC0, _buf[80]); // End Collection
+
+        var destroyLen = ControlMessageWriter.WriteUhidDestroy(_buf, id: 1);
+        Assert.Equal(new byte[] { 0x0e, 0x00, 0x01 }, _buf[..destroyLen]);
+    }
+
     [Theory]
     [InlineData(0f, 0)]
     [InlineData(0.5f, 0x8000)]

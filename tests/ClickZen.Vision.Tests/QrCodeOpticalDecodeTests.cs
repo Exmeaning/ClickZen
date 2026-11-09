@@ -17,7 +17,7 @@ public sealed class QrCodeOpticalDecodeTests
     public void OpenCv_qr_detector_decodes_rendered_qr_code_exact_match(string payload)
     {
         var qr = QrCodeEncoder.Encode(payload);
-        var (w, h, bgra) = qr.ToBgraPixels(modulePixels: 6, quietZoneModules: 4);
+        var (w, h, bgra) = qr.ToBgraPixels(modulePixels: 10, quietZoneModules: 8);
 
         using var bgraMat = Mat.FromPixelData(h, w, MatType.CV_8UC4, bgra);
         using var gray = new Mat();
@@ -33,7 +33,7 @@ public sealed class QrCodeOpticalDecodeTests
     public void Random_adb_wireless_qr_credentials_decode_optically()
     {
         var creds = AdbWirelessQrCredentials.CreateRandom();
-        var (w, h, bgra) = QrCodeEncoder.Encode(creds.Payload).ToBgraPixels(modulePixels: 5, quietZoneModules: 4);
+        var (w, h, bgra) = QrCodeEncoder.Encode(creds.Payload).ToBgraPixels(modulePixels: 10, quietZoneModules: 8);
 
         using var bgraMat = Mat.FromPixelData(h, w, MatType.CV_8UC4, bgra);
         using var bgr = new Mat();

@@ -110,11 +110,11 @@ public sealed class WirelessMdnsAndCoordinatorTests : IDisposable
         string? pairedCode = null;
 
         var (client, fake) = FakeAdbClient.Create();
-        fake.Pair = (host, port, code, _) =>
+        fake.Pair = (addr, _, code, _) =>
         {
-            pairedAddr = $"{host}:{port}";
+            pairedAddr = addr;
             pairedCode = code;
-            return Task.FromResult($"Successfully paired to {pairedAddr} [guid=adb-pixel]");
+            return Task.FromResult($"Successfully paired to {addr} [guid=adb-pixel]");
         };
         fake.Connect = (addr, _) => Task.FromResult($"connected to {addr}");
         var adb = new AdbService(client, null, null, null);

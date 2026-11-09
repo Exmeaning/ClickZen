@@ -244,9 +244,11 @@ public sealed class McpBackend : IClickZenBackend
     {
         var (serial, name) = await OnUi(() =>
         {
-            var e = ResolveEntry(device);
-            var adbSerial = e.AdbSerial ?? throw new McpToolException($"Device \"{e.DisplayName}\" has no linked ADB device.");
-            return (adbSerial, e.DisplayName);
+            var e = Resolve(device);
+            var adbSerial = e.IsWindow
+                ? e.AdbSerial ?? throw new McpToolException($"Device \"{e.Info.DisplayName}\" has no linked ADB device.")
+                : e.Serial;
+            return (adbSerial, e.Info.DisplayName);
         });
 
         var r = await _adb.EnableWirelessAsync(serial, port, ct: ct);

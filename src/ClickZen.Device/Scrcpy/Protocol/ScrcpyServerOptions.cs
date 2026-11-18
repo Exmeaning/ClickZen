@@ -6,6 +6,9 @@ namespace ClickZen.Device.Scrcpy.Protocol;
 /// <summary>Options for one scrcpy-server session.</summary>
 public sealed record ScrcpyServerOptions
 {
+    /// <summary>Server default video bit rate (scrcpy-server <c>Options.java</c>); omitted from the command line when unchanged.</summary>
+    private const int DefaultVideoBitRate = 8_000_000;
+
     /// <summary>31-bit random id; identifies the abstract socket <c>scrcpy_%08x</c>.</summary>
     public required int Scid { get; init; }
 
@@ -21,7 +24,7 @@ public sealed record ScrcpyServerOptions
     /// <summary>Longest edge of the video, 0 = native.</summary>
     public int MaxSize { get; init; } = 1280;
 
-    public int VideoBitRate { get; init; } = 8_000_000;
+    public int VideoBitRate { get; init; } = DefaultVideoBitRate;
     public int MaxFps { get; init; } = 60;
     public bool StayAwake { get; init; } = true;
     public bool ShowTouches { get; init; }
@@ -36,6 +39,12 @@ public sealed record ScrcpyServerOptions
     /// Command line run on the device via <c>adb shell</c>:
     /// <c>CLASSPATH=... app_process / com.genymobile.scrcpy.Server 4.1 key=value...</c>.
     /// Audio is always disabled; the codec is H.264 for maximum decoder compatibility.
+    /// Only values that differ from the server defaults are sent (mirroring upstream
+    /// scrcpy's <c>server.c</c>): Samsung's <c>ACodec::reconfigEncoder4OtherApps</c> copies
+    /// <c>/proc/&lt;pid&gt;/cmdline</c> into a ~255-byte stack buffer
+    /// (Genymobile/scrcpy#7169), so the <c>app_process</c> command line must stay well
+    /// under 255 bytes or the server aborts with a stack-protector error on Samsung devices.
+    /// Server defaults are from scrcpy-server <c>Options.java</c> (v4.1).
     /// </summary>
     public string BuildCommand()
     {
@@ -48,11 +57,28 @@ public sealed record ScrcpyServerOptions
             sb.Append(' ').Append(key).Append('=').Append(Convert.ToString(value, CultureInfo.InvariantCulture)!.ToLowerInvariant());
 
         P("scid", Scid.ToString("x8", CultureInfo.InvariantCulture));
-        P("log_level", LogLevel);
-        P("video", Video);
+        if (!string.Equals(LogLevel, "debug", StringComparison.OrdinalIgnoreCase))
+        {
+            P("log_level", LogLevel);
+        }
+
+        if (!Video)
+        {
+            P("video", false);
+        }
+
+        // Audio is always disabled; the server default is enabled.
         P("audio", false);
-        P("control", Control);
-        P("tunnel_forward", TunnelForward);
+        if (TunnelForward)
+        {
+            P("tunnel_forward", true);
+        }
+
+        if (!Control)
+        {
+            P("control", false);
+        }
+
         if (DisplayId > 0)
         {
             P("display_id", DisplayId);
@@ -60,17 +86,41 @@ public sealed record ScrcpyServerOptions
 
         if (Video)
         {
-            P("video_codec", "h264");
-            P("max_size", MaxSize);
-            P("video_bit_rate", VideoBitRate);
-            P("max_fps", MaxFps);
+            // The codec is always H.264, which is the server default.
+            if (MaxSize != 0)
+            {
+                P("max_size", MaxSize);
+            }
+
+            if (VideoBitRate != DefaultVideoBitRate)
+            {
+                P("video_bit_rate", VideoBitRate);
+            }
+
+            if (MaxFps != 0)
+            {
+                P("max_fps", MaxFps);
+            }
         }
 
-        P("stay_awake", StayAwake);
-        P("show_touches", ShowTouches);
-        P("power_off_on_close", PowerOffOnClose);
+        if (StayAwake)
+        {
+            P("stay_awake", true);
+        }
+
+        if (ShowTouches)
+        {
+            P("show_touches", true);
+        }
+
+        if (PowerOffOnClose)
+        {
+            P("power_off_on_close", true);
+        }
+
+        // Clipboard autosync is always disabled; the server default is enabled.
         P("clipboard_autosync", false);
-        P("cleanup", true);
+        // Cleanup is always enabled, which is the server default.
         return sb.ToString();
     }
 }

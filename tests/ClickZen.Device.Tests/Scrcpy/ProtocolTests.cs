@@ -209,10 +209,80 @@ public sealed class ScrcpyServerOptionsTests
         Assert.Contains(" scid=1234abcd", cmd, StringComparison.Ordinal);
         Assert.Contains(" audio=false", cmd, StringComparison.Ordinal);
         Assert.Contains(" tunnel_forward=true", cmd, StringComparison.Ordinal);
-        Assert.Contains(" video_codec=h264", cmd, StringComparison.Ordinal);
         Assert.Contains(" max_size=1280", cmd, StringComparison.Ordinal);
-        Assert.Contains(" cleanup=true", cmd, StringComparison.Ordinal);
         Assert.Equal("scrcpy_1234abcd", o.SocketName);
+    }
+
+    [Fact]
+    public void Default_valued_options_are_omitted_from_command_line()
+    {
+        // Only non-default values are sent (upstream scrcpy server.c behaviour); the
+        // Samsung ACodec bug requires the app_process command line to stay under 255 bytes.
+        var cmd = new ScrcpyServerOptions { Scid = 1 }.BuildCommand();
+        Assert.Equal(
+            "CLASSPATH=/data/local/tmp/clickzen-scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 4.1 " +
+            "scid=00000001 log_level=info audio=false max_size=1280 max_fps=60 stay_awake=true clipboard_autosync=false",
+            cmd);
+
+        // Server defaults must not appear: video/control/video_codec/cleanup are true/h264/true,
+        // tunnel_forward/show_touches/power_off_on_close are false, video_bit_rate is 8000000.
+        Assert.DoesNotContain("video=true", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("control=true", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("video_codec", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("cleanup", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("tunnel_forward", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("show_touches", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("power_off_on_close", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("video_bit_rate", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("display_id", cmd, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Non_default_options_are_emitted()
+    {
+        var cmd = new ScrcpyServerOptions
+        {
+            Scid = 3,
+            VideoBitRate = 4_000_000,
+            ShowTouches = true,
+            PowerOffOnClose = true,
+            Control = false,
+            StayAwake = false,
+            LogLevel = "debug",
+            MaxSize = 0,
+            MaxFps = 0,
+        }.BuildCommand();
+
+        Assert.Contains(" video_bit_rate=4000000", cmd, StringComparison.Ordinal);
+        Assert.Contains(" show_touches=true", cmd, StringComparison.Ordinal);
+        Assert.Contains(" power_off_on_close=true", cmd, StringComparison.Ordinal);
+        Assert.Contains(" control=false", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("stay_awake", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("log_level", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("max_size", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("max_fps", cmd, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(1280, 8_000_000, 60, false, 0, true)]
+    [InlineData(1920, 4_000_000, 240, true, 2, true)]
+    [InlineData(1080, 2_000_000, 30, true, 1, false)]
+    public void App_process_command_line_stays_under_samsung_255_byte_limit(int maxSize, int bitRate, int maxFps, bool tunnelForward, int displayId, bool showTouches)
+    {
+        var cmd = new ScrcpyServerOptions
+        {
+            Scid = 0x4A0A27BC,
+            MaxSize = maxSize,
+            VideoBitRate = bitRate,
+            MaxFps = maxFps,
+            TunnelForward = tunnelForward,
+            DisplayId = displayId,
+            ShowTouches = showTouches,
+        }.BuildCommand();
+
+        // /proc/<pid>/cmdline only contains the app_process argv (CLASSPATH is an env var).
+        var argv = cmd[cmd.IndexOf("app_process", StringComparison.Ordinal)..];
+        Assert.True(argv.Length < 255, $"Command line too long ({argv.Length} bytes): {argv}");
     }
 
     [Fact]
@@ -221,6 +291,8 @@ public sealed class ScrcpyServerOptionsTests
         var cmd = new ScrcpyServerOptions { Scid = 1, Video = false }.BuildCommand();
         Assert.Contains(" video=false", cmd, StringComparison.Ordinal);
         Assert.DoesNotContain("max_size", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("video_bit_rate", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("max_fps", cmd, StringComparison.Ordinal);
         Assert.DoesNotContain("display_id", cmd, StringComparison.Ordinal);
         Assert.Contains(" scid=00000001", cmd, StringComparison.Ordinal);
     }
